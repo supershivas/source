@@ -701,34 +701,69 @@ export default function App({ initialProjects, userEmail }: AppProps) {
             style={{ zIndex: 10 }}
           />
         )}
-        <div className="flex items-center justify-between px-4 h-[52px] sidebar-border border-b">
-          <div className="sidebar-text font-semibold">Source</div>
-          <button onClick={() => setShowSettings(true)} className="sidebar-icon-btn rounded p-1">
-            <i className="ti ti-settings" />
+        <div className="flex items-center justify-between px-3 gap-2 sidebar-border border-b" style={{ minHeight: '52px' }}>
+          <div className="flex items-center gap-2 min-w-0">
+            <div
+              className="flex items-center justify-center rounded-lg flex-shrink-0"
+              style={{ width: 24, height: 24, fontSize: '0.85rem', background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-fg)' }}
+            >
+              ✦
+            </div>
+            <span className="sidebar-text font-semibold" style={{ fontSize: '0.95rem', letterSpacing: '-0.01em' }}>Source</span>
+          </div>
+          <button
+            onClick={() => setShowSettings(true)}
+            className="flex items-center justify-center rounded-lg transition-colors sidebar-icon-btn"
+            style={{ width: 32, height: 32 }}
+          >
+            <i className="ti ti-settings" style={{ fontSize: '15px' }} />
           </button>
         </div>
 
-        <div className="px-3 pt-3">
+        <div className="px-2 pt-2 pb-1">
           <button
             onClick={() => { setModalProject(null); if (isMobile) setMobileSidebarOpen(false) }}
-            className="w-full rounded-lg px-3 py-2 text-sm font-medium"
-            style={{ background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-fg)' }}
+            className="w-full relative flex items-center justify-center gap-2 rounded-xl text-sm font-medium transition-colors"
+            style={{ height: 40, padding: '0 12px', background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-fg)' }}
           >
-            Nouveau projet
+            <i className="ti ti-plus" style={{ fontSize: '15px' }} />
+            <span>Nouveau projet</span>
+            <kbd
+              className="absolute text-[10px] px-1.5 py-0.5 rounded font-mono opacity-60"
+              style={{ right: 12, top: '50%', transform: 'translateY(-50%)', background: 'rgba(255,255,255,0.20)', border: '1px solid rgba(255,255,255,0.30)' }}
+            >
+              N
+            </kbd>
           </button>
         </div>
 
-        <div className="px-3 pt-3">
-          <input
-            type="text"
-            placeholder="Rechercher…"
-            value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
-            className="w-full rounded-lg px-3 py-2 text-sm sidebar-text bg-transparent sidebar-border border outline-none"
-          />
+        <div className="relative px-2 py-2">
+          <div
+            className="flex items-center gap-2 rounded-lg px-3"
+            style={{ height: 36, background: 'rgba(255,255,255,0.10)', border: '1px solid rgba(255,255,255,0.10)' }}
+          >
+            <i className="ti ti-search" style={{ fontSize: '13px', color: 'var(--sidebar-icon)', flexShrink: 0 }} />
+            <input
+              type="text"
+              placeholder="Rechercher…"
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              className="flex-1 outline-none bg-transparent min-w-0"
+              style={{ color: 'var(--sidebar-fg)', fontSize: '13px' }}
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="w-6 h-6 flex items-center justify-center text-sm flex-shrink-0"
+                style={{ color: 'var(--sidebar-muted)' }}
+              >
+                ✕
+              </button>
+            )}
+          </div>
         </div>
 
-        <nav className="sidebar-scroll flex-1 overflow-y-auto px-2 pt-3">
+        <nav className="sidebar-scroll flex-1 overflow-y-auto px-2 pt-1">
           {(['pro', 'perso'] as Category[]).map(cat => (
             <div key={cat} className="mb-3">
               <div className="flex items-center justify-between px-2">
@@ -744,13 +779,26 @@ export default function App({ initialProjects, userEmail }: AppProps) {
               )}
               {yearsByCat[cat].map(year => {
                 const active = selectedCat === cat && selectedYear === year
+                const count = projects.filter(p => p.cat === cat && p.year === year && !p.archived && !p.trashed).length
                 return (
                   <button
                     key={`${cat}-${year}`}
                     onClick={() => { selectYear(cat, year); if (isMobile) setMobileSidebarOpen(false) }}
-                    className={`sidebar-item-hover sidebar-text w-full rounded-lg px-2 py-1.5 text-left text-sm ${active ? 'sidebar-selected' : ''}`}
+                    className={`sidebar-item-hover sidebar-text w-full flex items-center justify-between text-left text-sm font-medium ${active ? 'sidebar-selected' : ''}`}
+                    style={{ padding: '8px 12px', borderRadius: 6, margin: '1px 0' }}
                   >
-                    {year}
+                    <span>{year}</span>
+                    <span
+                      className="text-[10px] font-semibold flex-shrink-0"
+                      style={{
+                        padding: '2px 7px',
+                        borderRadius: 10,
+                        background: active ? 'rgba(192,57,43,0.35)' : 'rgba(255,255,255,0.10)',
+                        color: active ? 'var(--sidebar-selected-fg)' : 'rgba(255,255,255,0.55)',
+                      }}
+                    >
+                      {count}
+                    </span>
                   </button>
                 )
               })}
@@ -758,7 +806,7 @@ export default function App({ initialProjects, userEmail }: AppProps) {
           ))}
         </nav>
 
-        <div className="px-2 pb-2">
+        <div className="px-2 py-2 space-y-1" style={{ borderTop: '1px solid var(--sidebar-border)' }}>
           <button
             onClick={() => {
               setShowDashboard(v => !v)
@@ -766,9 +814,11 @@ export default function App({ initialProjects, userEmail }: AppProps) {
               setShowTrash(false)
               if (isMobile) setMobileSidebarOpen(false)
             }}
-            className={`sidebar-item-hover sidebar-text w-full rounded-lg px-2 py-2 text-left text-sm ${showDashboard ? 'sidebar-selected' : ''}`}
+            className={`sidebar-item-hover sidebar-text w-full flex items-center gap-2 text-left text-sm ${showDashboard ? 'sidebar-selected' : ''}`}
+            style={{ padding: '8px 12px', borderRadius: 6 }}
           >
-            Dashboard
+            <i className="ti ti-chart-bar" style={{ fontSize: '15px', flexShrink: 0 }} />
+            <span className="flex-1">Dashboard</span>
           </button>
           <button
             onClick={() => {
@@ -777,12 +827,19 @@ export default function App({ initialProjects, userEmail }: AppProps) {
               setShowTrash(false)
               if (isMobile) setMobileSidebarOpen(false)
             }}
-            className={`sidebar-item-hover sidebar-text w-full rounded-lg px-2 py-2 text-left text-sm ${showArchived ? 'sidebar-selected' : ''}`}
+            className={`sidebar-item-hover sidebar-text w-full flex items-center gap-2 text-left text-sm ${showArchived ? 'sidebar-selected' : ''}`}
+            style={{ padding: '8px 12px', borderRadius: 6 }}
           >
-            Archivés
+            <i className="ti ti-archive" style={{ fontSize: '15px', flexShrink: 0 }} />
+            <span className="flex-1">Archivés</span>
           </button>
-          <button onClick={exportCSV} className="sidebar-item-hover sidebar-text w-full rounded-lg px-2 py-2 text-left text-sm">
-            Export CSV
+          <button
+            onClick={exportCSV}
+            className="sidebar-item-hover sidebar-text w-full flex items-center gap-2 text-left text-sm"
+            style={{ padding: '8px 12px', borderRadius: 6 }}
+          >
+            <i className="ti ti-download" style={{ fontSize: '15px', flexShrink: 0 }} />
+            <span className="flex-1">Export CSV</span>
           </button>
           <button
             onClick={() => {
@@ -791,16 +848,25 @@ export default function App({ initialProjects, userEmail }: AppProps) {
               setShowArchived(false)
               if (isMobile) setMobileSidebarOpen(false)
             }}
-            className={`sidebar-item-hover sidebar-text w-full rounded-lg px-2 py-2 text-left text-sm ${showTrash ? 'sidebar-selected' : ''}`}
+            className={`sidebar-item-hover sidebar-text w-full flex items-center gap-2 text-left text-sm ${showTrash ? 'sidebar-selected' : ''}`}
+            style={{ padding: '8px 12px', borderRadius: 6 }}
           >
-            Corbeille{trashedProjects.length > 0 ? ` (${trashedProjects.length})` : ''}
+            <i className="ti ti-trash" style={{ fontSize: '15px', flexShrink: 0 }} />
+            <span className="flex-1">Corbeille</span>
+            {trashedProjects.length > 0 && (
+              <span className="text-xs" style={{ color: 'var(--sidebar-muted)' }}>{trashedProjects.length}</span>
+            )}
           </button>
         </div>
 
-        <div className="sidebar-border flex items-center justify-between border-t px-3 py-2">
-          <span className="sidebar-text-muted text-xs">{userEmail}</span>
-          <button onClick={handleLogout} className="sidebar-icon-btn rounded p-1">
-            <i className="ti ti-logout" />
+        <div className="flex items-center justify-between px-3 py-2" style={{ borderTop: '1px solid var(--sidebar-border)' }}>
+          <span className="sidebar-text-muted text-xs truncate">{userEmail}</span>
+          <button
+            onClick={handleLogout}
+            className="flex items-center justify-center rounded-lg transition-colors sidebar-icon-btn flex-shrink-0"
+            style={{ width: 32, height: 32 }}
+          >
+            <i className="ti ti-logout" style={{ fontSize: '15px' }} />
           </button>
         </div>
       </aside>
