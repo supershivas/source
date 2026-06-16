@@ -8,10 +8,12 @@ interface ProjectCardProps {
   onEdit: () => void
   onDelete: () => void
   onArchive: () => void
+  onDuplicate: () => void
   onAddSubproject: () => void
   onEditSubproject: (sub: Subproject) => void
   onDeleteSubproject: (sub: Subproject) => void
   onArchiveSubproject: (sub: Subproject) => void
+  onDuplicateSubproject: (sub: Subproject) => void
   onAddNote: (subprojectId?: string) => void
   onEditNote: (note: Note, subprojectId?: string) => void
   onDeleteNote: (note: Note, subprojectId?: string) => void
@@ -23,10 +25,12 @@ export default function ProjectCard({
   onEdit,
   onDelete,
   onArchive,
+  onDuplicate,
   onAddSubproject,
   onEditSubproject,
   onDeleteSubproject,
   onArchiveSubproject,
+  onDuplicateSubproject,
   onAddNote,
   onEditNote,
   onDeleteNote,
@@ -74,6 +78,9 @@ export default function ProjectCard({
         >
           <i className={`ti ti-archive${project.archived ? '-off' : ''}`} />
         </button>
+        <button onClick={onDuplicate} title="Dupliquer" className="sidebar-icon-btn rounded p-1" style={{ color: 'var(--text-muted)' }}>
+          <i className="ti ti-copy" />
+        </button>
         <button onClick={onEdit} className="sidebar-icon-btn rounded p-1" style={{ color: 'var(--text-muted)' }}>
           <i className="ti ti-edit" />
         </button>
@@ -109,6 +116,14 @@ export default function ProjectCard({
                     style={{ color: 'var(--text-muted)' }}
                   >
                     <i className={`ti ti-archive${s.archived ? '-off' : ''}`} />
+                  </button>
+                  <button
+                    onClick={() => onDuplicateSubproject(s)}
+                    title="Dupliquer"
+                    className="sidebar-icon-btn rounded p-1"
+                    style={{ color: 'var(--text-muted)' }}
+                  >
+                    <i className="ti ti-copy" />
                   </button>
                   <button onClick={() => onEditSubproject(s)} className="sidebar-icon-btn rounded p-1" style={{ color: 'var(--text-muted)' }}>
                     <i className="ti ti-edit" />

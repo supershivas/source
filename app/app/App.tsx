@@ -244,6 +244,84 @@ export default function App({ initialProjects, userEmail }: AppProps) {
     }
   }
 
+  async function handleDuplicateProject(p: Project) {
+    const maxSort = projects.reduce((m, pr) => Math.max(m, pr.sort_order || 0), 0)
+    const { data: newProject, error } = await supabase
+      .from('projects')
+      .insert({
+        number: `${p.number}_copie`,
+        name: `${p.name} (copie)`,
+        cat: p.cat,
+        year: p.year,
+        status: p.status,
+        progress: p.progress,
+        importance: p.importance,
+        editor: p.editor,
+        client: p.client,
+        date: p.date,
+        deadline: p.deadline,
+        ended: null,
+        archived: false,
+        trashed: false,
+        sort_order: maxSort + 1,
+      })
+      .select()
+      .single()
+    if (error || !newProject) return
+
+    const newSubprojects: Subproject[] = []
+    for (const s of p.subprojects || []) {
+      const { data: newSub } = await supabase
+        .from('subprojects')
+        .insert({
+          parent_id: newProject.id,
+          number: s.number,
+          name: s.name,
+          status: s.status,
+          progress: s.progress,
+          archived: false,
+          trashed: false,
+        })
+        .select()
+        .single()
+      if (newSub) newSubprojects.push({ ...newSub, notes: [] })
+    }
+
+    const newNotes: Note[] = []
+    for (const n of p.notes || []) {
+      const { data: newNote } = await supabase
+        .from('notes')
+        .insert({ text: n.text, date: n.date, project_id: newProject.id })
+        .select()
+        .single()
+      if (newNote) newNotes.push(newNote)
+    }
+
+    setProjects(ps => [...ps, { ...newProject, subprojects: newSubprojects, notes: newNotes }])
+  }
+
+  async function handleDuplicateSubproject(parentId: string, sub: Subproject) {
+    const { data: newSub, error } = await supabase
+      .from('subprojects')
+      .insert({
+        parent_id: parentId,
+        number: `${sub.number}b`,
+        name: `${sub.name} (copie)`,
+        status: sub.status,
+        progress: sub.progress,
+        archived: false,
+        trashed: false,
+      })
+      .select()
+      .single()
+    if (error || !newSub) return
+    setProjects(ps =>
+      ps.map(p =>
+        p.id === parentId ? { ...p, subprojects: [...(p.subprojects || []), { ...newSub, notes: [] }] } : p
+      )
+    )
+  }
+
   async function handleRestoreProject(id: string) {
     const { error } = await supabase.from('projects').update({ trashed: false }).eq('id', id)
     if (!error) updateProject(id, { trashed: false })
@@ -547,10 +625,12 @@ export default function App({ initialProjects, userEmail }: AppProps) {
                       onEdit={() => setModalProject(p)}
                       onDelete={() => setDeleteTarget({ type: 'project', id: p.id })}
                       onArchive={() => handleArchiveProject(p)}
+                      onDuplicate={() => handleDuplicateProject(p)}
                       onAddSubproject={() => setSubModalTarget({ parentId: p.id })}
                       onEditSubproject={sub => setSubModalTarget({ parentId: p.id, sub })}
                       onDeleteSubproject={sub => setDeleteTarget({ type: 'subproject', id: sub.id, parentId: p.id })}
                       onArchiveSubproject={sub => handleArchiveSubproject(p.id, sub)}
+                      onDuplicateSubproject={sub => handleDuplicateSubproject(p.id, sub)}
                       onAddNote={subprojectId => setNoteModalTarget({ projectId: p.id, subprojectId })}
                       onEditNote={(note, subprojectId) => setNoteModalTarget({ projectId: p.id, subprojectId, note })}
                       onDeleteNote={(note, subprojectId) =>

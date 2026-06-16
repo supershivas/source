@@ -9,10 +9,12 @@ interface SortableProjectCardProps {
   onEdit: () => void
   onDelete: () => void
   onArchive: () => void
+  onDuplicate: () => void
   onAddSubproject: () => void
   onEditSubproject: (sub: Subproject) => void
   onDeleteSubproject: (sub: Subproject) => void
   onArchiveSubproject: (sub: Subproject) => void
+  onDuplicateSubproject: (sub: Subproject) => void
   onAddNote: (subprojectId?: string) => void
   onEditNote: (note: Note, subprojectId?: string) => void
   onDeleteNote: (note: Note, subprojectId?: string) => void
