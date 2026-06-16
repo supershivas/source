@@ -12,6 +12,7 @@ import FilterBar, { SortMode } from './components/FilterBar'
 import Dashboard from './components/Dashboard'
 import TrashView from './components/TrashView'
 import SettingsModal, { useSettingsPrefs } from './components/SettingsModal'
+import ToastStack, { Toast } from './components/ToastStack'
 import { STATUS_LABELS, IMPORTANCE_LABELS, toEU } from './constants'
 import { DndContext, DragEndEvent, PointerSensor, useSensor, useSensors, closestCenter } from '@dnd-kit/core'
 import { SortableContext, arrayMove, verticalListSortingStrategy } from '@dnd-kit/sortable'
@@ -44,6 +45,13 @@ export default function App({ initialProjects, userEmail }: AppProps) {
   const [subModalTarget, setSubModalTarget] = useState<SubprojectModalTarget | null>(null)
   const [noteModalTarget, setNoteModalTarget] = useState<NoteModalTarget | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null)
+  const [toasts, setToasts] = useState<Toast[]>([])
+
+  function showToast(message: string, type: Toast['type'] = 'success') {
+    const id = Date.now() + Math.random()
+    setToasts(ts => [...ts, { id, message, type }])
+    setTimeout(() => setToasts(ts => ts.filter(t => t.id !== id)), 2800)
+  }
 
   const [searchQuery, setSearchQuery] = useState('')
   const [filterStatus, setFilterStatus] = useState<Status | ''>('')
@@ -142,6 +150,7 @@ export default function App({ initialProjects, userEmail }: AppProps) {
     a.download = `source_${selectedCat}_${selectedYear}_${new Date().toISOString().split('T')[0]}.csv`
     a.click()
     URL.revokeObjectURL(url)
+    showToast('Export CSV ✓')
   }
 
   function clearFilters() {
@@ -201,7 +210,10 @@ export default function App({ initialProjects, userEmail }: AppProps) {
         .eq('id', modalProject.id)
         .select()
         .single()
-      if (!error && data) updateProject(data.id, data)
+      if (!error && data) {
+        updateProject(data.id, data)
+        showToast('Projet mis à jour ✓')
+      } else if (error) showToast('Erreur lors de la mise à jour', 'error')
     } else {
       const maxSort = projects.reduce((m, p) => Math.max(m, p.sort_order || 0), 0)
       const { data, error } = await supabase
@@ -213,21 +225,28 @@ export default function App({ initialProjects, userEmail }: AppProps) {
         setProjects(ps => [...ps, { ...data, subprojects: [], notes: [] }])
         setSelectedCat(values.cat)
         setSelectedYear(values.year)
-      }
+        showToast('Projet créé ✓')
+      } else if (error) showToast('Erreur lors de la création', 'error')
     }
     setModalProject(undefined)
   }
 
   async function handleDeleteProject(id: string) {
     const { error } = await supabase.from('projects').update({ trashed: true }).eq('id', id)
-    if (!error) updateProject(id, { trashed: true })
+    if (!error) {
+      updateProject(id, { trashed: true })
+      showToast('Projet déplacé dans la corbeille')
+    }
     setDeleteTarget(null)
   }
 
   async function handleArchiveProject(p: Project) {
     const archived = !p.archived
     const { error } = await supabase.from('projects').update({ archived }).eq('id', p.id)
-    if (!error) updateProject(p.id, { archived })
+    if (!error) {
+      updateProject(p.id, { archived })
+      showToast(archived ? 'Projet archivé' : 'Projet désarchivé')
+    }
   }
 
   async function handleArchiveSubproject(parentId: string, sub: Subproject) {
@@ -241,6 +260,7 @@ export default function App({ initialProjects, userEmail }: AppProps) {
             : p
         )
       )
+      showToast(archived ? 'Sous-projet archivé' : 'Sous-projet restauré')
     }
   }
 
@@ -298,6 +318,7 @@ export default function App({ initialProjects, userEmail }: AppProps) {
     }
 
     setProjects(ps => [...ps, { ...newProject, subprojects: newSubprojects, notes: newNotes }])
+    showToast(`Projet dupliqué ✓ (${newSubprojects.length} sous-projet${newSubprojects.length > 1 ? 's' : ''})`)
   }
 
   async function handleDuplicateSubproject(parentId: string, sub: Subproject) {
@@ -320,18 +341,25 @@ export default function App({ initialProjects, userEmail }: AppProps) {
         p.id === parentId ? { ...p, subprojects: [...(p.subprojects || []), { ...newSub, notes: [] }] } : p
       )
     )
+    showToast('Sous-projet dupliqué ✓')
   }
 
   async function handleRestoreProject(id: string) {
     const { error } = await supabase.from('projects').update({ trashed: false }).eq('id', id)
-    if (!error) updateProject(id, { trashed: false })
+    if (!error) {
+      updateProject(id, { trashed: false })
+      showToast('Projet restauré')
+    }
   }
 
   async function handleDeleteProjectForever(id: string) {
     await supabase.from('subprojects').delete().eq('parent_id', id)
     await supabase.from('notes').delete().eq('project_id', id)
     const { error } = await supabase.from('projects').delete().eq('id', id)
-    if (!error) setProjects(ps => ps.filter(p => p.id !== id))
+    if (!error) {
+      setProjects(ps => ps.filter(p => p.id !== id))
+      showToast('Projet supprimé définitivement')
+    }
     setDeleteTarget(null)
   }
 
@@ -354,6 +382,7 @@ export default function App({ initialProjects, userEmail }: AppProps) {
               : p
           )
         )
+        showToast('Sous-projet mis à jour ✓')
       }
     } else {
       const { data, error } = await supabase
@@ -365,6 +394,7 @@ export default function App({ initialProjects, userEmail }: AppProps) {
         setProjects(ps =>
           ps.map(p => (p.id === parentId ? { ...p, subprojects: [...(p.subprojects || []), { ...data, notes: [] }] } : p))
         )
+        showToast('Sous-projet créé ✓')
       }
     }
     setSubModalTarget(null)
@@ -378,6 +408,7 @@ export default function App({ initialProjects, userEmail }: AppProps) {
           p.id === target.parentId ? { ...p, subprojects: (p.subprojects || []).filter(s => s.id !== target.id) } : p
         )
       )
+      showToast('Sous-projet supprimé')
     }
     setDeleteTarget(null)
   }
@@ -410,6 +441,7 @@ export default function App({ initialProjects, userEmail }: AppProps) {
             return { ...p, notes: (p.notes || []).map(n => (n.id === data.id ? data : n)) }
           })
         )
+        showToast('Note mise à jour ✓')
       }
     } else {
       const { data, error } = await supabase
@@ -437,6 +469,7 @@ export default function App({ initialProjects, userEmail }: AppProps) {
             return { ...p, notes: [...(p.notes || []), data] }
           })
         )
+        showToast('Note ajoutée ✓')
       }
     }
     setNoteModalTarget(null)
@@ -459,6 +492,7 @@ export default function App({ initialProjects, userEmail }: AppProps) {
           return { ...p, notes: (p.notes || []).filter(n => n.id !== target.id) }
         })
       )
+      showToast('Note supprimée')
     }
     setDeleteTarget(null)
   }
@@ -712,6 +746,8 @@ export default function App({ initialProjects, userEmail }: AppProps) {
           onClose={() => setShowSettings(false)}
         />
       )}
+
+      <ToastStack toasts={toasts} />
     </div>
   )
 }
