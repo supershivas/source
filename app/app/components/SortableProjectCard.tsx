@@ -9,6 +9,7 @@ interface SortableProjectCardProps {
   onOpenDetail: () => void
   onChangeStatus: (status: Status) => void
   onChangeSubStatus: (sub: Subproject, status: Status) => void
+  onReorderSubprojects: (reordered: Subproject[]) => void
   onChangeImportance: (importance: Importance) => void
   onCopyNumber: () => void
   onEdit: () => void

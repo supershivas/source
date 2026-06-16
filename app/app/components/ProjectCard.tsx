@@ -1,13 +1,17 @@
 'use client'
 import { useState } from 'react'
+import { DndContext, DragEndEvent, PointerSensor, closestCenter, useSensor, useSensors } from '@dnd-kit/core'
+import { SortableContext, arrayMove, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { Importance, Note, Project, Status, Subproject } from '../types'
 import { IMPORTANCE_COLOR, IMPORTANCE_LABELS, IMPORTANCE_ORDER, STATUS_LABELS, STATUS_ORDER } from '../constants'
+import SortableSubRow from './SortableSubRow'
 
 interface ProjectCardProps {
   project: Project
   onOpenDetail: () => void
   onChangeStatus: (status: Status) => void
   onChangeSubStatus: (sub: Subproject, status: Status) => void
+  onReorderSubprojects: (reordered: Subproject[]) => void
   onChangeImportance: (importance: Importance) => void
   onCopyNumber: () => void
   onEdit: () => void
@@ -39,6 +43,7 @@ export default function ProjectCard({
   onOpenDetail,
   onChangeStatus,
   onChangeSubStatus,
+  onReorderSubprojects,
   onChangeImportance,
   onCopyNumber,
   onEdit,
@@ -57,6 +62,16 @@ export default function ProjectCard({
   const [expanded, setExpanded] = useState(false)
   const subprojects = project.subprojects || []
   const notes = project.notes || []
+  const subSensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }))
+
+  function handleSubDragEnd(event: DragEndEvent) {
+    const { active, over } = event
+    if (!over || active.id === over.id) return
+    const oldIndex = subprojects.findIndex(s => s.id === active.id)
+    const newIndex = subprojects.findIndex(s => s.id === over.id)
+    if (oldIndex === -1 || newIndex === -1) return
+    onReorderSubprojects(arrayMove(subprojects, oldIndex, newIndex))
+  }
 
   return (
     <div
@@ -139,45 +154,51 @@ export default function ProjectCard({
               </button>
             </div>
             {subprojects.length === 0 && <p className="text-xs t-text-muted">Aucun sous-projet.</p>}
-            <div className="flex flex-col gap-1.5">
-              {subprojects.map(s => (
-                <div key={s.id} className="flex items-center gap-2 rounded border t-border px-2 py-1.5">
-                  <span className="text-xs t-text-muted shrink-0 whitespace-nowrap">{s.number}</span>
-                  <span className="flex-1 text-sm truncate">{s.name}</span>
-                  <button
-                    onClick={() => onChangeSubStatus(s, nextStatus(s.status))}
-                    title="Cliquer pour changer le statut"
-                    className={`status-badge s-${s.status}`}
-                    style={{ fontSize: '0.62rem', padding: '2px 7px', cursor: 'pointer', border: 'none', font: 'inherit' }}
-                  >
-                    {STATUS_LABELS[s.status]}
-                  </button>
-                  <span className="text-xs t-text-muted w-9 text-right">{s.progress ?? 0}%</span>
-                  <button
-                    onClick={() => onArchiveSubproject(s)}
-                    title={s.archived ? 'Désarchiver' : 'Archiver'}
-                    className="sidebar-icon-btn rounded p-1"
-                    style={{ color: 'var(--text-muted)' }}
-                  >
-                    <i className={`ti ti-archive${s.archived ? '-off' : ''}`} />
-                  </button>
-                  <button
-                    onClick={() => onDuplicateSubproject(s)}
-                    title="Dupliquer"
-                    className="sidebar-icon-btn rounded p-1"
-                    style={{ color: 'var(--text-muted)' }}
-                  >
-                    <i className="ti ti-copy" />
-                  </button>
-                  <button onClick={() => onEditSubproject(s)} className="sidebar-icon-btn rounded p-1" style={{ color: 'var(--text-muted)' }}>
-                    <i className="ti ti-edit" />
-                  </button>
-                  <button onClick={() => onDeleteSubproject(s)} className="sidebar-icon-btn rounded p-1" style={{ color: 'var(--text-muted)' }}>
-                    <i className="ti ti-trash" />
-                  </button>
+            <DndContext sensors={subSensors} collisionDetection={closestCenter} onDragEnd={handleSubDragEnd}>
+              <SortableContext items={subprojects.map(s => s.id)} strategy={verticalListSortingStrategy}>
+                <div className="flex flex-col gap-1.5">
+                  {subprojects.map(s => (
+                    <SortableSubRow key={s.id} id={s.id}>
+                      <div className="flex items-center gap-2 rounded border t-border px-2 py-1.5">
+                        <span className="text-xs t-text-muted shrink-0 whitespace-nowrap">{s.number}</span>
+                        <span className="flex-1 text-sm truncate">{s.name}</span>
+                        <button
+                          onClick={() => onChangeSubStatus(s, nextStatus(s.status))}
+                          title="Cliquer pour changer le statut"
+                          className={`status-badge s-${s.status}`}
+                          style={{ fontSize: '0.62rem', padding: '2px 7px', cursor: 'pointer', border: 'none', font: 'inherit' }}
+                        >
+                          {STATUS_LABELS[s.status]}
+                        </button>
+                        <span className="text-xs t-text-muted w-9 text-right">{s.progress ?? 0}%</span>
+                        <button
+                          onClick={() => onArchiveSubproject(s)}
+                          title={s.archived ? 'Désarchiver' : 'Archiver'}
+                          className="sidebar-icon-btn rounded p-1"
+                          style={{ color: 'var(--text-muted)' }}
+                        >
+                          <i className={`ti ti-archive${s.archived ? '-off' : ''}`} />
+                        </button>
+                        <button
+                          onClick={() => onDuplicateSubproject(s)}
+                          title="Dupliquer"
+                          className="sidebar-icon-btn rounded p-1"
+                          style={{ color: 'var(--text-muted)' }}
+                        >
+                          <i className="ti ti-copy" />
+                        </button>
+                        <button onClick={() => onEditSubproject(s)} className="sidebar-icon-btn rounded p-1" style={{ color: 'var(--text-muted)' }}>
+                          <i className="ti ti-edit" />
+                        </button>
+                        <button onClick={() => onDeleteSubproject(s)} className="sidebar-icon-btn rounded p-1" style={{ color: 'var(--text-muted)' }}>
+                          <i className="ti ti-trash" />
+                        </button>
+                      </div>
+                    </SortableSubRow>
+                  ))}
                 </div>
-              ))}
-            </div>
+              </SortableContext>
+            </DndContext>
           </div>
 
           {/* Notes */}

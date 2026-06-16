@@ -21,11 +21,13 @@ interface ProjectModalProps {
   project?: Project | null
   defaultCat: Category
   defaultYear: number
+  editors?: string[]
+  clients?: string[]
   onSave: (values: ProjectFormValues) => Promise<void>
   onClose: () => void
 }
 
-export default function ProjectModal({ project, defaultCat, defaultYear, onSave, onClose }: ProjectModalProps) {
+export default function ProjectModal({ project, defaultCat, defaultYear, editors = [], clients = [], onSave, onClose }: ProjectModalProps) {
   const [values, setValues] = useState<ProjectFormValues>({
     number: project?.number || '',
     name: project?.name || '',
@@ -157,18 +159,26 @@ export default function ProjectModal({ project, defaultCat, defaultYear, onSave,
             <div className="flex-1">
               <label className="text-xs t-text-muted">Éditeur</label>
               <input
+                list="editor-suggest"
                 className="w-full rounded-lg border px-3 py-2 text-sm t-border"
                 value={values.editor}
                 onChange={e => setValues(v => ({ ...v, editor: e.target.value }))}
               />
+              <datalist id="editor-suggest">
+                {editors.map(e => <option key={e} value={e} />)}
+              </datalist>
             </div>
             <div className="flex-1">
               <label className="text-xs t-text-muted">Client</label>
               <input
+                list="client-suggest"
                 className="w-full rounded-lg border px-3 py-2 text-sm t-border"
                 value={values.client}
                 onChange={e => setValues(v => ({ ...v, client: e.target.value }))}
               />
+              <datalist id="client-suggest">
+                {clients.map(c => <option key={c} value={c} />)}
+              </datalist>
             </div>
           </div>
 

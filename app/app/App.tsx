@@ -129,6 +129,18 @@ export default function App({ initialProjects, userEmail }: AppProps) {
     return [...set].sort()
   }, [projects, selectedCat, selectedYear])
 
+  const allEditors = useMemo(() => {
+    const set = new Set<string>()
+    for (const p of projects) if (!p.trashed && p.editor) set.add(p.editor.trim())
+    return [...set].sort()
+  }, [projects])
+
+  const allClients = useMemo(() => {
+    const set = new Set<string>()
+    for (const p of projects) if (!p.trashed && p.client) set.add(p.client.trim())
+    return [...set].sort()
+  }, [projects])
+
   const hasActiveFilters = !!(searchQuery || filterStatus || filterImportance || filterEditor)
 
   const trashedProjects = useMemo(() => projects.filter(p => p.trashed), [projects])
@@ -377,6 +389,10 @@ export default function App({ initialProjects, userEmail }: AppProps) {
       )
       showToast('Statut mis à jour ✓')
     }
+  }
+
+  function handleReorderSubprojects(parentId: string, reordered: Subproject[]) {
+    setProjects(ps => ps.map(p => (p.id === parentId ? { ...p, subprojects: reordered } : p)))
   }
 
   async function handleDuplicateProject(p: Project) {
@@ -784,6 +800,7 @@ export default function App({ initialProjects, userEmail }: AppProps) {
                       onOpenDetail={() => setSelectedDetailId(p.id)}
                       onChangeStatus={status => handleChangeStatus(p, status)}
                       onChangeSubStatus={(sub, status) => handleChangeSubStatus(p.id, sub, status)}
+                      onReorderSubprojects={reordered => handleReorderSubprojects(p.id, reordered)}
                       onChangeImportance={importance => handleChangeImportance(p, importance)}
                       onCopyNumber={() => handleCopyNumber(p.number)}
                       onEdit={() => setModalProject(p)}
@@ -814,6 +831,8 @@ export default function App({ initialProjects, userEmail }: AppProps) {
           project={modalProject}
           defaultCat={selectedCat}
           defaultYear={selectedYear}
+          editors={allEditors}
+          clients={allClients}
           onSave={handleSaveProject}
           onClose={() => setModalProject(undefined)}
         />
