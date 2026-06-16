@@ -1,11 +1,14 @@
 'use client'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { Note, Project, Subproject } from '../types'
+import { Note, Project, Status, Subproject } from '../types'
 import ProjectCard from './ProjectCard'
 
 interface SortableProjectCardProps {
   project: Project
+  onOpenDetail: () => void
+  onChangeStatus: (status: Status) => void
+  onChangeSubStatus: (sub: Subproject, status: Status) => void
   onEdit: () => void
   onDelete: () => void
   onArchive: () => void
@@ -30,8 +33,8 @@ export default function SortableProjectCard(props: SortableProjectCardProps) {
   }
 
   return (
-    <div ref={setNodeRef} style={style}>
-      <ProjectCard {...props} dragHandleProps={{ attributes, listeners }} />
+    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+      <ProjectCard {...props} />
     </div>
   )
 }

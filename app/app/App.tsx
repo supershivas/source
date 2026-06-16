@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useMemo, useState } from 'react'
+import { MouseEvent as ReactMouseEvent, useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Category, Importance, Note, Project, Status, Subproject } from './types'
@@ -13,7 +13,8 @@ import Dashboard from './components/Dashboard'
 import TrashView from './components/TrashView'
 import SettingsModal, { useSettingsPrefs } from './components/SettingsModal'
 import ToastStack, { Toast } from './components/ToastStack'
-import { STATUS_LABELS, IMPORTANCE_LABELS, toEU } from './constants'
+import { STATUS_LABELS, IMPORTANCE_LABELS, AUTO_PROGRESS, toEU } from './constants'
+import DetailPanel from './components/DetailPanel'
 import { DndContext, DragEndEvent, PointerSensor, useSensor, useSensors, closestCenter } from '@dnd-kit/core'
 import { SortableContext, arrayMove, verticalListSortingStrategy } from '@dnd-kit/sortable'
 
@@ -45,7 +46,38 @@ export default function App({ initialProjects, userEmail }: AppProps) {
   const [subModalTarget, setSubModalTarget] = useState<SubprojectModalTarget | null>(null)
   const [noteModalTarget, setNoteModalTarget] = useState<NoteModalTarget | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null)
+  const [selectedDetailId, setSelectedDetailId] = useState<string | null>(null)
   const [toasts, setToasts] = useState<Toast[]>([])
+  const [sidebarW, setSidebarW] = useState(264)
+
+  useEffect(() => {
+    const stored = Number(localStorage.getItem('source-sidebar-w'))
+    if (stored && stored >= 200 && stored <= 420) setSidebarW(stored)
+  }, [])
+
+  function startSidebarResize(e: ReactMouseEvent) {
+    e.preventDefault()
+    const startX = e.clientX
+    const startW = sidebarW
+    document.body.style.cursor = 'col-resize'
+    document.body.style.userSelect = 'none'
+    function onMove(ev: MouseEvent) {
+      const w = Math.min(420, Math.max(200, startW + (ev.clientX - startX)))
+      setSidebarW(w)
+    }
+    function onUp() {
+      document.body.style.cursor = ''
+      document.body.style.userSelect = ''
+      document.removeEventListener('mousemove', onMove)
+      document.removeEventListener('mouseup', onUp)
+      setSidebarW(w => {
+        localStorage.setItem('source-sidebar-w', String(w))
+        return w
+      })
+    }
+    document.addEventListener('mousemove', onMove)
+    document.addEventListener('mouseup', onUp)
+  }
 
   function showToast(message: string, type: Toast['type'] = 'success') {
     const id = Date.now() + Math.random()
@@ -87,10 +119,19 @@ export default function App({ initialProjects, userEmail }: AppProps) {
 
   const trashedProjects = useMemo(() => projects.filter(p => p.trashed), [projects])
 
+  const selectedDetailProject = useMemo(
+    () => projects.find(p => p.id === selectedDetailId) || null,
+    [projects, selectedDetailId]
+  )
+
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
       const target = e.target as HTMLElement
       if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT') return
+      if (e.key === 'Escape' && selectedDetailId) {
+        setSelectedDetailId(null)
+        return
+      }
       if (e.key === 'n' || e.key === 'N') {
         e.preventDefault()
         setModalProject(null)
@@ -105,7 +146,7 @@ export default function App({ initialProjects, userEmail }: AppProps) {
     }
     document.addEventListener('keydown', onKeyDown)
     return () => document.removeEventListener('keydown', onKeyDown)
-  }, [exportCSV])
+  }, [exportCSV, selectedDetailId])
 
   const visibleProjects = useMemo(() => {
     let list = projects.filter(
@@ -256,6 +297,7 @@ export default function App({ initialProjects, userEmail }: AppProps) {
     if (!error) {
       updateProject(id, { trashed: true })
       showToast('Projet déplacé dans la corbeille')
+      setSelectedDetailId(prev => (prev === id ? null : prev))
     }
     setDeleteTarget(null)
   }
@@ -281,6 +323,32 @@ export default function App({ initialProjects, userEmail }: AppProps) {
         )
       )
       showToast(archived ? 'Sous-projet archivé' : 'Sous-projet restauré')
+    }
+  }
+
+  async function handleChangeStatus(p: Project, status: Status) {
+    const progress = AUTO_PROGRESS[status]
+    const patch: Partial<Project> = progress == null ? { status } : { status, progress }
+    const { error } = await supabase.from('projects').update(patch).eq('id', p.id)
+    if (!error) {
+      updateProject(p.id, patch)
+      showToast('Statut mis à jour ✓')
+    }
+  }
+
+  async function handleChangeSubStatus(parentId: string, sub: Subproject, status: Status) {
+    const progress = AUTO_PROGRESS[status]
+    const patch: Partial<Subproject> = progress == null ? { status } : { status, progress }
+    const { error } = await supabase.from('subprojects').update(patch).eq('id', sub.id)
+    if (!error) {
+      setProjects(ps =>
+        ps.map(p =>
+          p.id === parentId
+            ? { ...p, subprojects: (p.subprojects || []).map(s => (s.id === sub.id ? { ...s, ...patch } : s)) }
+            : p
+        )
+      )
+      showToast('Statut mis à jour ✓')
     }
   }
 
@@ -379,6 +447,7 @@ export default function App({ initialProjects, userEmail }: AppProps) {
     if (!error) {
       setProjects(ps => ps.filter(p => p.id !== id))
       showToast('Projet supprimé définitivement')
+      setSelectedDetailId(prev => (prev === id ? null : prev))
     }
     setDeleteTarget(null)
   }
@@ -528,7 +597,16 @@ export default function App({ initialProjects, userEmail }: AppProps) {
   return (
     <div id="body" className="flex h-screen overflow-hidden">
       {/* Sidebar — toujours sombre, parité visuelle avec idee/La-fabrique */}
-      <aside id="sidebar" className="sidebar-bg flex flex-col shrink-0" style={{ width: 264 }}>
+      <aside
+        id="sidebar"
+        className="sidebar-bg flex flex-col shrink-0 relative"
+        style={{ width: sidebarW, minWidth: 200, maxWidth: 420 }}
+      >
+        <div
+          onMouseDown={startSidebarResize}
+          className="absolute top-0 right-0 h-full w-1 cursor-col-resize hover:bg-[var(--accent)] hover:opacity-50"
+          style={{ zIndex: 10 }}
+        />
         <div className="flex items-center justify-between px-4 h-[52px] sidebar-border border-b">
           <div className="sidebar-text font-semibold">Source</div>
           <button onClick={() => setShowSettings(true)} className="sidebar-icon-btn rounded p-1">
@@ -676,6 +754,9 @@ export default function App({ initialProjects, userEmail }: AppProps) {
                     <SortableProjectCard
                       key={p.id}
                       project={p}
+                      onOpenDetail={() => setSelectedDetailId(p.id)}
+                      onChangeStatus={status => handleChangeStatus(p, status)}
+                      onChangeSubStatus={(sub, status) => handleChangeSubStatus(p.id, sub, status)}
                       onEdit={() => setModalProject(p)}
                       onDelete={() => setDeleteTarget({ type: 'project', id: p.id })}
                       onArchive={() => handleArchiveProject(p)}
@@ -764,6 +845,29 @@ export default function App({ initialProjects, userEmail }: AppProps) {
           prefs={prefs}
           onChange={patch => setPrefs(p => ({ ...p, ...patch }))}
           onClose={() => setShowSettings(false)}
+        />
+      )}
+
+      {selectedDetailProject && (
+        <DetailPanel
+          project={selectedDetailProject}
+          onClose={() => setSelectedDetailId(null)}
+          onEdit={() => setModalProject(selectedDetailProject)}
+          onDuplicate={() => handleDuplicateProject(selectedDetailProject)}
+          onArchive={() => handleArchiveProject(selectedDetailProject)}
+          onDelete={() => setDeleteTarget({ type: 'project', id: selectedDetailProject.id })}
+          onAddSubproject={() => setSubModalTarget({ parentId: selectedDetailProject.id })}
+          onEditSubproject={sub => setSubModalTarget({ parentId: selectedDetailProject.id, sub })}
+          onDeleteSubproject={sub =>
+            setDeleteTarget({ type: 'subproject', id: sub.id, parentId: selectedDetailProject.id })
+          }
+          onAddNote={subprojectId => setNoteModalTarget({ projectId: selectedDetailProject.id, subprojectId })}
+          onEditNote={(note, subprojectId) =>
+            setNoteModalTarget({ projectId: selectedDetailProject.id, subprojectId, note })
+          }
+          onDeleteNote={(note, subprojectId) =>
+            setDeleteTarget({ type: 'note', id: note.id, projectId: selectedDetailProject.id, subprojectId })
+          }
         />
       )}
 

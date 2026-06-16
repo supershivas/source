@@ -1,0 +1,166 @@
+'use client'
+import { useEffect, useRef } from 'react'
+import { Note, Project, Subproject } from '../types'
+import { STATUS_LABELS, IMPORTANCE_LABELS, toEU } from '../constants'
+
+interface DetailPanelProps {
+  project: Project
+  onClose: () => void
+  onEdit: () => void
+  onDuplicate: () => void
+  onArchive: () => void
+  onDelete: () => void
+  onAddSubproject: () => void
+  onEditSubproject: (sub: Subproject) => void
+  onDeleteSubproject: (sub: Subproject) => void
+  onAddNote: (subprojectId?: string) => void
+  onEditNote: (note: Note, subprojectId?: string) => void
+  onDeleteNote: (note: Note, subprojectId?: string) => void
+}
+
+export default function DetailPanel({
+  project,
+  onClose,
+  onEdit,
+  onDuplicate,
+  onArchive,
+  onDelete,
+  onAddSubproject,
+  onEditSubproject,
+  onDeleteSubproject,
+  onAddNote,
+  onEditNote,
+  onDeleteNote,
+}: DetailPanelProps) {
+  const panelRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    function onClickOutside(e: MouseEvent) {
+      if (panelRef.current && !panelRef.current.contains(e.target as Node)) onClose()
+    }
+    document.addEventListener('mousedown', onClickOutside)
+    return () => document.removeEventListener('mousedown', onClickOutside)
+  }, [onClose])
+
+  const subprojects = (project.subprojects || []).filter(s => !s.archived)
+  const notes = project.notes || []
+
+  return (
+    <div
+      ref={panelRef}
+      className="fixed top-20 right-5 bottom-5 z-40 flex w-[420px] max-w-[90vw] flex-col overflow-y-auto rounded-lg t-bg-card p-4"
+      style={{ boxShadow: 'var(--card-shadow)', borderLeft: '3px solid var(--accent)' }}
+    >
+      <div className="flex items-center justify-between mb-3">
+        <button onClick={onClose} className="sidebar-icon-btn rounded p-1" style={{ color: 'var(--text-muted)' }}>
+          <i className="ti ti-x" />
+        </button>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={onArchive}
+            title={project.archived ? 'Désarchiver' : 'Archiver'}
+            className="sidebar-icon-btn rounded p-1"
+            style={{ color: 'var(--text-muted)' }}
+          >
+            <i className={`ti ti-archive${project.archived ? '-off' : ''}`} />
+          </button>
+          <button onClick={onDuplicate} title="Dupliquer" className="sidebar-icon-btn rounded p-1" style={{ color: 'var(--text-muted)' }}>
+            <i className="ti ti-copy" />
+          </button>
+          <button onClick={onEdit} className="sidebar-icon-btn rounded p-1" style={{ color: 'var(--text-muted)' }}>
+            <i className="ti ti-edit" />
+          </button>
+          <button onClick={onDelete} className="sidebar-icon-btn rounded p-1" style={{ color: 'var(--text-muted)' }}>
+            <i className="ti ti-trash" />
+          </button>
+        </div>
+      </div>
+
+      <span className="text-xs t-text-muted">{project.number}</span>
+      <h2 className="text-lg font-semibold mb-2">{project.name}</h2>
+
+      <div className="flex items-center gap-2 mb-3">
+        <span className={`status-badge s-${project.status}`}>{STATUS_LABELS[project.status]}</span>
+        <span className="text-xs t-text-muted">{IMPORTANCE_LABELS[project.importance]}</span>
+      </div>
+
+      <div className="prog-wrap mb-3">
+        <div className="prog-bar-bg">
+          <div className="prog-fill-bg" style={{ width: `${project.progress ?? 0}%`, background: 'var(--accent)' }} />
+        </div>
+        <span className="prog-pct">{project.progress ?? 0}%</span>
+      </div>
+
+      <div className="flex flex-wrap gap-3 text-xs t-text-muted mb-4">
+        {project.editor && (
+          <span>
+            <i className="ti ti-user" /> {project.editor}
+          </span>
+        )}
+        {project.client && (
+          <span>
+            <i className="ti ti-building" /> {project.client}
+          </span>
+        )}
+        {project.deadline && (
+          <span>
+            <i className="ti ti-calendar" /> {toEU(project.deadline)}
+          </span>
+        )}
+      </div>
+
+      <div className="mb-4">
+        <div className="flex items-center justify-between mb-1">
+          <span className="text-xs font-medium t-text-muted uppercase">
+            Sous-projets ({subprojects.length})
+          </span>
+          <button onClick={onAddSubproject} className="text-xs" style={{ color: 'var(--accent)' }}>
+            + Ajouter
+          </button>
+        </div>
+        {subprojects.length === 0 && <p className="text-xs t-text-muted">Aucun sous-projet.</p>}
+        <div className="flex flex-col gap-1.5">
+          {subprojects.map(s => (
+            <div key={s.id} className="flex items-center gap-2 rounded border t-border px-2 py-1.5">
+              <span className="text-xs t-text-muted shrink-0">{s.number}</span>
+              <span className="flex-1 text-sm truncate">{s.name}</span>
+              <span className={`status-badge s-${s.status}`} style={{ fontSize: '0.62rem', padding: '2px 7px' }}>
+                {STATUS_LABELS[s.status]}
+              </span>
+              <button onClick={() => onEditSubproject(s)} className="sidebar-icon-btn rounded p-1" style={{ color: 'var(--text-muted)' }}>
+                <i className="ti ti-edit" />
+              </button>
+              <button onClick={() => onDeleteSubproject(s)} className="sidebar-icon-btn rounded p-1" style={{ color: 'var(--text-muted)' }}>
+                <i className="ti ti-trash" />
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div>
+        <div className="flex items-center justify-between mb-1">
+          <span className="text-xs font-medium t-text-muted uppercase">Notes</span>
+          <button onClick={() => onAddNote()} className="text-xs" style={{ color: 'var(--accent)' }}>
+            + Ajouter
+          </button>
+        </div>
+        {notes.length === 0 && <p className="text-xs t-text-muted">Aucune note.</p>}
+        <div className="flex flex-col gap-1.5">
+          {notes.map(n => (
+            <div key={n.id} className="flex items-start gap-2 rounded border t-border px-2 py-1.5">
+              {n.date && <span className="text-xs t-text-muted shrink-0">{n.date}</span>}
+              <span className="flex-1 text-sm">{n.text}</span>
+              <button onClick={() => onEditNote(n)} className="sidebar-icon-btn rounded p-1" style={{ color: 'var(--text-muted)' }}>
+                <i className="ti ti-edit" />
+              </button>
+              <button onClick={() => onDeleteNote(n)} className="sidebar-icon-btn rounded p-1" style={{ color: 'var(--text-muted)' }}>
+                <i className="ti ti-trash" />
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}

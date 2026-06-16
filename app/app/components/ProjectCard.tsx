@@ -1,10 +1,13 @@
 'use client'
 import { useState } from 'react'
-import { Note, Project, Subproject } from '../types'
-import { STATUS_LABELS } from '../constants'
+import { Note, Project, Status, Subproject } from '../types'
+import { STATUS_LABELS, STATUS_ORDER } from '../constants'
 
 interface ProjectCardProps {
   project: Project
+  onOpenDetail: () => void
+  onChangeStatus: (status: Status) => void
+  onChangeSubStatus: (sub: Subproject, status: Status) => void
   onEdit: () => void
   onDelete: () => void
   onArchive: () => void
@@ -17,11 +20,18 @@ interface ProjectCardProps {
   onAddNote: (subprojectId?: string) => void
   onEditNote: (note: Note, subprojectId?: string) => void
   onDeleteNote: (note: Note, subprojectId?: string) => void
-  dragHandleProps?: { attributes?: any; listeners?: any }
+}
+
+function nextStatus(status: Status): Status {
+  const i = STATUS_ORDER.indexOf(status)
+  return STATUS_ORDER[(i + 1) % STATUS_ORDER.length]
 }
 
 export default function ProjectCard({
   project,
+  onOpenDetail,
+  onChangeStatus,
+  onChangeSubStatus,
   onEdit,
   onDelete,
   onArchive,
@@ -34,36 +44,36 @@ export default function ProjectCard({
   onAddNote,
   onEditNote,
   onDeleteNote,
-  dragHandleProps,
 }: ProjectCardProps) {
   const [expanded, setExpanded] = useState(false)
   const subprojects = project.subprojects || []
   const notes = project.notes || []
 
   return (
-    <div className="t-bg-card rounded-lg p-3" style={{ boxShadow: 'var(--card-shadow)' }}>
+    <div
+      className="t-bg-card rounded-lg p-3 cursor-grab active:cursor-grabbing"
+      style={{ boxShadow: 'var(--card-shadow)' }}
+      onClick={onOpenDetail}
+    >
       <div className="flex items-center gap-3">
-        {dragHandleProps && (
-          <button
-            {...dragHandleProps.attributes}
-            {...dragHandleProps.listeners}
-            className="t-text-muted shrink-0 cursor-grab active:cursor-grabbing"
-            title="Glisser pour réordonner"
-          >
-            <i className="ti ti-grip-vertical" />
-          </button>
-        )}
-        <button onClick={() => setExpanded(e => !e)} className="t-text-muted shrink-0">
+        <button onClick={e => { e.stopPropagation(); setExpanded(ex => !ex) }} className="t-text-muted shrink-0">
           <i className={`ti ti-chevron-${expanded ? 'down' : 'right'}`} />
         </button>
-        <span className="text-xs t-text-muted w-10 shrink-0">{project.number}</span>
+        <span className="text-xs t-text-muted shrink-0 whitespace-nowrap">{project.number}</span>
         <span className="flex-1 text-sm font-medium truncate">{project.name}</span>
         {subprojects.length > 0 && (
           <span className="text-xs t-text-muted">
             <i className="ti ti-folders" /> {subprojects.length}
           </span>
         )}
-        <span className={`status-badge s-${project.status}`}>{STATUS_LABELS[project.status]}</span>
+        <button
+          onClick={e => { e.stopPropagation(); onChangeStatus(nextStatus(project.status)) }}
+          title="Cliquer pour changer le statut"
+          className={`status-badge s-${project.status}`}
+          style={{ cursor: 'pointer', border: 'none', font: 'inherit' }}
+        >
+          {STATUS_LABELS[project.status]}
+        </button>
         <div className="prog-wrap" style={{ width: 100 }}>
           <div className="prog-bar-bg">
             <div className="prog-fill-bg" style={{ width: `${project.progress ?? 0}%`, background: 'var(--accent)' }} />
@@ -71,26 +81,31 @@ export default function ProjectCard({
           <span className="prog-pct">{project.progress ?? 0}%</span>
         </div>
         <button
-          onClick={onArchive}
+          onClick={e => { e.stopPropagation(); onArchive() }}
           title={project.archived ? 'Désarchiver' : 'Archiver'}
           className="sidebar-icon-btn rounded p-1"
           style={{ color: 'var(--text-muted)' }}
         >
           <i className={`ti ti-archive${project.archived ? '-off' : ''}`} />
         </button>
-        <button onClick={onDuplicate} title="Dupliquer" className="sidebar-icon-btn rounded p-1" style={{ color: 'var(--text-muted)' }}>
+        <button
+          onClick={e => { e.stopPropagation(); onDuplicate() }}
+          title="Dupliquer"
+          className="sidebar-icon-btn rounded p-1"
+          style={{ color: 'var(--text-muted)' }}
+        >
           <i className="ti ti-copy" />
         </button>
-        <button onClick={onEdit} className="sidebar-icon-btn rounded p-1" style={{ color: 'var(--text-muted)' }}>
+        <button onClick={e => { e.stopPropagation(); onEdit() }} className="sidebar-icon-btn rounded p-1" style={{ color: 'var(--text-muted)' }}>
           <i className="ti ti-edit" />
         </button>
-        <button onClick={onDelete} className="sidebar-icon-btn rounded p-1" style={{ color: 'var(--text-muted)' }}>
+        <button onClick={e => { e.stopPropagation(); onDelete() }} className="sidebar-icon-btn rounded p-1" style={{ color: 'var(--text-muted)' }}>
           <i className="ti ti-trash" />
         </button>
       </div>
 
       {expanded && (
-        <div className="mt-3 pl-8 flex flex-col gap-3">
+        <div className="mt-3 pl-8 flex flex-col gap-3" onClick={e => e.stopPropagation()}>
           {/* Sous-projets */}
           <div>
             <div className="flex items-center justify-between mb-1">
@@ -103,11 +118,16 @@ export default function ProjectCard({
             <div className="flex flex-col gap-1.5">
               {subprojects.map(s => (
                 <div key={s.id} className="flex items-center gap-2 rounded border t-border px-2 py-1.5">
-                  <span className="text-xs t-text-muted w-10 shrink-0">{s.number}</span>
+                  <span className="text-xs t-text-muted shrink-0 whitespace-nowrap">{s.number}</span>
                   <span className="flex-1 text-sm truncate">{s.name}</span>
-                  <span className={`status-badge s-${s.status}`} style={{ fontSize: '0.62rem', padding: '2px 7px' }}>
+                  <button
+                    onClick={() => onChangeSubStatus(s, nextStatus(s.status))}
+                    title="Cliquer pour changer le statut"
+                    className={`status-badge s-${s.status}`}
+                    style={{ fontSize: '0.62rem', padding: '2px 7px', cursor: 'pointer', border: 'none', font: 'inherit' }}
+                  >
                     {STATUS_LABELS[s.status]}
-                  </span>
+                  </button>
                   <span className="text-xs t-text-muted w-9 text-right">{s.progress ?? 0}%</span>
                   <button
                     onClick={() => onArchiveSubproject(s)}
