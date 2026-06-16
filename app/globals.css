@@ -1,0 +1,127 @@
+/* Valeurs partagées avec La-fabrique et idee : voir design-tokens.json
+   (couleurs accent fixe, radii, sidebar, kbd, search) — la
+   source de vérité canonique est supershivas/design-system,
+   à récupérer via ./scripts/sync-tokens.sh. */
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─── Variables — Light ──────────────────────────────────────────────────────*/
+:root {
+  --app-bg:          #f0f0ec;
+  --card-bg:         #ffffff;
+  --card-shadow:     0 2px 12px rgba(0,0,0,0.07), 0 1px 3px rgba(0,0,0,0.04);
+  --font-title:      'Playfair Display', Georgia, serif;
+  --font-body:       'Inter', system-ui, sans-serif;
+
+  /* Text */
+  --text-primary:    #1a1714;
+  --text-secondary:  #4b4440;
+  --text-muted:      #9ca3af;
+  --text-faint:      #d1d5db;
+
+  /* Borders / dividers */
+  --border:          #e5e7eb;
+  --border-light:    #f3f4f6;
+
+  /* Interactive */
+  --hover-bg:        rgba(0,0,0,0.04);
+  --selected-bg:     #e5e7eb;
+
+  /* Sidebar — toujours sombre, identique entre Light et Dark (voir CLAUDE.md) */
+  --sidebar-bg:      #1C1C1E;
+  --sidebar-fg:      rgba(255,255,255,0.88);
+  --sidebar-muted:   rgba(255,255,255,0.55);
+  --sidebar-icon:    #8E8E93;
+  --sidebar-hover:   rgba(255,255,255,0.07);
+  --sidebar-selected:rgba(192,57,43,0.20);
+  --sidebar-selected-fg:#E8887E;
+  --sidebar-border:  rgba(196,201,209,0.18);
+
+  /* Boutons primaires — cramoisi */
+  --btn-primary-bg:    #C0392B;
+  --btn-primary-fg:    #ffffff;
+  --btn-primary-hover: #9B2D22;
+
+  /* Accent — cramoisi */
+  --accent:            #C0392B;
+  --accent-fg:         #ffffff;
+  --accent-hover:      #9B2D22;
+  --accent-muted:      rgba(192,57,43,0.12);
+
+  --scrollbar-thumb: #d4c5b0;
+}
+
+/* ─── Variables — Dark ───────────────────────────────────────────────────────*/
+html.dark {
+  --app-bg:          #141414;
+  --card-bg:         #1f1f1f;
+  --card-shadow:     0 2px 16px rgba(0,0,0,0.4), 0 1px 4px rgba(0,0,0,0.3);
+
+  --text-primary:    #e8e4df;
+  --text-secondary:  #b8b0a8;
+  --text-muted:      #6b6560;
+  --text-faint:      #3d3a37;
+
+  --border:          #2e2e2e;
+  --border-light:    #252525;
+
+  --hover-bg:        rgba(255,255,255,0.05);
+  --selected-bg:     rgba(255,255,255,0.1);
+
+  /* Sidebar dark mode (idem, toujours sombre — ne pas faire diverger d'idee) */
+  --sidebar-bg:      #161618;
+  --sidebar-fg:      rgba(255,255,255,0.88);
+  --sidebar-muted:   rgba(255,255,255,0.55);
+  --sidebar-icon:    #8E8E93;
+  --sidebar-hover:   rgba(255,255,255,0.07);
+  --sidebar-selected:rgba(192,57,43,0.20);
+  --sidebar-selected-fg:#E8887E;
+  --sidebar-border:  rgba(196,201,209,0.18);
+
+  --btn-primary-bg:    #C0392B;
+  --btn-primary-fg:    #ffffff;
+  --btn-primary-hover: #9B2D22;
+
+  --accent:            #C0392B;
+  --accent-fg:         #ffffff;
+  --accent-hover:      #9B2D22;
+  --accent-muted:      rgba(192,57,43,0.12);
+
+  --scrollbar-thumb: #3d3530;
+}
+
+/* ─── Base ───────────────────────────────────────────────────────────────────*/
+html, body {
+  background: var(--app-bg);
+  font-family: var(--font-body);
+  color: var(--text-primary);
+}
+
+/* ─── Sidebar sombre (parité avec idee / La-fabrique) ───────────────────────*/
+.sidebar-bg { background: var(--sidebar-bg) !important; }
+.sidebar-text { color: var(--sidebar-fg); }
+.sidebar-text-muted { color: var(--sidebar-muted); }
+.sidebar-icon-color { color: var(--sidebar-icon); }
+.sidebar-item-hover:hover { background: var(--sidebar-hover) !important; }
+.sidebar-selected { background: var(--sidebar-selected) !important; color: var(--sidebar-selected-fg) !important; }
+.sidebar-border { border-color: var(--sidebar-border) !important; }
+.sidebar-icon-btn { color: var(--sidebar-icon); background: transparent; }
+.sidebar-icon-btn:hover { background: var(--sidebar-hover); color: var(--sidebar-fg); }
+
+/* ─── Sidebar scrollbar ──────────────────────────────────────────────────────*/
+.sidebar-scroll::-webkit-scrollbar { width: 4px; }
+.sidebar-scroll::-webkit-scrollbar-track { background: transparent; }
+.sidebar-scroll::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 4px; }
+
+/* ─── Utility classes thème ──────────────────────────────────────────────────*/
+.t-bg-app    { background: var(--app-bg); }
+.t-bg-card   { background: var(--card-bg); }
+.t-text      { color: var(--text-primary); }
+.t-text-muted{ color: var(--text-muted); }
+
+input::placeholder, textarea::placeholder {
+  color: var(--text-muted);
+}
