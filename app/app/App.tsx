@@ -1,5 +1,5 @@
 'use client'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Category, Importance, Note, Project, Status, Subproject } from './types'
@@ -86,6 +86,26 @@ export default function App({ initialProjects, userEmail }: AppProps) {
   const hasActiveFilters = !!(searchQuery || filterStatus || filterImportance || filterEditor)
 
   const trashedProjects = useMemo(() => projects.filter(p => p.trashed), [projects])
+
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      const target = e.target as HTMLElement
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT') return
+      if (e.key === 'n' || e.key === 'N') {
+        e.preventDefault()
+        setModalProject(null)
+      } else if (e.key === 'd' || e.key === 'D') {
+        setShowDashboard(v => !v)
+        setShowTrash(false)
+      } else if (e.key === 'p' || e.key === 'P') {
+        setShowSettings(true)
+      } else if (e.key === 'e' || e.key === 'E') {
+        exportCSV()
+      }
+    }
+    document.addEventListener('keydown', onKeyDown)
+    return () => document.removeEventListener('keydown', onKeyDown)
+  }, [exportCSV])
 
   const visibleProjects = useMemo(() => {
     let list = projects.filter(
