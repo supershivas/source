@@ -50,23 +50,22 @@ et La-fabrique.
 
 ## État du portage
 
-La coquille Next.js/Tailwind/TS (config, layout, login, connexion Supabase,
-middleware, sidebar de base, sync des tokens) est en place. Les
-fonctionnalités de La-fabrique restent à porter une par une dans
-`app/app/components/` :
+Le portage des fonctionnalités de La-fabrique est terminé :
 
 - CRUD projets / sous-projets / notes
-- Drag-and-drop (réutiliser `@dnd-kit`, comme dans idee)
+- Drag-and-drop (`@dnd-kit`, comme dans idee)
 - Filtres / tri, navigation année / catégorie
-- Dashboard / stats
-- Export CSV
-- Archivage
-- Corbeille (soft-delete via `trashed`)
-- Settings (thème / accent / taille de police)
-- Modals (projet/sous-projet, note, settings, année, confirmation),
-  Enter-to-submit
+- Reset de mot de passe (`/login` + `/reset-password`)
+- Dashboard / stats (`app/app/components/Dashboard.tsx`)
+- Export CSV (vue filtrée courante, projets + sous-projets)
+- Archivage (toggle projets/sous-projets, vue "Archivés")
+- Corbeille (`app/app/components/TrashView.tsx` : restaurer / supprimer
+  définitivement, soft-delete via `trashed`)
+- Settings (`app/app/components/SettingsModal.tsx` : thème clair/sombre,
+  taille du texte, couleur d'accent, persistés en localStorage)
+- Modals (projet/sous-projet, note, confirmation), Enter-to-submit
 
-`app/app/types.ts` définit déjà les types `Project`, `Subproject`, `Note`
+`app/app/types.ts` définit les types `Project`, `Subproject`, `Note`
 correspondant au schéma Supabase existant.
 
 ## Workflow Git
