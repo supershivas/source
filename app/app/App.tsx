@@ -1,5 +1,5 @@
 'use client'
-import { MouseEvent as ReactMouseEvent, useEffect, useMemo, useState } from 'react'
+import { MouseEvent as ReactMouseEvent, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Category, Importance, Note, Project, Status, Subproject } from './types'
@@ -97,6 +97,7 @@ export default function App({ initialProjects, userEmail }: AppProps) {
     setTimeout(() => setToasts(ts => ts.filter(t => t.id !== id)), 2800)
   }
 
+  const searchInputRef = useRef<HTMLInputElement>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [filterStatus, setFilterStatus] = useState<Status | ''>('')
   const [filterImportance, setFilterImportance] = useState<Importance | ''>('')
@@ -189,6 +190,12 @@ export default function App({ initialProjects, userEmail }: AppProps) {
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key === '/') {
+        e.preventDefault()
+        searchInputRef.current?.focus()
+        searchInputRef.current?.select()
+        return
+      }
       const target = e.target as HTMLElement
       if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT') return
       if (e.key === 'Escape' && selectedDetailId) {
@@ -744,8 +751,9 @@ export default function App({ initialProjects, userEmail }: AppProps) {
           >
             <i className="ti ti-search" style={{ fontSize: '13px', color: 'var(--sidebar-icon)', flexShrink: 0 }} />
             <input
+              ref={searchInputRef}
               type="text"
-              placeholder="Rechercher…"
+              placeholder="Rechercher…  ⌘/"
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
               className="flex-1 outline-none bg-transparent min-w-0"
