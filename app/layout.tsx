@@ -24,7 +24,7 @@ export default function RootLayout({
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css"/>
       </head>
 
-      <body className="bg-gray-50 text-gray-900">
+      <body className="t-bg-app t-text">
         {children}
       </body>
     </html>

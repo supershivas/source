@@ -1,0 +1,33 @@
+'use client'
+import { useSortable } from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
+import { Note, Project, Subproject } from '../types'
+import ProjectCard from './ProjectCard'
+
+interface SortableProjectCardProps {
+  project: Project
+  onEdit: () => void
+  onDelete: () => void
+  onAddSubproject: () => void
+  onEditSubproject: (sub: Subproject) => void
+  onDeleteSubproject: (sub: Subproject) => void
+  onAddNote: (subprojectId?: string) => void
+  onEditNote: (note: Note, subprojectId?: string) => void
+  onDeleteNote: (note: Note, subprojectId?: string) => void
+}
+
+export default function SortableProjectCard(props: SortableProjectCardProps) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: props.project.id })
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  }
+
+  return (
+    <div ref={setNodeRef} style={style}>
+      <ProjectCard {...props} dragHandleProps={{ attributes, listeners }} />
+    </div>
+  )
+}

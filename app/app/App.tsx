@@ -7,8 +7,10 @@ import ProjectModal, { ProjectFormValues } from './components/ProjectModal'
 import SubprojectModal, { SubprojectFormValues } from './components/SubprojectModal'
 import NoteModal, { NoteFormValues } from './components/NoteModal'
 import ConfirmModal from './components/ConfirmModal'
-import ProjectCard from './components/ProjectCard'
+import SortableProjectCard from './components/SortableProjectCard'
 import FilterBar, { SortMode } from './components/FilterBar'
+import { DndContext, DragEndEvent, PointerSensor, useSensor, useSensors, closestCenter } from '@dnd-kit/core'
+import { SortableContext, arrayMove, verticalListSortingStrategy } from '@dnd-kit/sortable'
 
 interface AppProps {
   initialProjects: Project[]
@@ -108,6 +110,29 @@ export default function App({ initialProjects, userEmail }: AppProps) {
     setFilterStatus('')
     setFilterImportance('')
     setFilterEditor('')
+  }
+
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }))
+
+  async function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event
+    if (!over || active.id === over.id) return
+    const oldIndex = visibleProjects.findIndex(p => p.id === active.id)
+    const newIndex = visibleProjects.findIndex(p => p.id === over.id)
+    if (oldIndex === -1 || newIndex === -1) return
+    const reordered = arrayMove(visibleProjects, oldIndex, newIndex)
+
+    setSortMode('manual')
+    setProjects(ps => {
+      const reorderedIds = new Set(reordered.map(p => p.id))
+      const others = ps.filter(p => !reorderedIds.has(p.id))
+      const updated = reordered.map((p, i) => ({ ...p, sort_order: i }))
+      return [...others, ...updated]
+    })
+
+    reordered.forEach((p, i) => {
+      supabase.from('projects').update({ sort_order: i }).eq('id', p.id).then()
+    })
   }
 
   async function handleLogout() {
@@ -397,24 +422,28 @@ export default function App({ initialProjects, userEmail }: AppProps) {
           </p>
         )}
 
-        <div className="flex flex-col gap-2">
-          {visibleProjects.map(p => (
-            <ProjectCard
-              key={p.id}
-              project={p}
-              onEdit={() => setModalProject(p)}
-              onDelete={() => setDeleteTarget({ type: 'project', id: p.id })}
-              onAddSubproject={() => setSubModalTarget({ parentId: p.id })}
-              onEditSubproject={sub => setSubModalTarget({ parentId: p.id, sub })}
-              onDeleteSubproject={sub => setDeleteTarget({ type: 'subproject', id: sub.id, parentId: p.id })}
-              onAddNote={subprojectId => setNoteModalTarget({ projectId: p.id, subprojectId })}
-              onEditNote={(note, subprojectId) => setNoteModalTarget({ projectId: p.id, subprojectId, note })}
-              onDeleteNote={(note, subprojectId) =>
-                setDeleteTarget({ type: 'note', id: note.id, projectId: p.id, subprojectId })
-              }
-            />
-          ))}
-        </div>
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <SortableContext items={visibleProjects.map(p => p.id)} strategy={verticalListSortingStrategy}>
+            <div className="flex flex-col gap-2">
+              {visibleProjects.map(p => (
+                <SortableProjectCard
+                  key={p.id}
+                  project={p}
+                  onEdit={() => setModalProject(p)}
+                  onDelete={() => setDeleteTarget({ type: 'project', id: p.id })}
+                  onAddSubproject={() => setSubModalTarget({ parentId: p.id })}
+                  onEditSubproject={sub => setSubModalTarget({ parentId: p.id, sub })}
+                  onDeleteSubproject={sub => setDeleteTarget({ type: 'subproject', id: sub.id, parentId: p.id })}
+                  onAddNote={subprojectId => setNoteModalTarget({ projectId: p.id, subprojectId })}
+                  onEditNote={(note, subprojectId) => setNoteModalTarget({ projectId: p.id, subprojectId, note })}
+                  onDeleteNote={(note, subprojectId) =>
+                    setDeleteTarget({ type: 'note', id: note.id, projectId: p.id, subprojectId })
+                  }
+                />
+              ))}
+            </div>
+          </SortableContext>
+        </DndContext>
       </main>
 
       {modalProject !== undefined && (

@@ -13,6 +13,7 @@ interface ProjectCardProps {
   onAddNote: (subprojectId?: string) => void
   onEditNote: (note: Note, subprojectId?: string) => void
   onDeleteNote: (note: Note, subprojectId?: string) => void
+  dragHandleProps?: { attributes?: any; listeners?: any }
 }
 
 export default function ProjectCard({
@@ -25,6 +26,7 @@ export default function ProjectCard({
   onAddNote,
   onEditNote,
   onDeleteNote,
+  dragHandleProps,
 }: ProjectCardProps) {
   const [expanded, setExpanded] = useState(false)
   const subprojects = project.subprojects || []
@@ -33,6 +35,16 @@ export default function ProjectCard({
   return (
     <div className="t-bg-card rounded-lg p-3" style={{ boxShadow: 'var(--card-shadow)' }}>
       <div className="flex items-center gap-3">
+        {dragHandleProps && (
+          <button
+            {...dragHandleProps.attributes}
+            {...dragHandleProps.listeners}
+            className="t-text-muted shrink-0 cursor-grab active:cursor-grabbing"
+            title="Glisser pour réordonner"
+          >
+            <i className="ti ti-grip-vertical" />
+          </button>
+        )}
         <button onClick={() => setExpanded(e => !e)} className="t-text-muted shrink-0">
           <i className={`ti ti-chevron-${expanded ? 'down' : 'right'}`} />
         </button>
