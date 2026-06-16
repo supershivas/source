@@ -9,6 +9,7 @@ import NoteModal, { NoteFormValues } from './components/NoteModal'
 import ConfirmModal from './components/ConfirmModal'
 import SortableProjectCard from './components/SortableProjectCard'
 import FilterBar, { SortMode } from './components/FilterBar'
+import Dashboard from './components/Dashboard'
 import { DndContext, DragEndEvent, PointerSensor, useSensor, useSensors, closestCenter } from '@dnd-kit/core'
 import { SortableContext, arrayMove, verticalListSortingStrategy } from '@dnd-kit/sortable'
 
@@ -45,6 +46,7 @@ export default function App({ initialProjects, userEmail }: AppProps) {
   const [filterImportance, setFilterImportance] = useState<Importance | ''>('')
   const [filterEditor, setFilterEditor] = useState('')
   const [sortMode, setSortMode] = useState<SortMode>('updated')
+  const [showDashboard, setShowDashboard] = useState(false)
 
   const yearsByCat = useMemo(() => {
     const map: Record<Category, number[]> = { pro: [], perso: [] }
@@ -144,6 +146,7 @@ export default function App({ initialProjects, userEmail }: AppProps) {
   function selectYear(cat: Category, year: number) {
     setSelectedCat(cat)
     setSelectedYear(year)
+    setShowDashboard(false)
   }
 
   function updateProject(id: string, patch: Partial<Project>) {
@@ -374,7 +377,10 @@ export default function App({ initialProjects, userEmail }: AppProps) {
         </nav>
 
         <div className="px-2 pb-2">
-          <button className="sidebar-item-hover sidebar-text w-full rounded-lg px-2 py-2 text-left text-sm">
+          <button
+            onClick={() => setShowDashboard(v => !v)}
+            className={`sidebar-item-hover sidebar-text w-full rounded-lg px-2 py-2 text-left text-sm ${showDashboard ? 'sidebar-selected' : ''}`}
+          >
             Dashboard
           </button>
           <button className="sidebar-item-hover sidebar-text w-full rounded-lg px-2 py-2 text-left text-sm">
@@ -399,51 +405,57 @@ export default function App({ initialProjects, userEmail }: AppProps) {
       {/* Main */}
       <main id="main" className="flex-1 overflow-y-auto p-6">
         <h1 className="text-lg font-semibold mb-4">
-          {selectedCat === 'pro' ? 'Pro' : 'Perso'} · {selectedYear}
+          {selectedCat === 'pro' ? 'Pro' : 'Perso'} · {selectedYear} {showDashboard ? '· Dashboard' : ''}
         </h1>
 
-        <FilterBar
-          status={filterStatus}
-          importance={filterImportance}
-          editor={filterEditor}
-          sort={sortMode}
-          editors={editors}
-          hasActiveFilters={hasActiveFilters}
-          onStatusChange={setFilterStatus}
-          onImportanceChange={setFilterImportance}
-          onEditorChange={setFilterEditor}
-          onSortChange={setSortMode}
-          onClear={clearFilters}
-        />
+        {showDashboard ? (
+          <Dashboard projects={projects} selectedCat={selectedCat} selectedYear={selectedYear} />
+        ) : (
+          <>
+            <FilterBar
+              status={filterStatus}
+              importance={filterImportance}
+              editor={filterEditor}
+              sort={sortMode}
+              editors={editors}
+              hasActiveFilters={hasActiveFilters}
+              onStatusChange={setFilterStatus}
+              onImportanceChange={setFilterImportance}
+              onEditorChange={setFilterEditor}
+              onSortChange={setSortMode}
+              onClear={clearFilters}
+            />
 
-        {visibleProjects.length === 0 && (
-          <p className="t-text-muted text-sm">
-            {hasActiveFilters ? 'Aucun résultat pour ce filtre.' : 'Aucun projet pour cette année/catégorie.'}
-          </p>
+            {visibleProjects.length === 0 && (
+              <p className="t-text-muted text-sm">
+                {hasActiveFilters ? 'Aucun résultat pour ce filtre.' : 'Aucun projet pour cette année/catégorie.'}
+              </p>
+            )}
+
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+              <SortableContext items={visibleProjects.map(p => p.id)} strategy={verticalListSortingStrategy}>
+                <div className="flex flex-col gap-2">
+                  {visibleProjects.map(p => (
+                    <SortableProjectCard
+                      key={p.id}
+                      project={p}
+                      onEdit={() => setModalProject(p)}
+                      onDelete={() => setDeleteTarget({ type: 'project', id: p.id })}
+                      onAddSubproject={() => setSubModalTarget({ parentId: p.id })}
+                      onEditSubproject={sub => setSubModalTarget({ parentId: p.id, sub })}
+                      onDeleteSubproject={sub => setDeleteTarget({ type: 'subproject', id: sub.id, parentId: p.id })}
+                      onAddNote={subprojectId => setNoteModalTarget({ projectId: p.id, subprojectId })}
+                      onEditNote={(note, subprojectId) => setNoteModalTarget({ projectId: p.id, subprojectId, note })}
+                      onDeleteNote={(note, subprojectId) =>
+                        setDeleteTarget({ type: 'note', id: note.id, projectId: p.id, subprojectId })
+                      }
+                    />
+                  ))}
+                </div>
+              </SortableContext>
+            </DndContext>
+          </>
         )}
-
-        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-          <SortableContext items={visibleProjects.map(p => p.id)} strategy={verticalListSortingStrategy}>
-            <div className="flex flex-col gap-2">
-              {visibleProjects.map(p => (
-                <SortableProjectCard
-                  key={p.id}
-                  project={p}
-                  onEdit={() => setModalProject(p)}
-                  onDelete={() => setDeleteTarget({ type: 'project', id: p.id })}
-                  onAddSubproject={() => setSubModalTarget({ parentId: p.id })}
-                  onEditSubproject={sub => setSubModalTarget({ parentId: p.id, sub })}
-                  onDeleteSubproject={sub => setDeleteTarget({ type: 'subproject', id: sub.id, parentId: p.id })}
-                  onAddNote={subprojectId => setNoteModalTarget({ projectId: p.id, subprojectId })}
-                  onEditNote={(note, subprojectId) => setNoteModalTarget({ projectId: p.id, subprojectId, note })}
-                  onDeleteNote={(note, subprojectId) =>
-                    setDeleteTarget({ type: 'note', id: note.id, projectId: p.id, subprojectId })
-                  }
-                />
-              ))}
-            </div>
-          </SortableContext>
-        </DndContext>
       </main>
 
       {modalProject !== undefined && (
