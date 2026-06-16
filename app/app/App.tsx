@@ -34,7 +34,7 @@ type DeleteTarget =
 type NoteModalTarget = { projectId: string; subprojectId?: string; note?: Note }
 type SubprojectModalTarget = { parentId: string; sub?: Subproject }
 
-export default function App({ initialProjects, userEmail }: AppProps) {
+export default function App({ initialProjects, userId, userEmail }: AppProps) {
   const router = useRouter()
   const supabase = createClient()
 
