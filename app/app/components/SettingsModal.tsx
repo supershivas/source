@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react'
 import { Project } from '../types'
 
-export type ThemeMode = 'light' | 'dark'
+export type ThemeMode = 'light' | 'dark' | 'system'
 export type FontSize = 'compact' | 'normal' | 'large'
 
 const FONT_SCALE: Record<FontSize, string> = {
@@ -19,17 +19,19 @@ interface Prefs {
 }
 
 function loadPrefs(): Prefs {
-  if (typeof window === 'undefined') return { theme: 'light', fontSize: 'normal' }
+  if (typeof window === 'undefined') return { theme: 'system', fontSize: 'normal' }
   try {
     const raw = localStorage.getItem(PK)
-    if (raw) return { theme: 'light', fontSize: 'normal', ...JSON.parse(raw) }
+    if (raw) return { theme: 'system', fontSize: 'normal', ...JSON.parse(raw) }
   } catch {}
-  return { theme: 'light', fontSize: 'normal' }
+  return { theme: 'system', fontSize: 'normal' }
 }
 
 function applyPrefs(p: Prefs) {
   const html = document.documentElement
-  html.classList.toggle('dark', p.theme === 'dark')
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+  const isDark = p.theme === 'dark' || (p.theme === 'system' && prefersDark)
+  html.classList.toggle('dark', isDark)
   html.style.fontSize = FONT_SCALE[p.fontSize]
 }
 
@@ -79,17 +81,22 @@ export default function SettingsModal({ prefs, onChange, onClose, onLogout, user
           <div>
             <p className="t-text-muted text-xs uppercase tracking-wide mb-2">Apparence</p>
             <div className="flex gap-2 mb-2">
-              {(['light', 'dark'] as ThemeMode[]).map(t => (
+              {([
+                { value: 'light', label: 'Clair', icon: '☀️' },
+                { value: 'dark', label: 'Sombre', icon: '🌙' },
+                { value: 'system', label: 'Système', icon: '💻' },
+              ] as { value: ThemeMode; label: string; icon: string }[]).map(t => (
                 <button
-                  key={t}
-                  onClick={() => onChange({ theme: t })}
-                  className="flex-1 rounded-lg border px-3 py-2 text-sm t-text"
+                  key={t.value}
+                  onClick={() => onChange({ theme: t.value })}
+                  className="flex-1 flex flex-col items-center gap-1 rounded-lg border px-3 py-2 text-sm t-text"
                   style={{
-                    borderColor: prefs.theme === t ? 'var(--accent)' : 'var(--border)',
-                    background: prefs.theme === t ? 'var(--accent-muted)' : 'transparent',
+                    borderColor: prefs.theme === t.value ? 'var(--accent)' : 'var(--border)',
+                    background: prefs.theme === t.value ? 'var(--accent-muted)' : 'transparent',
                   }}
                 >
-                  {t === 'light' ? '☀️ Clair' : '🌙 Sombre'}
+                  <span>{t.icon}</span>
+                  <span className="text-xs">{t.label}</span>
                 </button>
               ))}
             </div>
