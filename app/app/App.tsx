@@ -822,8 +822,8 @@ export default function App({ initialProjects, userEmail }: AppProps) {
               setShowTrash(false)
               if (isMobile) setMobileSidebarOpen(false)
             }}
-            className={`sidebar-item-hover sidebar-text w-full flex items-center gap-2 text-left text-sm ${showDashboard ? 'sidebar-selected' : ''}`}
-            style={{ padding: '8px 12px', borderRadius: 6 }}
+            className={`sidebar-item-hover w-full flex items-center gap-2 text-left text-sm ${showDashboard ? 'sidebar-selected' : ''}`}
+            style={{ padding: '8px 12px', borderRadius: 6, color: showDashboard ? 'var(--sidebar-selected-fg)' : 'var(--sidebar-muted)' }}
           >
             <i className="ti ti-chart-bar" style={{ fontSize: '15px', flexShrink: 0 }} />
             <span className="flex-1">Dashboard</span>
@@ -835,16 +835,16 @@ export default function App({ initialProjects, userEmail }: AppProps) {
               setShowTrash(false)
               if (isMobile) setMobileSidebarOpen(false)
             }}
-            className={`sidebar-item-hover sidebar-text w-full flex items-center gap-2 text-left text-sm ${showArchived ? 'sidebar-selected' : ''}`}
-            style={{ padding: '8px 12px', borderRadius: 6 }}
+            className={`sidebar-item-hover w-full flex items-center gap-2 text-left text-sm ${showArchived ? 'sidebar-selected' : ''}`}
+            style={{ padding: '8px 12px', borderRadius: 6, color: showArchived ? 'var(--sidebar-selected-fg)' : 'var(--sidebar-muted)' }}
           >
             <i className="ti ti-archive" style={{ fontSize: '15px', flexShrink: 0 }} />
             <span className="flex-1">Archivés</span>
           </button>
           <button
             onClick={exportCSV}
-            className="sidebar-item-hover sidebar-text w-full flex items-center gap-2 text-left text-sm"
-            style={{ padding: '8px 12px', borderRadius: 6 }}
+            className="sidebar-item-hover w-full flex items-center gap-2 text-left text-sm"
+            style={{ padding: '8px 12px', borderRadius: 6, color: 'var(--sidebar-muted)' }}
           >
             <i className="ti ti-download" style={{ fontSize: '15px', flexShrink: 0 }} />
             <span className="flex-1">Export CSV</span>
@@ -856,8 +856,8 @@ export default function App({ initialProjects, userEmail }: AppProps) {
               setShowArchived(false)
               if (isMobile) setMobileSidebarOpen(false)
             }}
-            className={`sidebar-item-hover sidebar-text w-full flex items-center gap-2 text-left text-sm ${showTrash ? 'sidebar-selected' : ''}`}
-            style={{ padding: '8px 12px', borderRadius: 6 }}
+            className={`sidebar-item-hover w-full flex items-center gap-2 text-left text-sm ${showTrash ? 'sidebar-selected' : ''}`}
+            style={{ padding: '8px 12px', borderRadius: 6, color: showTrash ? 'var(--sidebar-selected-fg)' : 'var(--sidebar-muted)' }}
           >
             <i className="ti ti-trash" style={{ fontSize: '15px', flexShrink: 0 }} />
             <span className="flex-1">Corbeille</span>
