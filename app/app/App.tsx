@@ -2,12 +2,13 @@
 import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { Category, Note, Project, Subproject } from './types'
+import { Category, Importance, Note, Project, Status, Subproject } from './types'
 import ProjectModal, { ProjectFormValues } from './components/ProjectModal'
 import SubprojectModal, { SubprojectFormValues } from './components/SubprojectModal'
 import NoteModal, { NoteFormValues } from './components/NoteModal'
 import ConfirmModal from './components/ConfirmModal'
 import ProjectCard from './components/ProjectCard'
+import FilterBar, { SortMode } from './components/FilterBar'
 
 interface AppProps {
   initialProjects: Project[]
@@ -37,6 +38,12 @@ export default function App({ initialProjects, userEmail }: AppProps) {
   const [noteModalTarget, setNoteModalTarget] = useState<NoteModalTarget | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null)
 
+  const [searchQuery, setSearchQuery] = useState('')
+  const [filterStatus, setFilterStatus] = useState<Status | ''>('')
+  const [filterImportance, setFilterImportance] = useState<Importance | ''>('')
+  const [filterEditor, setFilterEditor] = useState('')
+  const [sortMode, setSortMode] = useState<SortMode>('updated')
+
   const yearsByCat = useMemo(() => {
     const map: Record<Category, number[]> = { pro: [], perso: [] }
     for (const p of projects) {
@@ -48,10 +55,60 @@ export default function App({ initialProjects, userEmail }: AppProps) {
     return map
   }, [projects])
 
-  const visibleProjects = useMemo(
-    () => projects.filter(p => p.cat === selectedCat && p.year === selectedYear && !p.trashed && !p.archived),
-    [projects, selectedCat, selectedYear]
-  )
+  const editors = useMemo(() => {
+    const set = new Set<string>()
+    for (const p of projects) {
+      if (p.cat === selectedCat && p.year === selectedYear && !p.trashed && p.editor) set.add(p.editor.trim())
+    }
+    return [...set].sort()
+  }, [projects, selectedCat, selectedYear])
+
+  const hasActiveFilters = !!(searchQuery || filterStatus || filterImportance || filterEditor)
+
+  const visibleProjects = useMemo(() => {
+    let list = projects.filter(p => p.cat === selectedCat && p.year === selectedYear && !p.trashed && !p.archived)
+
+    const q = searchQuery.trim().toLowerCase()
+    if (q) {
+      list = list.filter(
+        p =>
+          p.name.toLowerCase().includes(q) ||
+          p.number.toLowerCase().includes(q) ||
+          (p.editor && p.editor.toLowerCase().includes(q)) ||
+          (p.client && p.client.toLowerCase().includes(q)) ||
+          (p.notes || []).some(n => n.text.toLowerCase().includes(q)) ||
+          (p.subprojects || []).some(s => (s.notes || []).some(n => n.text.toLowerCase().includes(q)))
+      )
+    }
+    if (filterStatus) list = list.filter(p => p.status === filterStatus)
+    if (filterImportance) list = list.filter(p => p.importance === filterImportance)
+    if (filterEditor) list = list.filter(p => p.editor && p.editor.toLowerCase().includes(filterEditor.toLowerCase()))
+
+    list = [...list]
+    if (sortMode === 'number') list.sort((a, b) => a.number.localeCompare(b.number))
+    else if (sortMode === 'name') list.sort((a, b) => a.name.localeCompare(b.name))
+    else if (sortMode === 'progress') list.sort((a, b) => (b.progress ?? 0) - (a.progress ?? 0))
+    else if (sortMode === 'deadline')
+      list.sort((a, b) => {
+        if (!a.deadline) return 1
+        if (!b.deadline) return -1
+        return new Date(a.deadline).getTime() - new Date(b.deadline).getTime()
+      })
+    else if (sortMode === 'importance') {
+      const order: Record<Importance, number> = { high: 0, medium: 1, low: 2 }
+      list.sort((a, b) => order[a.importance] - order[b.importance])
+    } else if (sortMode === 'manual') list.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
+    else list.sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
+
+    return list
+  }, [projects, selectedCat, selectedYear, searchQuery, filterStatus, filterImportance, filterEditor, sortMode])
+
+  function clearFilters() {
+    setSearchQuery('')
+    setFilterStatus('')
+    setFilterImportance('')
+    setFilterEditor('')
+  }
 
   async function handleLogout() {
     await supabase.auth.signOut()
@@ -260,6 +317,8 @@ export default function App({ initialProjects, userEmail }: AppProps) {
           <input
             type="text"
             placeholder="Rechercher…"
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
             className="w-full rounded-lg px-3 py-2 text-sm sidebar-text bg-transparent sidebar-border border outline-none"
           />
         </div>
@@ -318,8 +377,24 @@ export default function App({ initialProjects, userEmail }: AppProps) {
           {selectedCat === 'pro' ? 'Pro' : 'Perso'} · {selectedYear}
         </h1>
 
+        <FilterBar
+          status={filterStatus}
+          importance={filterImportance}
+          editor={filterEditor}
+          sort={sortMode}
+          editors={editors}
+          hasActiveFilters={hasActiveFilters}
+          onStatusChange={setFilterStatus}
+          onImportanceChange={setFilterImportance}
+          onEditorChange={setFilterEditor}
+          onSortChange={setSortMode}
+          onClear={clearFilters}
+        />
+
         {visibleProjects.length === 0 && (
-          <p className="t-text-muted text-sm">Aucun projet pour cette année/catégorie.</p>
+          <p className="t-text-muted text-sm">
+            {hasActiveFilters ? 'Aucun résultat pour ce filtre.' : 'Aucun projet pour cette année/catégorie.'}
+          </p>
         )}
 
         <div className="flex flex-col gap-2">
