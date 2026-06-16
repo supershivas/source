@@ -48,6 +48,7 @@ export default function App({ initialProjects, userEmail }: AppProps) {
   const [filterEditor, setFilterEditor] = useState('')
   const [sortMode, setSortMode] = useState<SortMode>('updated')
   const [showDashboard, setShowDashboard] = useState(false)
+  const [showArchived, setShowArchived] = useState(false)
 
   const yearsByCat = useMemo(() => {
     const map: Record<Category, number[]> = { pro: [], perso: [] }
@@ -71,7 +72,9 @@ export default function App({ initialProjects, userEmail }: AppProps) {
   const hasActiveFilters = !!(searchQuery || filterStatus || filterImportance || filterEditor)
 
   const visibleProjects = useMemo(() => {
-    let list = projects.filter(p => p.cat === selectedCat && p.year === selectedYear && !p.trashed && !p.archived)
+    let list = projects.filter(
+      p => p.cat === selectedCat && p.year === selectedYear && !p.trashed && (showArchived ? p.archived : !p.archived)
+    )
 
     const q = searchQuery.trim().toLowerCase()
     if (q) {
@@ -106,7 +109,7 @@ export default function App({ initialProjects, userEmail }: AppProps) {
     else list.sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
 
     return list
-  }, [projects, selectedCat, selectedYear, searchQuery, filterStatus, filterImportance, filterEditor, sortMode])
+  }, [projects, selectedCat, selectedYear, showArchived, searchQuery, filterStatus, filterImportance, filterEditor, sortMode])
 
   function exportCSV() {
     const headers = ['Type', 'Numéro', 'Nom', 'Catégorie', 'Statut', '%', 'Importance', 'Éditeur', 'Client(s)', 'Début', 'Deadline', 'Terminé', 'Mis à jour']
@@ -173,6 +176,7 @@ export default function App({ initialProjects, userEmail }: AppProps) {
     setSelectedCat(cat)
     setSelectedYear(year)
     setShowDashboard(false)
+    setShowArchived(false)
   }
 
   function updateProject(id: string, patch: Partial<Project>) {
@@ -209,6 +213,26 @@ export default function App({ initialProjects, userEmail }: AppProps) {
     const { error } = await supabase.from('projects').update({ trashed: true }).eq('id', id)
     if (!error) updateProject(id, { trashed: true })
     setDeleteTarget(null)
+  }
+
+  async function handleArchiveProject(p: Project) {
+    const archived = !p.archived
+    const { error } = await supabase.from('projects').update({ archived }).eq('id', p.id)
+    if (!error) updateProject(p.id, { archived })
+  }
+
+  async function handleArchiveSubproject(parentId: string, sub: Subproject) {
+    const archived = !sub.archived
+    const { error } = await supabase.from('subprojects').update({ archived }).eq('id', sub.id)
+    if (!error) {
+      setProjects(ps =>
+        ps.map(p =>
+          p.id === parentId
+            ? { ...p, subprojects: (p.subprojects || []).map(s => (s.id === sub.id ? { ...s, archived } : s)) }
+            : p
+        )
+      )
+    }
   }
 
   // ── Subprojects ──
@@ -404,12 +428,21 @@ export default function App({ initialProjects, userEmail }: AppProps) {
 
         <div className="px-2 pb-2">
           <button
-            onClick={() => setShowDashboard(v => !v)}
+            onClick={() => {
+              setShowDashboard(v => !v)
+              setShowArchived(false)
+            }}
             className={`sidebar-item-hover sidebar-text w-full rounded-lg px-2 py-2 text-left text-sm ${showDashboard ? 'sidebar-selected' : ''}`}
           >
             Dashboard
           </button>
-          <button className="sidebar-item-hover sidebar-text w-full rounded-lg px-2 py-2 text-left text-sm">
+          <button
+            onClick={() => {
+              setShowArchived(v => !v)
+              setShowDashboard(false)
+            }}
+            className={`sidebar-item-hover sidebar-text w-full rounded-lg px-2 py-2 text-left text-sm ${showArchived ? 'sidebar-selected' : ''}`}
+          >
             Archivés
           </button>
           <button onClick={exportCSV} className="sidebar-item-hover sidebar-text w-full rounded-lg px-2 py-2 text-left text-sm">
@@ -431,7 +464,8 @@ export default function App({ initialProjects, userEmail }: AppProps) {
       {/* Main */}
       <main id="main" className="flex-1 overflow-y-auto p-6">
         <h1 className="text-lg font-semibold mb-4">
-          {selectedCat === 'pro' ? 'Pro' : 'Perso'} · {selectedYear} {showDashboard ? '· Dashboard' : ''}
+          {selectedCat === 'pro' ? 'Pro' : 'Perso'} · {selectedYear}
+          {showDashboard ? ' · Dashboard' : showArchived ? ' · Archivés' : ''}
         </h1>
 
         {showDashboard ? (
@@ -454,7 +488,11 @@ export default function App({ initialProjects, userEmail }: AppProps) {
 
             {visibleProjects.length === 0 && (
               <p className="t-text-muted text-sm">
-                {hasActiveFilters ? 'Aucun résultat pour ce filtre.' : 'Aucun projet pour cette année/catégorie.'}
+                {hasActiveFilters
+                  ? 'Aucun résultat pour ce filtre.'
+                  : showArchived
+                  ? 'Aucun projet archivé.'
+                  : 'Aucun projet pour cette année/catégorie.'}
               </p>
             )}
 
@@ -467,9 +505,11 @@ export default function App({ initialProjects, userEmail }: AppProps) {
                       project={p}
                       onEdit={() => setModalProject(p)}
                       onDelete={() => setDeleteTarget({ type: 'project', id: p.id })}
+                      onArchive={() => handleArchiveProject(p)}
                       onAddSubproject={() => setSubModalTarget({ parentId: p.id })}
                       onEditSubproject={sub => setSubModalTarget({ parentId: p.id, sub })}
                       onDeleteSubproject={sub => setDeleteTarget({ type: 'subproject', id: sub.id, parentId: p.id })}
+                      onArchiveSubproject={sub => handleArchiveSubproject(p.id, sub)}
                       onAddNote={subprojectId => setNoteModalTarget({ projectId: p.id, subprojectId })}
                       onEditNote={(note, subprojectId) => setNoteModalTarget({ projectId: p.id, subprojectId, note })}
                       onDeleteNote={(note, subprojectId) =>

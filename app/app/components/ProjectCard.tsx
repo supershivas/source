@@ -7,9 +7,11 @@ interface ProjectCardProps {
   project: Project
   onEdit: () => void
   onDelete: () => void
+  onArchive: () => void
   onAddSubproject: () => void
   onEditSubproject: (sub: Subproject) => void
   onDeleteSubproject: (sub: Subproject) => void
+  onArchiveSubproject: (sub: Subproject) => void
   onAddNote: (subprojectId?: string) => void
   onEditNote: (note: Note, subprojectId?: string) => void
   onDeleteNote: (note: Note, subprojectId?: string) => void
@@ -20,9 +22,11 @@ export default function ProjectCard({
   project,
   onEdit,
   onDelete,
+  onArchive,
   onAddSubproject,
   onEditSubproject,
   onDeleteSubproject,
+  onArchiveSubproject,
   onAddNote,
   onEditNote,
   onDeleteNote,
@@ -62,6 +66,14 @@ export default function ProjectCard({
           </div>
           <span className="prog-pct">{project.progress ?? 0}%</span>
         </div>
+        <button
+          onClick={onArchive}
+          title={project.archived ? 'Désarchiver' : 'Archiver'}
+          className="sidebar-icon-btn rounded p-1"
+          style={{ color: 'var(--text-muted)' }}
+        >
+          <i className={`ti ti-archive${project.archived ? '-off' : ''}`} />
+        </button>
         <button onClick={onEdit} className="sidebar-icon-btn rounded p-1" style={{ color: 'var(--text-muted)' }}>
           <i className="ti ti-edit" />
         </button>
@@ -90,6 +102,14 @@ export default function ProjectCard({
                     {STATUS_LABELS[s.status]}
                   </span>
                   <span className="text-xs t-text-muted w-9 text-right">{s.progress ?? 0}%</span>
+                  <button
+                    onClick={() => onArchiveSubproject(s)}
+                    title={s.archived ? 'Désarchiver' : 'Archiver'}
+                    className="sidebar-icon-btn rounded p-1"
+                    style={{ color: 'var(--text-muted)' }}
+                  >
+                    <i className={`ti ti-archive${s.archived ? '-off' : ''}`} />
+                  </button>
                   <button onClick={() => onEditSubproject(s)} className="sidebar-icon-btn rounded p-1" style={{ color: 'var(--text-muted)' }}>
                     <i className="ti ti-edit" />
                   </button>
