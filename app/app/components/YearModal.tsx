@@ -42,14 +42,10 @@ export default function YearModal({ onConfirm, onClose }: YearModalProps) {
         />
         {error && <p className="text-xs mt-1" style={{ color: 'var(--s-sent-fg)' }}>{error}</p>}
         <div className="flex justify-end gap-2 mt-4">
-          <button onClick={onClose} className="rounded-lg border px-4 py-2 text-sm t-border">
+          <button onClick={onClose} className="btn-ghost">
             Annuler
           </button>
-          <button
-            onClick={handleConfirm}
-            className="rounded-lg px-4 py-2 text-sm font-medium"
-            style={{ background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-fg)' }}
-          >
+          <button onClick={handleConfirm} className="btn-primary">
             Créer
           </button>
         </div>

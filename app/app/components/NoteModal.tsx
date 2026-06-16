@@ -66,14 +66,13 @@ export default function NoteModal({ initial, onSave, onClose }: NoteModalProps) 
         </div>
 
         <div className="flex justify-end gap-2 mt-5">
-          <button onClick={onClose} className="rounded-lg border px-4 py-2 text-sm t-border">
+          <button onClick={onClose} className="btn-ghost">
             Annuler
           </button>
           <button
             onClick={handleSubmit}
             disabled={saving || !values.text.trim()}
-            className="rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50"
-            style={{ background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-fg)' }}
+            className="btn-primary disabled:opacity-50"
           >
             {initial ? 'Enregistrer' : 'Ajouter'}
           </button>

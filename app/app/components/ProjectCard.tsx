@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { DndContext, DragEndEvent, PointerSensor, closestCenter, useSensor, useSensors } from '@dnd-kit/core'
 import { SortableContext, arrayMove, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { Importance, Note, Project, Status, Subproject } from '../types'
-import { IMPORTANCE_COLOR, IMPORTANCE_LABELS, IMPORTANCE_ORDER, STATUS_ACCENT, STATUS_LABELS, STATUS_ORDER, dlStatus, toEU } from '../constants'
+import { IMPORTANCE_LABELS, IMPORTANCE_ORDER, STATUS_ACCENT, STATUS_LABELS, STATUS_ORDER, dlStatus, toEU } from '../constants'
 import SortableSubRow from './SortableSubRow'
 
 interface ProjectCardProps {
@@ -146,8 +146,8 @@ export default function ProjectCard({
         <button
           onClick={e => { e.stopPropagation(); onChangeImportance(nextImportance(project.importance)) }}
           title="Cliquer pour changer la priorité"
-          className="text-xs font-medium shrink-0"
-          style={{ color: IMPORTANCE_COLOR[project.importance], border: 'none', background: 'none', font: 'inherit', cursor: 'pointer' }}
+          className={`imp-tag imp-tag-${project.importance} shrink-0`}
+          style={{ font: 'inherit' }}
         >
           {IMPORTANCE_LABELS[project.importance]}
         </button>

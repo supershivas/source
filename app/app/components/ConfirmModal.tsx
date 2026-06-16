@@ -25,14 +25,10 @@ export default function ConfirmModal({ title, message, confirmLabel = 'Supprimer
         <h2 className="text-base font-semibold mb-2">{title}</h2>
         <p className="text-sm t-text-muted mb-5">{message}</p>
         <div className="flex justify-end gap-2">
-          <button onClick={onClose} className="rounded-lg border px-4 py-2 text-sm t-border">
+          <button onClick={onClose} className="btn-ghost">
             Annuler
           </button>
-          <button
-            onClick={onConfirm}
-            className="rounded-lg px-4 py-2 text-sm font-medium"
-            style={{ background: 'var(--s-sent-fg)', color: '#fff' }}
-          >
+          <button onClick={onConfirm} className="btn-primary">
             {confirmLabel}
           </button>
         </div>

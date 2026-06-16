@@ -168,6 +168,20 @@ input::placeholder, textarea::placeholder {
 .proj-num-row:hover .btn-copy-num { opacity: 1; }
 .btn-copy-num:hover { background: var(--border-light); color: var(--accent); }
 
+/* ─── Tag d'importance (pill) ────────────────────────────────────────────────*/
+.imp-tag { display: inline-flex; align-items: center; padding: 1px 7px; border-radius: 20px; font-size: 0.6rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em; cursor: pointer; border: 1px solid transparent; line-height: 1.4; }
+.imp-tag-low    { color: #8A8A8A; background: color-mix(in srgb, #8A8A8A 15%, transparent); border-color: color-mix(in srgb, #8A8A8A 35%, transparent); }
+.imp-tag-medium { color: #D4A017; background: color-mix(in srgb, #D4A017 15%, transparent); border-color: color-mix(in srgb, #D4A017 35%, transparent); }
+.imp-tag-high   { color: #C0392B; background: color-mix(in srgb, #C0392B 15%, transparent); border-color: color-mix(in srgb, #C0392B 35%, transparent); }
+
+/* ─── Boutons partagés (parité La-fabrique) ──────────────────────────────────*/
+.btn-primary { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 30px; padding: 0 12px; font-size: 0.78rem; font-weight: 500; background: var(--btn-primary-bg); color: var(--btn-primary-fg); border: none; border-radius: 8px; cursor: pointer; transition: background .15s; }
+.btn-primary:hover { background: var(--btn-primary-hover); }
+.btn-ghost { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 30px; padding: 0 12px; font-size: 0.78rem; font-weight: 500; background: none; color: var(--text-secondary); border: 1px solid var(--border); border-radius: 8px; cursor: pointer; transition: background .15s; }
+.btn-ghost:hover { background: var(--hover-bg); }
+.btn-icon { display: inline-flex; align-items: center; justify-content: center; padding: 3px; border: none; background: none; color: var(--text-muted); border-radius: 5px; cursor: pointer; transition: background .15s, color .15s; }
+.btn-icon:hover { background: var(--hover-bg); color: var(--text-primary); }
+
 /* ─── Overlay / modal ────────────────────────────────────────────────────────*/
 .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; z-index: 50; }
 .modal-box { background: var(--card-bg); border-radius: 12px; box-shadow: var(--card-shadow); width: 100%; max-width: 480px; max-height: 90vh; overflow-y: auto; padding: 20px; }

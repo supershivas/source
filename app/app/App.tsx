@@ -709,7 +709,7 @@ export default function App({ initialProjects, userEmail }: AppProps) {
             >
               ✦
             </div>
-            <span className="sidebar-text font-semibold" style={{ fontSize: '0.95rem', letterSpacing: '-0.01em' }}>Source</span>
+            <span className="sidebar-text font-semibold" style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: '17px', fontWeight: 700, letterSpacing: '-0.01em', lineHeight: 1 }}>Source</span>
           </div>
           <button
             onClick={() => setShowSettings(true)}
