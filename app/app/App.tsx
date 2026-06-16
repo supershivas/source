@@ -2,16 +2,26 @@
 import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { Category, Project } from './types'
-import { STATUS_LABELS } from './constants'
+import { Category, Note, Project, Subproject } from './types'
 import ProjectModal, { ProjectFormValues } from './components/ProjectModal'
+import SubprojectModal, { SubprojectFormValues } from './components/SubprojectModal'
+import NoteModal, { NoteFormValues } from './components/NoteModal'
 import ConfirmModal from './components/ConfirmModal'
+import ProjectCard from './components/ProjectCard'
 
 interface AppProps {
   initialProjects: Project[]
   userId: string
   userEmail?: string
 }
+
+type DeleteTarget =
+  | { type: 'project'; id: string }
+  | { type: 'subproject'; id: string; parentId: string }
+  | { type: 'note'; id: string; projectId: string; subprojectId?: string }
+
+type NoteModalTarget = { projectId: string; subprojectId?: string; note?: Note }
+type SubprojectModalTarget = { parentId: string; sub?: Subproject }
 
 export default function App({ initialProjects, userEmail }: AppProps) {
   const router = useRouter()
@@ -23,7 +33,9 @@ export default function App({ initialProjects, userEmail }: AppProps) {
     initialProjects.find(p => p.cat === 'pro')?.year || new Date().getFullYear()
   )
   const [modalProject, setModalProject] = useState<Project | null | undefined>(undefined)
-  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
+  const [subModalTarget, setSubModalTarget] = useState<SubprojectModalTarget | null>(null)
+  const [noteModalTarget, setNoteModalTarget] = useState<NoteModalTarget | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null)
 
   const yearsByCat = useMemo(() => {
     const map: Record<Category, number[]> = { pro: [], perso: [] }
@@ -52,6 +64,11 @@ export default function App({ initialProjects, userEmail }: AppProps) {
     setSelectedYear(year)
   }
 
+  function updateProject(id: string, patch: Partial<Project>) {
+    setProjects(ps => ps.map(p => (p.id === id ? { ...p, ...patch } : p)))
+  }
+
+  // ── Projects ──
   async function handleSaveProject(values: ProjectFormValues) {
     if (modalProject) {
       const { data, error } = await supabase
@@ -60,9 +77,7 @@ export default function App({ initialProjects, userEmail }: AppProps) {
         .eq('id', modalProject.id)
         .select()
         .single()
-      if (!error && data) {
-        setProjects(ps => ps.map(p => (p.id === data.id ? { ...p, ...data } : p)))
-      }
+      if (!error && data) updateProject(data.id, data)
     } else {
       const maxSort = projects.reduce((m, p) => Math.max(m, p.sort_order || 0), 0)
       const { data, error } = await supabase
@@ -71,7 +86,7 @@ export default function App({ initialProjects, userEmail }: AppProps) {
         .select()
         .single()
       if (!error && data) {
-        setProjects(ps => [...ps, data])
+        setProjects(ps => [...ps, { ...data, subprojects: [], notes: [] }])
         setSelectedCat(values.cat)
         setSelectedYear(values.year)
       }
@@ -81,10 +96,143 @@ export default function App({ initialProjects, userEmail }: AppProps) {
 
   async function handleDeleteProject(id: string) {
     const { error } = await supabase.from('projects').update({ trashed: true }).eq('id', id)
-    if (!error) {
-      setProjects(ps => ps.map(p => (p.id === id ? { ...p, trashed: true } : p)))
+    if (!error) updateProject(id, { trashed: true })
+    setDeleteTarget(null)
+  }
+
+  // ── Subprojects ──
+  async function handleSaveSubproject(values: SubprojectFormValues) {
+    if (!subModalTarget) return
+    const { parentId, sub } = subModalTarget
+    if (sub) {
+      const { data, error } = await supabase
+        .from('subprojects')
+        .update({ ...values, updated_at: new Date().toISOString() })
+        .eq('id', sub.id)
+        .select()
+        .single()
+      if (!error && data) {
+        setProjects(ps =>
+          ps.map(p =>
+            p.id === parentId
+              ? { ...p, subprojects: (p.subprojects || []).map(s => (s.id === data.id ? { ...s, ...data } : s)) }
+              : p
+          )
+        )
+      }
+    } else {
+      const { data, error } = await supabase
+        .from('subprojects')
+        .insert({ ...values, parent_id: parentId, trashed: false, archived: false })
+        .select()
+        .single()
+      if (!error && data) {
+        setProjects(ps =>
+          ps.map(p => (p.id === parentId ? { ...p, subprojects: [...(p.subprojects || []), { ...data, notes: [] }] } : p))
+        )
+      }
     }
-    setConfirmDeleteId(null)
+    setSubModalTarget(null)
+  }
+
+  async function handleDeleteSubproject(target: { id: string; parentId: string }) {
+    const { error } = await supabase.from('subprojects').delete().eq('id', target.id)
+    if (!error) {
+      setProjects(ps =>
+        ps.map(p =>
+          p.id === target.parentId ? { ...p, subprojects: (p.subprojects || []).filter(s => s.id !== target.id) } : p
+        )
+      )
+    }
+    setDeleteTarget(null)
+  }
+
+  // ── Notes ──
+  async function handleSaveNote(values: NoteFormValues) {
+    if (!noteModalTarget) return
+    const { projectId, subprojectId, note } = noteModalTarget
+    if (note) {
+      const { data, error } = await supabase
+        .from('notes')
+        .update({ text: values.text, date: values.date || null })
+        .eq('id', note.id)
+        .select()
+        .single()
+      if (!error && data) {
+        setProjects(ps =>
+          ps.map(p => {
+            if (p.id !== projectId) return p
+            if (subprojectId) {
+              return {
+                ...p,
+                subprojects: (p.subprojects || []).map(s =>
+                  s.id === subprojectId
+                    ? { ...s, notes: (s.notes || []).map(n => (n.id === data.id ? data : n)) }
+                    : s
+                ),
+              }
+            }
+            return { ...p, notes: (p.notes || []).map(n => (n.id === data.id ? data : n)) }
+          })
+        )
+      }
+    } else {
+      const { data, error } = await supabase
+        .from('notes')
+        .insert({
+          text: values.text,
+          date: values.date || null,
+          project_id: subprojectId ? null : projectId,
+          subproject_id: subprojectId || null,
+        })
+        .select()
+        .single()
+      if (!error && data) {
+        setProjects(ps =>
+          ps.map(p => {
+            if (p.id !== projectId) return p
+            if (subprojectId) {
+              return {
+                ...p,
+                subprojects: (p.subprojects || []).map(s =>
+                  s.id === subprojectId ? { ...s, notes: [...(s.notes || []), data] } : s
+                ),
+              }
+            }
+            return { ...p, notes: [...(p.notes || []), data] }
+          })
+        )
+      }
+    }
+    setNoteModalTarget(null)
+  }
+
+  async function handleDeleteNote(target: { id: string; projectId: string; subprojectId?: string }) {
+    const { error } = await supabase.from('notes').delete().eq('id', target.id)
+    if (!error) {
+      setProjects(ps =>
+        ps.map(p => {
+          if (p.id !== target.projectId) return p
+          if (target.subprojectId) {
+            return {
+              ...p,
+              subprojects: (p.subprojects || []).map(s =>
+                s.id === target.subprojectId ? { ...s, notes: (s.notes || []).filter(n => n.id !== target.id) } : s
+              ),
+            }
+          }
+          return { ...p, notes: (p.notes || []).filter(n => n.id !== target.id) }
+        })
+      )
+    }
+    setDeleteTarget(null)
+  }
+
+  function handleConfirmDelete() {
+    if (!deleteTarget) return
+    if (deleteTarget.type === 'project') handleDeleteProject(deleteTarget.id)
+    else if (deleteTarget.type === 'subproject') handleDeleteSubproject(deleteTarget)
+    else handleDeleteNote(deleteTarget)
   }
 
   return (
@@ -176,23 +324,20 @@ export default function App({ initialProjects, userEmail }: AppProps) {
 
         <div className="flex flex-col gap-2">
           {visibleProjects.map(p => (
-            <div key={p.id} className="t-bg-card rounded-lg p-3 flex items-center gap-3" style={{ boxShadow: 'var(--card-shadow)' }}>
-              <span className="text-xs t-text-muted w-10 shrink-0">{p.number}</span>
-              <span className="flex-1 text-sm font-medium truncate">{p.name}</span>
-              <span className={`status-badge s-${p.status}`}>{STATUS_LABELS[p.status]}</span>
-              <div className="prog-wrap" style={{ width: 100 }}>
-                <div className="prog-bar-bg">
-                  <div className="prog-fill-bg" style={{ width: `${p.progress ?? 0}%`, background: 'var(--accent)' }} />
-                </div>
-                <span className="prog-pct">{p.progress ?? 0}%</span>
-              </div>
-              <button onClick={() => setModalProject(p)} className="sidebar-icon-btn rounded p-1" style={{ color: 'var(--text-muted)' }}>
-                <i className="ti ti-edit" />
-              </button>
-              <button onClick={() => setConfirmDeleteId(p.id)} className="sidebar-icon-btn rounded p-1" style={{ color: 'var(--text-muted)' }}>
-                <i className="ti ti-trash" />
-              </button>
-            </div>
+            <ProjectCard
+              key={p.id}
+              project={p}
+              onEdit={() => setModalProject(p)}
+              onDelete={() => setDeleteTarget({ type: 'project', id: p.id })}
+              onAddSubproject={() => setSubModalTarget({ parentId: p.id })}
+              onEditSubproject={sub => setSubModalTarget({ parentId: p.id, sub })}
+              onDeleteSubproject={sub => setDeleteTarget({ type: 'subproject', id: sub.id, parentId: p.id })}
+              onAddNote={subprojectId => setNoteModalTarget({ projectId: p.id, subprojectId })}
+              onEditNote={(note, subprojectId) => setNoteModalTarget({ projectId: p.id, subprojectId, note })}
+              onDeleteNote={(note, subprojectId) =>
+                setDeleteTarget({ type: 'note', id: note.id, projectId: p.id, subprojectId })
+              }
+            />
           ))}
         </div>
       </main>
@@ -207,12 +352,49 @@ export default function App({ initialProjects, userEmail }: AppProps) {
         />
       )}
 
-      {confirmDeleteId && (
+      {subModalTarget && (
+        <SubprojectModal
+          initial={
+            subModalTarget.sub
+              ? {
+                  number: subModalTarget.sub.number,
+                  name: subModalTarget.sub.name,
+                  status: subModalTarget.sub.status,
+                  progress: subModalTarget.sub.progress ?? 0,
+                  deadline: subModalTarget.sub.deadline || '',
+                }
+              : undefined
+          }
+          parentNumber={projects.find(p => p.id === subModalTarget.parentId)?.number || ''}
+          onSave={handleSaveSubproject}
+          onClose={() => setSubModalTarget(null)}
+        />
+      )}
+
+      {noteModalTarget && (
+        <NoteModal
+          initial={noteModalTarget.note ? { text: noteModalTarget.note.text, date: noteModalTarget.note.date || '' } : undefined}
+          onSave={handleSaveNote}
+          onClose={() => setNoteModalTarget(null)}
+        />
+      )}
+
+      {deleteTarget && (
         <ConfirmModal
-          title="Supprimer le projet"
-          message="Le projet sera déplacé dans la corbeille."
-          onConfirm={() => handleDeleteProject(confirmDeleteId)}
-          onClose={() => setConfirmDeleteId(null)}
+          title={
+            deleteTarget.type === 'project'
+              ? 'Supprimer le projet'
+              : deleteTarget.type === 'subproject'
+              ? 'Supprimer le sous-projet'
+              : 'Supprimer la note'
+          }
+          message={
+            deleteTarget.type === 'project'
+              ? 'Le projet sera déplacé dans la corbeille.'
+              : 'Cette action est définitive.'
+          }
+          onConfirm={handleConfirmDelete}
+          onClose={() => setDeleteTarget(null)}
         />
       )}
     </div>
