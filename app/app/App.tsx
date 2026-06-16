@@ -866,17 +866,6 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
             )}
           </button>
         </div>
-
-        <div className="flex items-center justify-between px-3 py-2" style={{ borderTop: '1px solid var(--sidebar-border)' }}>
-          <span className="sidebar-text-muted text-xs truncate">{userEmail}</span>
-          <button
-            onClick={handleLogout}
-            className="flex items-center justify-center rounded-lg transition-colors sidebar-icon-btn flex-shrink-0"
-            style={{ width: 32, height: 32 }}
-          >
-            <i className="ti ti-logout" style={{ fontSize: '15px' }} />
-          </button>
-        </div>
       </aside>
 
       {/* Main */}
@@ -1048,6 +1037,10 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
           prefs={prefs}
           onChange={patch => setPrefs(p => ({ ...p, ...patch }))}
           onClose={() => setShowSettings(false)}
+          onLogout={handleLogout}
+          userId={userId}
+          userEmail={userEmail}
+          projects={projects}
         />
       )}
 
