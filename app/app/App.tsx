@@ -10,6 +10,7 @@ import ConfirmModal from './components/ConfirmModal'
 import SortableProjectCard from './components/SortableProjectCard'
 import FilterBar, { SortMode } from './components/FilterBar'
 import Dashboard from './components/Dashboard'
+import { STATUS_LABELS, IMPORTANCE_LABELS, toEU } from './constants'
 import { DndContext, DragEndEvent, PointerSensor, useSensor, useSensors, closestCenter } from '@dnd-kit/core'
 import { SortableContext, arrayMove, verticalListSortingStrategy } from '@dnd-kit/sortable'
 
@@ -106,6 +107,31 @@ export default function App({ initialProjects, userEmail }: AppProps) {
 
     return list
   }, [projects, selectedCat, selectedYear, searchQuery, filterStatus, filterImportance, filterEditor, sortMode])
+
+  function exportCSV() {
+    const headers = ['Type', 'Numéro', 'Nom', 'Catégorie', 'Statut', '%', 'Importance', 'Éditeur', 'Client(s)', 'Début', 'Deadline', 'Terminé', 'Mis à jour']
+    const rows: (string | number)[][] = []
+    visibleProjects.forEach(p => {
+      rows.push([
+        'Projet', p.number, p.name, p.cat, STATUS_LABELS[p.status] || p.status, `${p.progress ?? 0}%`,
+        IMPORTANCE_LABELS[p.importance] || p.importance, p.editor || '', p.client || '',
+        toEU(p.date), toEU(p.deadline), toEU(p.ended), toEU(p.updated_at),
+      ])
+      ;(p.subprojects || []).forEach(s => {
+        rows.push(['↳ Sous-projet', s.number, s.name, p.cat, STATUS_LABELS[s.status] || s.status, `${s.progress ?? 0}%`, '', '', '', '', '', toEU(s.ended), ''])
+      })
+    })
+    const csv = [headers, ...rows]
+      .map(r => r.map(v => `"${String(v == null ? '' : v).replace(/"/g, '""')}"`).join(','))
+      .join('\n')
+    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `source_${selectedCat}_${selectedYear}_${new Date().toISOString().split('T')[0]}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
 
   function clearFilters() {
     setSearchQuery('')
@@ -386,7 +412,7 @@ export default function App({ initialProjects, userEmail }: AppProps) {
           <button className="sidebar-item-hover sidebar-text w-full rounded-lg px-2 py-2 text-left text-sm">
             Archivés
           </button>
-          <button className="sidebar-item-hover sidebar-text w-full rounded-lg px-2 py-2 text-left text-sm">
+          <button onClick={exportCSV} className="sidebar-item-hover sidebar-text w-full rounded-lg px-2 py-2 text-left text-sm">
             Export CSV
           </button>
           <button className="sidebar-item-hover sidebar-text w-full rounded-lg px-2 py-2 text-left text-sm">
