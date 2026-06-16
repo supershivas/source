@@ -12,6 +12,7 @@ import FilterBar, { SortMode } from './components/FilterBar'
 import Dashboard from './components/Dashboard'
 import TrashView from './components/TrashView'
 import SettingsModal, { useSettingsPrefs } from './components/SettingsModal'
+import YearModal from './components/YearModal'
 import ToastStack, { Toast } from './components/ToastStack'
 import { STATUS_LABELS, IMPORTANCE_LABELS, AUTO_PROGRESS, toEU } from './constants'
 import DetailPanel from './components/DetailPanel'
@@ -110,16 +111,41 @@ export default function App({ initialProjects, userEmail }: AppProps) {
   const [showSettings, setShowSettings] = useState(false)
   const { prefs, setPrefs } = useSettingsPrefs()
 
+  const [extraYears, setExtraYears] = useState<Record<Category, number[]>>({ pro: [], perso: [] })
+  const [yearModalCat, setYearModalCat] = useState<Category | null>(null)
+
+  useEffect(() => {
+    const stored = localStorage.getItem('source-extra-years')
+    if (stored) {
+      try {
+        setExtraYears(JSON.parse(stored))
+      } catch {}
+    }
+  }, [])
+
   const yearsByCat = useMemo(() => {
     const map: Record<Category, number[]> = { pro: [], perso: [] }
     for (const p of projects) {
       if (p.trashed) continue
       if (!map[p.cat].includes(p.year)) map[p.cat].push(p.year)
     }
+    for (const cat of ['pro', 'perso'] as Category[]) {
+      for (const y of extraYears[cat]) if (!map[cat].includes(y)) map[cat].push(y)
+    }
     map.pro.sort((a, b) => b - a)
     map.perso.sort((a, b) => b - a)
     return map
-  }, [projects])
+  }, [projects, extraYears])
+
+  function addYear(cat: Category, year: number) {
+    setExtraYears(prev => {
+      const next = { ...prev, [cat]: prev[cat].includes(year) ? prev[cat] : [...prev[cat], year] }
+      localStorage.setItem('source-extra-years', JSON.stringify(next))
+      return next
+    })
+    selectYear(cat, year)
+    setYearModalCat(null)
+  }
 
   const editors = useMemo(() => {
     const set = new Set<string>()
@@ -680,8 +706,13 @@ export default function App({ initialProjects, userEmail }: AppProps) {
         <nav className="sidebar-scroll flex-1 overflow-y-auto px-2 pt-3">
           {(['pro', 'perso'] as Category[]).map(cat => (
             <div key={cat} className="mb-3">
-              <div className="sidebar-text-muted px-2 text-xs uppercase tracking-wide">
-                {cat === 'pro' ? 'Pro' : 'Perso'}
+              <div className="flex items-center justify-between px-2">
+                <span className="sidebar-text-muted text-xs uppercase tracking-wide">
+                  {cat === 'pro' ? 'Pro' : 'Perso'}
+                </span>
+                <button onClick={() => setYearModalCat(cat)} className="sidebar-icon-btn rounded p-0.5" title="Ajouter une année">
+                  <i className="ti ti-plus" style={{ fontSize: '0.85rem' }} />
+                </button>
               </div>
               {yearsByCat[cat].length === 0 && (
                 <div className="sidebar-text-muted px-2 py-1 text-xs">Aucune année</div>
@@ -894,6 +925,10 @@ export default function App({ initialProjects, userEmail }: AppProps) {
           onChange={patch => setPrefs(p => ({ ...p, ...patch }))}
           onClose={() => setShowSettings(false)}
         />
+      )}
+
+      {yearModalCat && (
+        <YearModal onConfirm={year => addYear(yearModalCat, year)} onClose={() => setYearModalCat(null)} />
       )}
 
       {selectedDetailProject && (
