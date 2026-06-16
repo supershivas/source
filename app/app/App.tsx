@@ -50,6 +50,17 @@ export default function App({ initialProjects, userEmail }: AppProps) {
   const [selectedDetailId, setSelectedDetailId] = useState<string | null>(null)
   const [toasts, setToasts] = useState<Toast[]>([])
   const [sidebarW, setSidebarW] = useState(264)
+  const [isMobile, setIsMobile] = useState(false)
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
+  const [mobileFilterOpen, setMobileFilterOpen] = useState(false)
+
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 640px)')
+    setIsMobile(mq.matches)
+    const onChange = (e: MediaQueryListEvent) => setIsMobile(e.matches)
+    mq.addEventListener('change', onChange)
+    return () => mq.removeEventListener('change', onChange)
+  }, [])
 
   useEffect(() => {
     const stored = Number(localStorage.getItem('source-sidebar-w'))
@@ -665,17 +676,31 @@ export default function App({ initialProjects, userEmail }: AppProps) {
 
   return (
     <div id="body" className="flex h-screen overflow-hidden">
+      {/* Overlay mobile pour la sidebar */}
+      {isMobile && mobileSidebarOpen && (
+        <div
+          className="fixed inset-0 z-30 bg-black/50"
+          onClick={() => setMobileSidebarOpen(false)}
+        />
+      )}
+
       {/* Sidebar — toujours sombre, parité visuelle avec idee/La-fabrique */}
       <aside
         id="sidebar"
-        className="sidebar-bg flex flex-col shrink-0 relative"
-        style={{ width: sidebarW, minWidth: 200, maxWidth: 420 }}
+        className={`sidebar-bg flex flex-col shrink-0 relative transition-transform duration-200 ${
+          isMobile
+            ? `fixed inset-y-0 left-0 z-40 ${mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`
+            : ''
+        }`}
+        style={{ width: isMobile ? 240 : sidebarW, minWidth: isMobile ? undefined : 200, maxWidth: isMobile ? undefined : 420 }}
       >
-        <div
-          onMouseDown={startSidebarResize}
-          className="absolute top-0 right-0 h-full w-1 cursor-col-resize hover:bg-[var(--accent)] hover:opacity-50"
-          style={{ zIndex: 10 }}
-        />
+        {!isMobile && (
+          <div
+            onMouseDown={startSidebarResize}
+            className="absolute top-0 right-0 h-full w-1 cursor-col-resize hover:bg-[var(--accent)] hover:opacity-50"
+            style={{ zIndex: 10 }}
+          />
+        )}
         <div className="flex items-center justify-between px-4 h-[52px] sidebar-border border-b">
           <div className="sidebar-text font-semibold">Source</div>
           <button onClick={() => setShowSettings(true)} className="sidebar-icon-btn rounded p-1">
@@ -685,7 +710,7 @@ export default function App({ initialProjects, userEmail }: AppProps) {
 
         <div className="px-3 pt-3">
           <button
-            onClick={() => setModalProject(null)}
+            onClick={() => { setModalProject(null); if (isMobile) setMobileSidebarOpen(false) }}
             className="w-full rounded-lg px-3 py-2 text-sm font-medium"
             style={{ background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-fg)' }}
           >
@@ -722,7 +747,7 @@ export default function App({ initialProjects, userEmail }: AppProps) {
                 return (
                   <button
                     key={`${cat}-${year}`}
-                    onClick={() => selectYear(cat, year)}
+                    onClick={() => { selectYear(cat, year); if (isMobile) setMobileSidebarOpen(false) }}
                     className={`sidebar-item-hover sidebar-text w-full rounded-lg px-2 py-1.5 text-left text-sm ${active ? 'sidebar-selected' : ''}`}
                   >
                     {year}
@@ -739,6 +764,7 @@ export default function App({ initialProjects, userEmail }: AppProps) {
               setShowDashboard(v => !v)
               setShowArchived(false)
               setShowTrash(false)
+              if (isMobile) setMobileSidebarOpen(false)
             }}
             className={`sidebar-item-hover sidebar-text w-full rounded-lg px-2 py-2 text-left text-sm ${showDashboard ? 'sidebar-selected' : ''}`}
           >
@@ -749,6 +775,7 @@ export default function App({ initialProjects, userEmail }: AppProps) {
               setShowArchived(v => !v)
               setShowDashboard(false)
               setShowTrash(false)
+              if (isMobile) setMobileSidebarOpen(false)
             }}
             className={`sidebar-item-hover sidebar-text w-full rounded-lg px-2 py-2 text-left text-sm ${showArchived ? 'sidebar-selected' : ''}`}
           >
@@ -762,6 +789,7 @@ export default function App({ initialProjects, userEmail }: AppProps) {
               setShowTrash(v => !v)
               setShowDashboard(false)
               setShowArchived(false)
+              if (isMobile) setMobileSidebarOpen(false)
             }}
             className={`sidebar-item-hover sidebar-text w-full rounded-lg px-2 py-2 text-left text-sm ${showTrash ? 'sidebar-selected' : ''}`}
           >
@@ -779,13 +807,24 @@ export default function App({ initialProjects, userEmail }: AppProps) {
 
       {/* Main */}
       <main id="main" className="flex-1 overflow-y-auto p-6">
-        <h1 className="text-lg font-semibold mb-4">
-          {showTrash
-            ? 'Corbeille'
-            : `${selectedCat === 'pro' ? 'Pro' : 'Perso'} · ${selectedYear}${
-                showDashboard ? ' · Dashboard' : showArchived ? ' · Archivés' : ''
-              }`}
-        </h1>
+        <div className="flex items-center gap-2 mb-4">
+          {isMobile && (
+            <button
+              onClick={() => setMobileSidebarOpen(v => !v)}
+              className="sidebar-icon-btn rounded p-1"
+              style={{ color: 'var(--text-muted)' }}
+            >
+              <i className="ti ti-menu-2" />
+            </button>
+          )}
+          <h1 className="text-lg font-semibold">
+            {showTrash
+              ? 'Corbeille'
+              : `${selectedCat === 'pro' ? 'Pro' : 'Perso'} · ${selectedYear}${
+                  showDashboard ? ' · Dashboard' : showArchived ? ' · Archivés' : ''
+                }`}
+          </h1>
+        </div>
 
         {showTrash ? (
           <TrashView
@@ -797,19 +836,30 @@ export default function App({ initialProjects, userEmail }: AppProps) {
           <Dashboard projects={projects} selectedCat={selectedCat} selectedYear={selectedYear} />
         ) : (
           <>
-            <FilterBar
-              status={filterStatus}
-              importance={filterImportance}
-              editor={filterEditor}
-              sort={sortMode}
-              editors={editors}
-              hasActiveFilters={hasActiveFilters}
-              onStatusChange={setFilterStatus}
-              onImportanceChange={setFilterImportance}
-              onEditorChange={setFilterEditor}
-              onSortChange={setSortMode}
-              onClear={clearFilters}
-            />
+            {isMobile ? (
+              <div className="mb-3">
+                <button
+                  onClick={() => setMobileFilterOpen(true)}
+                  className="rounded-lg border px-3 py-2 text-sm t-border"
+                >
+                  <i className="ti ti-filter" /> Filtres{hasActiveFilters ? ' •' : ''}
+                </button>
+              </div>
+            ) : (
+              <FilterBar
+                status={filterStatus}
+                importance={filterImportance}
+                editor={filterEditor}
+                sort={sortMode}
+                editors={editors}
+                hasActiveFilters={hasActiveFilters}
+                onStatusChange={setFilterStatus}
+                onImportanceChange={setFilterImportance}
+                onEditorChange={setFilterEditor}
+                onSortChange={setSortMode}
+                onClear={clearFilters}
+              />
+            )}
 
             {visibleProjects.length === 0 && (
               <p className="t-text-muted text-sm">
@@ -952,6 +1002,33 @@ export default function App({ initialProjects, userEmail }: AppProps) {
             setDeleteTarget({ type: 'note', id: note.id, projectId: selectedDetailProject.id, subprojectId })
           }
         />
+      )}
+
+      {isMobile && mobileFilterOpen && (
+        <>
+          <div className="fixed inset-0 z-40 bg-black/50" onClick={() => setMobileFilterOpen(false)} />
+          <div className="fixed inset-x-0 bottom-0 z-50 rounded-t-2xl t-bg-card p-4" style={{ boxShadow: 'var(--card-shadow)' }}>
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm font-semibold">Filtres</span>
+              <button onClick={() => setMobileFilterOpen(false)} className="sidebar-icon-btn rounded p-1">
+                <i className="ti ti-x" />
+              </button>
+            </div>
+            <FilterBar
+              status={filterStatus}
+              importance={filterImportance}
+              editor={filterEditor}
+              sort={sortMode}
+              editors={editors}
+              hasActiveFilters={hasActiveFilters}
+              onStatusChange={setFilterStatus}
+              onImportanceChange={setFilterImportance}
+              onEditorChange={setFilterEditor}
+              onSortChange={setSortMode}
+              onClear={clearFilters}
+            />
+          </div>
+        </>
       )}
 
       <ToastStack toasts={toasts} />
