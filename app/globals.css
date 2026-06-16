@@ -52,6 +52,14 @@
   --accent-muted:      rgba(192,57,43,0.12);
 
   --scrollbar-thumb: #d4c5b0;
+
+  /* Status badges */
+  --s-ready-bg:#F1EFE8;   --s-ready-fg:#5F5E5A;
+  --s-ongoing-bg:#E6F1FB; --s-ongoing-fg:#185FA5;
+  --s-review-bg:#FAEEDA;  --s-review-fg:#854F0B;
+  --s-sent-bg:#FBEAF0;    --s-sent-fg:#993356;
+  --s-done-bg:#EAF3DE;    --s-done-fg:#3B6D11;
+  --s-hold-bg:#F1EFE8;    --s-hold-fg:#5F5E5A;
 }
 
 /* ─── Variables — Dark ───────────────────────────────────────────────────────*/
@@ -91,6 +99,14 @@ html.dark {
   --accent-muted:      rgba(192,57,43,0.12);
 
   --scrollbar-thumb: #3d3530;
+
+  /* Status badges */
+  --s-ready-bg:#2A2825;   --s-ready-fg:#A09890;
+  --s-ongoing-bg:#1A2535; --s-ongoing-fg:#60A5FA;
+  --s-review-bg:#2D2010;  --s-review-fg:#FBBF24;
+  --s-sent-bg:#2D1520;    --s-sent-fg:#F472B6;
+  --s-done-bg:#162510;    --s-done-fg:#86EFAC;
+  --s-hold-bg:#2A2825;    --s-hold-fg:#A09890;
 }
 
 /* ─── Base ───────────────────────────────────────────────────────────────────*/
@@ -125,3 +141,23 @@ html, body {
 input::placeholder, textarea::placeholder {
   color: var(--text-muted);
 }
+
+/* ─── Status badges ──────────────────────────────────────────────────────────*/
+.status-badge { font-size: 0.72rem; font-weight: 600; padding: 3px 9px; border-radius: 10px; white-space: nowrap; display: inline-block; cursor: pointer; transition: opacity .12s; }
+.status-badge:hover { opacity: .75; }
+.s-ready   { background: var(--s-ready-bg);   color: var(--s-ready-fg); }
+.s-ongoing { background: var(--s-ongoing-bg); color: var(--s-ongoing-fg); }
+.s-review  { background: var(--s-review-bg);  color: var(--s-review-fg); }
+.s-sent    { background: var(--s-sent-bg);    color: var(--s-sent-fg); }
+.s-done    { background: var(--s-done-bg);    color: var(--s-done-fg); }
+.s-hold    { background: var(--s-hold-bg);    color: var(--s-hold-fg); }
+
+/* ─── Progress bar ───────────────────────────────────────────────────────────*/
+.prog-wrap { width: 100%; display: flex; align-items: center; gap: 8px; }
+.prog-bar-bg { position: relative; flex: 1; height: 3px; background: color-mix(in srgb, var(--border) 50%, transparent); overflow: hidden; }
+.prog-fill-bg { position: absolute; inset: 0; height: 100%; transition: width .4s ease; }
+.prog-pct { font-size: 0.68rem; color: var(--text-muted); min-width: 26px; text-align: right; flex-shrink: 0; }
+
+/* ─── Overlay / modal ────────────────────────────────────────────────────────*/
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; z-index: 50; }
+.modal-box { background: var(--card-bg); border-radius: 12px; box-shadow: var(--card-shadow); width: 100%; max-width: 480px; max-height: 90vh; overflow-y: auto; padding: 20px; }
