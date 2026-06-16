@@ -1,7 +1,7 @@
 'use client'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { Note, Project, Status, Subproject } from '../types'
+import { Importance, Note, Project, Status, Subproject } from '../types'
 import ProjectCard from './ProjectCard'
 
 interface SortableProjectCardProps {
@@ -9,6 +9,8 @@ interface SortableProjectCardProps {
   onOpenDetail: () => void
   onChangeStatus: (status: Status) => void
   onChangeSubStatus: (sub: Subproject, status: Status) => void
+  onChangeImportance: (importance: Importance) => void
+  onCopyNumber: () => void
   onEdit: () => void
   onDelete: () => void
   onArchive: () => void

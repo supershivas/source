@@ -90,6 +90,20 @@ export default function App({ initialProjects, userEmail }: AppProps) {
   const [filterImportance, setFilterImportance] = useState<Importance | ''>('')
   const [filterEditor, setFilterEditor] = useState('')
   const [sortMode, setSortMode] = useState<SortMode>('updated')
+
+  useEffect(() => {
+    setSearchQuery(localStorage.getItem('source-filter-search') || '')
+    setFilterStatus((localStorage.getItem('source-filter-status') as Status | '') || '')
+    setFilterImportance((localStorage.getItem('source-filter-imp') as Importance | '') || '')
+    setFilterEditor(localStorage.getItem('source-filter-editor') || '')
+    setSortMode((localStorage.getItem('source-sort') as SortMode) || 'updated')
+  }, [])
+
+  useEffect(() => { localStorage.setItem('source-filter-search', searchQuery) }, [searchQuery])
+  useEffect(() => { localStorage.setItem('source-filter-status', filterStatus) }, [filterStatus])
+  useEffect(() => { localStorage.setItem('source-filter-imp', filterImportance) }, [filterImportance])
+  useEffect(() => { localStorage.setItem('source-filter-editor', filterEditor) }, [filterEditor])
+  useEffect(() => { localStorage.setItem('source-sort', sortMode) }, [sortMode])
   const [showDashboard, setShowDashboard] = useState(false)
   const [showArchived, setShowArchived] = useState(false)
   const [showTrash, setShowTrash] = useState(false)
@@ -334,6 +348,19 @@ export default function App({ initialProjects, userEmail }: AppProps) {
       updateProject(p.id, patch)
       showToast('Statut mis à jour ✓')
     }
+  }
+
+  async function handleChangeImportance(p: Project, importance: Importance) {
+    const { error } = await supabase.from('projects').update({ importance }).eq('id', p.id)
+    if (!error) {
+      updateProject(p.id, { importance })
+      showToast('Priorité mise à jour ✓')
+    }
+  }
+
+  function handleCopyNumber(number: string) {
+    navigator.clipboard.writeText(number)
+    showToast('Numéro copié ✓')
   }
 
   async function handleChangeSubStatus(parentId: string, sub: Subproject, status: Status) {
@@ -757,6 +784,8 @@ export default function App({ initialProjects, userEmail }: AppProps) {
                       onOpenDetail={() => setSelectedDetailId(p.id)}
                       onChangeStatus={status => handleChangeStatus(p, status)}
                       onChangeSubStatus={(sub, status) => handleChangeSubStatus(p.id, sub, status)}
+                      onChangeImportance={importance => handleChangeImportance(p, importance)}
+                      onCopyNumber={() => handleCopyNumber(p.number)}
                       onEdit={() => setModalProject(p)}
                       onDelete={() => setDeleteTarget({ type: 'project', id: p.id })}
                       onArchive={() => handleArchiveProject(p)}

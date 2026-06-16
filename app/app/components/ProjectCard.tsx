@@ -1,13 +1,15 @@
 'use client'
 import { useState } from 'react'
-import { Note, Project, Status, Subproject } from '../types'
-import { STATUS_LABELS, STATUS_ORDER } from '../constants'
+import { Importance, Note, Project, Status, Subproject } from '../types'
+import { IMPORTANCE_COLOR, IMPORTANCE_LABELS, IMPORTANCE_ORDER, STATUS_LABELS, STATUS_ORDER } from '../constants'
 
 interface ProjectCardProps {
   project: Project
   onOpenDetail: () => void
   onChangeStatus: (status: Status) => void
   onChangeSubStatus: (sub: Subproject, status: Status) => void
+  onChangeImportance: (importance: Importance) => void
+  onCopyNumber: () => void
   onEdit: () => void
   onDelete: () => void
   onArchive: () => void
@@ -27,11 +29,18 @@ function nextStatus(status: Status): Status {
   return STATUS_ORDER[(i + 1) % STATUS_ORDER.length]
 }
 
+function nextImportance(importance: Importance): Importance {
+  const i = IMPORTANCE_ORDER.indexOf(importance)
+  return IMPORTANCE_ORDER[(i + 1) % IMPORTANCE_ORDER.length]
+}
+
 export default function ProjectCard({
   project,
   onOpenDetail,
   onChangeStatus,
   onChangeSubStatus,
+  onChangeImportance,
+  onCopyNumber,
   onEdit,
   onDelete,
   onArchive,
@@ -59,13 +68,28 @@ export default function ProjectCard({
         <button onClick={e => { e.stopPropagation(); setExpanded(ex => !ex) }} className="t-text-muted shrink-0">
           <i className={`ti ti-chevron-${expanded ? 'down' : 'right'}`} />
         </button>
-        <span className="text-xs t-text-muted shrink-0 whitespace-nowrap">{project.number}</span>
+        <button
+          onClick={e => { e.stopPropagation(); onCopyNumber() }}
+          title="Copier le numéro"
+          className="text-xs t-text-muted shrink-0 whitespace-nowrap"
+          style={{ border: 'none', background: 'none', font: 'inherit', cursor: 'pointer' }}
+        >
+          {project.number}
+        </button>
         <span className="flex-1 text-sm font-medium truncate">{project.name}</span>
         {subprojects.length > 0 && (
           <span className="text-xs t-text-muted">
             <i className="ti ti-folders" /> {subprojects.length}
           </span>
         )}
+        <button
+          onClick={e => { e.stopPropagation(); onChangeImportance(nextImportance(project.importance)) }}
+          title="Cliquer pour changer la priorité"
+          className="text-xs font-medium"
+          style={{ color: IMPORTANCE_COLOR[project.importance], border: 'none', background: 'none', font: 'inherit', cursor: 'pointer' }}
+        >
+          {IMPORTANCE_LABELS[project.importance]}
+        </button>
         <button
           onClick={e => { e.stopPropagation(); onChangeStatus(nextStatus(project.status)) }}
           title="Cliquer pour changer le statut"
