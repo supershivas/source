@@ -52,6 +52,15 @@ export const IMPORTANCE_COLOR: Record<Importance, string> = {
   low: '#8A8A8A',
 }
 
+export const STATUS_ACCENT: Record<Status, string> = {
+  ready: 'var(--s-ready-fg)',
+  ongoing: 'var(--s-ongoing-fg)',
+  review: 'var(--s-review-fg)',
+  sent: 'var(--s-sent-fg)',
+  done: 'var(--s-done-fg)',
+  hold: 'var(--s-hold-fg)',
+}
+
 export function toEU(iso?: string | null) {
   if (!iso) return '—'
   const [y, m, d] = iso.split('-')

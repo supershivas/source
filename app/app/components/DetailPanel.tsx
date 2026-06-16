@@ -48,7 +48,7 @@ export default function DetailPanel({
   return (
     <div
       ref={panelRef}
-      className="fixed top-20 right-5 bottom-5 z-40 flex w-[420px] max-w-[90vw] flex-col overflow-y-auto rounded-lg t-bg-card p-4"
+      className="fixed top-20 right-5 z-40 flex w-[420px] max-w-[90vw] max-h-[calc(100vh-6rem)] flex-col overflow-y-auto rounded-lg t-bg-card p-4"
       style={{ boxShadow: 'var(--card-shadow)', borderLeft: '3px solid var(--accent)' }}
     >
       <div className="flex items-center justify-between mb-3">

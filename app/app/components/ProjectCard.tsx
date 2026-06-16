@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { DndContext, DragEndEvent, PointerSensor, closestCenter, useSensor, useSensors } from '@dnd-kit/core'
 import { SortableContext, arrayMove, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { Importance, Note, Project, Status, Subproject } from '../types'
-import { IMPORTANCE_COLOR, IMPORTANCE_LABELS, IMPORTANCE_ORDER, STATUS_LABELS, STATUS_ORDER } from '../constants'
+import { IMPORTANCE_COLOR, IMPORTANCE_LABELS, IMPORTANCE_ORDER, STATUS_ACCENT, STATUS_LABELS, STATUS_ORDER, dlStatus, toEU } from '../constants'
 import SortableSubRow from './SortableSubRow'
 
 interface ProjectCardProps {
@@ -73,52 +73,84 @@ export default function ProjectCard({
     onReorderSubprojects(arrayMove(subprojects, oldIndex, newIndex))
   }
 
+  const dls = dlStatus(project.deadline)
+  const dlClass = dls === 'over' ? 'dl-over' : dls === 'warn' ? 'dl-warn' : ''
+
   return (
     <div
       className="t-bg-card rounded-lg p-3 cursor-grab active:cursor-grabbing"
-      style={{ boxShadow: 'var(--card-shadow)' }}
+      style={{ boxShadow: 'var(--card-shadow)', borderLeft: `3px solid ${STATUS_ACCENT[project.status]}` }}
       onClick={onOpenDetail}
     >
       <div className="flex items-center gap-3">
         <button onClick={e => { e.stopPropagation(); setExpanded(ex => !ex) }} className="t-text-muted shrink-0">
           <i className={`ti ti-chevron-${expanded ? 'down' : 'right'}`} />
         </button>
-        <button
-          onClick={e => { e.stopPropagation(); onCopyNumber() }}
-          title="Copier le numéro"
-          className="text-xs t-text-muted shrink-0 whitespace-nowrap"
-          style={{ border: 'none', background: 'none', font: 'inherit', cursor: 'pointer' }}
-        >
-          {project.number}
-        </button>
-        <span className="flex-1 text-sm font-medium truncate">{project.name}</span>
-        {subprojects.length > 0 && (
-          <span className="text-xs t-text-muted">
-            <i className="ti ti-folders" /> {subprojects.length}
-          </span>
-        )}
+
+        <div className="flex-1 min-w-0 flex flex-col gap-1">
+          {/* Ligne 1 : numéro + bulles + nom */}
+          <div className="flex items-center gap-2 min-w-0 proj-num-row">
+            <span className="text-xs t-text-muted shrink-0 whitespace-nowrap" style={{ fontFamily: 'ui-monospace, monospace' }}>
+              {project.number}
+            </span>
+            <button
+              onClick={e => { e.stopPropagation(); onCopyNumber() }}
+              title="Copier le numéro"
+              className="btn-copy-num"
+            >
+              <i className="ti ti-copy" style={{ fontSize: '0.6rem' }} />
+            </button>
+            {notes.length > 0 && (
+              <span className="notes-bubble" title={`${notes.length} note${notes.length > 1 ? 's' : ''}`}>
+                <i className="ti ti-note" style={{ fontSize: '0.6rem' }} /> {notes.length}
+              </span>
+            )}
+            {subprojects.length > 0 && (
+              <span className="subs-bubble" title={`${subprojects.length} sous-projet${subprojects.length > 1 ? 's' : ''}`}>
+                <i className="ti ti-folders" style={{ fontSize: '0.6rem' }} /> {subprojects.length}
+              </span>
+            )}
+            <span className="text-sm font-semibold truncate">{project.name}</span>
+          </div>
+
+          {/* Ligne 2 : barre de progression + métadonnées */}
+          <div className="flex items-center gap-2 min-w-0">
+            <button
+              onClick={e => { e.stopPropagation(); onChangeStatus(nextStatus(project.status)) }}
+              title="Cliquer pour changer le statut"
+              className="prog-wrap"
+              style={{ width: 140, flexShrink: 0, border: 'none', background: 'none', padding: 0, cursor: 'pointer' }}
+            >
+              <div className="prog-bar-bg">
+                <div className="prog-fill-bg" style={{ width: `${project.progress ?? 0}%`, background: 'var(--accent)' }} />
+              </div>
+              <span className="prog-pct">{project.progress ?? 0}%</span>
+            </button>
+            <div className="flex items-center gap-1.5 min-w-0 overflow-hidden">
+              {project.editor && (
+                <span className="tag-chip"><i className="ti ti-building" style={{ fontSize: '0.6rem' }} />{project.editor}</span>
+              )}
+              {project.client && (
+                <span className="tag-chip"><i className="ti ti-user" style={{ fontSize: '0.6rem' }} />{project.client}</span>
+              )}
+              {project.deadline && (
+                <span className={`tag-chip ${dlClass}`}>☠ {toEU(project.deadline)}</span>
+              )}
+              {project.archived && (
+                <span className="tag-chip"><i className="ti ti-archive" style={{ fontSize: '0.6rem' }} />Archivé</span>
+              )}
+            </div>
+          </div>
+        </div>
+
         <button
           onClick={e => { e.stopPropagation(); onChangeImportance(nextImportance(project.importance)) }}
           title="Cliquer pour changer la priorité"
-          className="text-xs font-medium"
+          className="text-xs font-medium shrink-0"
           style={{ color: IMPORTANCE_COLOR[project.importance], border: 'none', background: 'none', font: 'inherit', cursor: 'pointer' }}
         >
           {IMPORTANCE_LABELS[project.importance]}
         </button>
-        <button
-          onClick={e => { e.stopPropagation(); onChangeStatus(nextStatus(project.status)) }}
-          title="Cliquer pour changer le statut"
-          className={`status-badge s-${project.status}`}
-          style={{ cursor: 'pointer', border: 'none', font: 'inherit' }}
-        >
-          {STATUS_LABELS[project.status]}
-        </button>
-        <div className="prog-wrap" style={{ width: 100 }}>
-          <div className="prog-bar-bg">
-            <div className="prog-fill-bg" style={{ width: `${project.progress ?? 0}%`, background: 'var(--accent)' }} />
-          </div>
-          <span className="prog-pct">{project.progress ?? 0}%</span>
-        </div>
         <button
           onClick={e => { e.stopPropagation(); onArchive() }}
           title={project.archived ? 'Désarchiver' : 'Archiver'}
