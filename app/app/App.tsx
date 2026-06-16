@@ -11,6 +11,7 @@ import SortableProjectCard from './components/SortableProjectCard'
 import FilterBar, { SortMode } from './components/FilterBar'
 import Dashboard from './components/Dashboard'
 import TrashView from './components/TrashView'
+import SettingsModal, { useSettingsPrefs } from './components/SettingsModal'
 import { STATUS_LABELS, IMPORTANCE_LABELS, toEU } from './constants'
 import { DndContext, DragEndEvent, PointerSensor, useSensor, useSensors, closestCenter } from '@dnd-kit/core'
 import { SortableContext, arrayMove, verticalListSortingStrategy } from '@dnd-kit/sortable'
@@ -52,6 +53,8 @@ export default function App({ initialProjects, userEmail }: AppProps) {
   const [showDashboard, setShowDashboard] = useState(false)
   const [showArchived, setShowArchived] = useState(false)
   const [showTrash, setShowTrash] = useState(false)
+  const [showSettings, setShowSettings] = useState(false)
+  const { prefs, setPrefs } = useSettingsPrefs()
 
   const yearsByCat = useMemo(() => {
     const map: Record<Category, number[]> = { pro: [], perso: [] }
@@ -396,7 +399,7 @@ export default function App({ initialProjects, userEmail }: AppProps) {
       <aside id="sidebar" className="sidebar-bg flex flex-col shrink-0" style={{ width: 264 }}>
         <div className="flex items-center justify-between px-4 h-[52px] sidebar-border border-b">
           <div className="sidebar-text font-semibold">Source</div>
-          <button className="sidebar-icon-btn rounded p-1">
+          <button onClick={() => setShowSettings(true)} className="sidebar-icon-btn rounded p-1">
             <i className="ti ti-settings" />
           </button>
         </div>
@@ -619,6 +622,14 @@ export default function App({ initialProjects, userEmail }: AppProps) {
           }
           onConfirm={handleConfirmDelete}
           onClose={() => setDeleteTarget(null)}
+        />
+      )}
+
+      {showSettings && (
+        <SettingsModal
+          prefs={prefs}
+          onChange={patch => setPrefs(p => ({ ...p, ...patch }))}
+          onClose={() => setShowSettings(false)}
         />
       )}
     </div>
