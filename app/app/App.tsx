@@ -10,6 +10,7 @@ import ConfirmModal from './components/ConfirmModal'
 import SortableProjectCard from './components/SortableProjectCard'
 import FilterBar, { SortMode } from './components/FilterBar'
 import Dashboard from './components/Dashboard'
+import TrashView from './components/TrashView'
 import { STATUS_LABELS, IMPORTANCE_LABELS, toEU } from './constants'
 import { DndContext, DragEndEvent, PointerSensor, useSensor, useSensors, closestCenter } from '@dnd-kit/core'
 import { SortableContext, arrayMove, verticalListSortingStrategy } from '@dnd-kit/sortable'
@@ -22,6 +23,7 @@ interface AppProps {
 
 type DeleteTarget =
   | { type: 'project'; id: string }
+  | { type: 'project-permanent'; id: string }
   | { type: 'subproject'; id: string; parentId: string }
   | { type: 'note'; id: string; projectId: string; subprojectId?: string }
 
@@ -49,6 +51,7 @@ export default function App({ initialProjects, userEmail }: AppProps) {
   const [sortMode, setSortMode] = useState<SortMode>('updated')
   const [showDashboard, setShowDashboard] = useState(false)
   const [showArchived, setShowArchived] = useState(false)
+  const [showTrash, setShowTrash] = useState(false)
 
   const yearsByCat = useMemo(() => {
     const map: Record<Category, number[]> = { pro: [], perso: [] }
@@ -70,6 +73,8 @@ export default function App({ initialProjects, userEmail }: AppProps) {
   }, [projects, selectedCat, selectedYear])
 
   const hasActiveFilters = !!(searchQuery || filterStatus || filterImportance || filterEditor)
+
+  const trashedProjects = useMemo(() => projects.filter(p => p.trashed), [projects])
 
   const visibleProjects = useMemo(() => {
     let list = projects.filter(
@@ -177,6 +182,7 @@ export default function App({ initialProjects, userEmail }: AppProps) {
     setSelectedYear(year)
     setShowDashboard(false)
     setShowArchived(false)
+    setShowTrash(false)
   }
 
   function updateProject(id: string, patch: Partial<Project>) {
@@ -233,6 +239,19 @@ export default function App({ initialProjects, userEmail }: AppProps) {
         )
       )
     }
+  }
+
+  async function handleRestoreProject(id: string) {
+    const { error } = await supabase.from('projects').update({ trashed: false }).eq('id', id)
+    if (!error) updateProject(id, { trashed: false })
+  }
+
+  async function handleDeleteProjectForever(id: string) {
+    await supabase.from('subprojects').delete().eq('parent_id', id)
+    await supabase.from('notes').delete().eq('project_id', id)
+    const { error } = await supabase.from('projects').delete().eq('id', id)
+    if (!error) setProjects(ps => ps.filter(p => p.id !== id))
+    setDeleteTarget(null)
   }
 
   // ── Subprojects ──
@@ -366,6 +385,7 @@ export default function App({ initialProjects, userEmail }: AppProps) {
   function handleConfirmDelete() {
     if (!deleteTarget) return
     if (deleteTarget.type === 'project') handleDeleteProject(deleteTarget.id)
+    else if (deleteTarget.type === 'project-permanent') handleDeleteProjectForever(deleteTarget.id)
     else if (deleteTarget.type === 'subproject') handleDeleteSubproject(deleteTarget)
     else handleDeleteNote(deleteTarget)
   }
@@ -431,6 +451,7 @@ export default function App({ initialProjects, userEmail }: AppProps) {
             onClick={() => {
               setShowDashboard(v => !v)
               setShowArchived(false)
+              setShowTrash(false)
             }}
             className={`sidebar-item-hover sidebar-text w-full rounded-lg px-2 py-2 text-left text-sm ${showDashboard ? 'sidebar-selected' : ''}`}
           >
@@ -440,6 +461,7 @@ export default function App({ initialProjects, userEmail }: AppProps) {
             onClick={() => {
               setShowArchived(v => !v)
               setShowDashboard(false)
+              setShowTrash(false)
             }}
             className={`sidebar-item-hover sidebar-text w-full rounded-lg px-2 py-2 text-left text-sm ${showArchived ? 'sidebar-selected' : ''}`}
           >
@@ -448,8 +470,15 @@ export default function App({ initialProjects, userEmail }: AppProps) {
           <button onClick={exportCSV} className="sidebar-item-hover sidebar-text w-full rounded-lg px-2 py-2 text-left text-sm">
             Export CSV
           </button>
-          <button className="sidebar-item-hover sidebar-text w-full rounded-lg px-2 py-2 text-left text-sm">
-            Corbeille
+          <button
+            onClick={() => {
+              setShowTrash(v => !v)
+              setShowDashboard(false)
+              setShowArchived(false)
+            }}
+            className={`sidebar-item-hover sidebar-text w-full rounded-lg px-2 py-2 text-left text-sm ${showTrash ? 'sidebar-selected' : ''}`}
+          >
+            Corbeille{trashedProjects.length > 0 ? ` (${trashedProjects.length})` : ''}
           </button>
         </div>
 
@@ -464,11 +493,20 @@ export default function App({ initialProjects, userEmail }: AppProps) {
       {/* Main */}
       <main id="main" className="flex-1 overflow-y-auto p-6">
         <h1 className="text-lg font-semibold mb-4">
-          {selectedCat === 'pro' ? 'Pro' : 'Perso'} · {selectedYear}
-          {showDashboard ? ' · Dashboard' : showArchived ? ' · Archivés' : ''}
+          {showTrash
+            ? 'Corbeille'
+            : `${selectedCat === 'pro' ? 'Pro' : 'Perso'} · ${selectedYear}${
+                showDashboard ? ' · Dashboard' : showArchived ? ' · Archivés' : ''
+              }`}
         </h1>
 
-        {showDashboard ? (
+        {showTrash ? (
+          <TrashView
+            projects={trashedProjects}
+            onRestore={handleRestoreProject}
+            onDeleteForever={id => setDeleteTarget({ type: 'project-permanent', id })}
+          />
+        ) : showDashboard ? (
           <Dashboard projects={projects} selectedCat={selectedCat} selectedYear={selectedYear} />
         ) : (
           <>
@@ -566,6 +604,8 @@ export default function App({ initialProjects, userEmail }: AppProps) {
           title={
             deleteTarget.type === 'project'
               ? 'Supprimer le projet'
+              : deleteTarget.type === 'project-permanent'
+              ? 'Supprimer définitivement'
               : deleteTarget.type === 'subproject'
               ? 'Supprimer le sous-projet'
               : 'Supprimer la note'
@@ -573,6 +613,8 @@ export default function App({ initialProjects, userEmail }: AppProps) {
           message={
             deleteTarget.type === 'project'
               ? 'Le projet sera déplacé dans la corbeille.'
+              : deleteTarget.type === 'project-permanent'
+              ? 'Action irréversible. Sous-projets et notes inclus.'
               : 'Cette action est définitive.'
           }
           onConfirm={handleConfirmDelete}
