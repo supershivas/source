@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, ReactNode } from 'react'
 import { Note, Project, Subproject, Status, Importance } from '../types'
 import { STATUS_LABELS, IMPORTANCE_LABELS, STATUS_ORDER, IMPORTANCE_ORDER, toEU } from '../constants'
 
@@ -35,7 +35,7 @@ function InlineDropdown<T extends string>({
   labels: Record<T, string>
   onChange: (v: T) => void
   triggerClassName?: string
-  renderOption?: (v: T) => React.ReactNode
+  renderOption?: (v: T) => ReactNode
 }) {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
