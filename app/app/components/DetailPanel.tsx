@@ -5,6 +5,7 @@ import { STATUS_LABELS, IMPORTANCE_LABELS, toEU } from '../constants'
 
 interface DetailPanelProps {
   project: Project
+  panelPos?: { top: number; left: number; connectorW: number; connectorTop: number; color: string }
   onClose: () => void
   onEdit: () => void
   onDuplicate: () => void
@@ -20,6 +21,7 @@ interface DetailPanelProps {
 
 export default function DetailPanel({
   project,
+  panelPos,
   onClose,
   onEdit,
   onDuplicate,
@@ -48,8 +50,14 @@ export default function DetailPanel({
   return (
     <div
       ref={panelRef}
-      className="fixed top-20 right-5 z-40 flex w-[420px] max-w-[90vw] max-h-[calc(100vh-6rem)] flex-col overflow-y-auto rounded-lg t-bg-card p-4"
-      style={{ boxShadow: 'var(--card-shadow)', borderLeft: '3px solid var(--accent)' }}
+      className="fixed z-40 flex w-[400px] max-w-[90vw] max-h-[calc(100vh-6rem)] flex-col overflow-y-auto rounded-lg t-bg-card p-4"
+      style={{
+        boxShadow: 'var(--card-shadow)',
+        borderLeft: `3px solid ${panelPos?.color || 'var(--accent)'}`,
+        top: panelPos ? panelPos.top : '5rem',
+        left: panelPos ? panelPos.left : undefined,
+        right: panelPos ? undefined : '1.25rem',
+      }}
     >
       <div className="flex items-center justify-between mb-3">
         <button onClick={onClose} className="sidebar-icon-btn rounded p-1" style={{ color: 'var(--text-muted)' }}>
