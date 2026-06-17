@@ -22,6 +22,66 @@ interface DetailPanelProps {
   onDeleteNote: (note: Note, subprojectId?: string) => void
 }
 
+function InlineDropdown<T extends string>({
+  value,
+  options,
+  labels,
+  onChange,
+  triggerClassName,
+  renderOption,
+}: {
+  value: T
+  options: T[]
+  labels: Record<T, string>
+  onChange: (v: T) => void
+  triggerClassName?: string
+  renderOption?: (v: T) => React.ReactNode
+}) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!open) return
+    function onDown(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('mousedown', onDown)
+    return () => document.removeEventListener('mousedown', onDown)
+  }, [open])
+
+  return (
+    <div ref={ref} className="relative" onMouseDown={e => e.stopPropagation()}>
+      <button
+        type="button"
+        onClick={() => setOpen(o => !o)}
+        className={triggerClassName}
+        style={{ cursor: 'pointer', border: 'none', font: 'inherit' }}
+      >
+        {labels[value]}
+        <i className="ti ti-chevron-down" style={{ fontSize: '0.6rem', marginLeft: '4px', opacity: 0.6 }} />
+      </button>
+      {open && (
+        <div
+          className="absolute z-50 mt-1 rounded-lg overflow-hidden"
+          style={{ background: 'var(--card-bg, var(--bg-card))', border: '1px solid var(--border)', boxShadow: '0 8px 24px rgba(0,0,0,0.12)', minWidth: '140px', top: '100%', left: 0 }}
+        >
+          {options.map(opt => (
+            <button
+              key={opt}
+              type="button"
+              onMouseDown={e => { e.stopPropagation(); onChange(opt); setOpen(false) }}
+              className="w-full text-left px-3 py-2 text-sm flex items-center gap-2"
+              style={{ background: opt === value ? 'var(--hover-bg, rgba(0,0,0,0.05))' : 'transparent' }}
+            >
+              {renderOption ? renderOption(opt) : labels[opt]}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function DetailPanel({
   project,
   panelPos,
@@ -98,28 +158,28 @@ export default function DetailPanel({
       <span className="text-xs t-text-muted">{project.number}</span>
       <h2 className="text-lg font-semibold mb-3">{project.name}</h2>
 
-      {/* Statut + Importance inline */}
+      {/* Statut + Importance — dropdowns inline */}
       <div className="flex items-center gap-2 mb-3">
-        <select
+        <InlineDropdown<Status>
           value={project.status}
-          onChange={e => onChangeStatus(e.target.value as Status)}
-          className={`status-badge s-${project.status}`}
-          style={{ border: 'none', cursor: 'pointer', font: 'inherit', appearance: 'none', WebkitAppearance: 'none', paddingRight: '0.5rem' }}
-        >
-          {STATUS_ORDER.map(s => (
-            <option key={s} value={s}>{STATUS_LABELS[s]}</option>
-          ))}
-        </select>
-        <select
+          options={STATUS_ORDER}
+          labels={STATUS_LABELS}
+          onChange={onChangeStatus}
+          triggerClassName={`status-badge s-${project.status} flex items-center`}
+          renderOption={opt => (
+            <span className={`status-badge s-${opt}`} style={{ pointerEvents: 'none' }}>{STATUS_LABELS[opt]}</span>
+          )}
+        />
+        <InlineDropdown<Importance>
           value={project.importance}
-          onChange={e => onChangeImportance(e.target.value as Importance)}
-          className={`imp-tag imp-tag-${project.importance}`}
-          style={{ border: 'none', cursor: 'pointer', font: 'inherit', appearance: 'none', WebkitAppearance: 'none', paddingRight: '0.5rem' }}
-        >
-          {IMPORTANCE_ORDER.map(i => (
-            <option key={i} value={i}>{IMPORTANCE_LABELS[i]}</option>
-          ))}
-        </select>
+          options={IMPORTANCE_ORDER}
+          labels={IMPORTANCE_LABELS}
+          onChange={onChangeImportance}
+          triggerClassName={`imp-tag imp-tag-${project.importance} flex items-center`}
+          renderOption={opt => (
+            <span className={`imp-tag imp-tag-${opt}`} style={{ pointerEvents: 'none' }}>{IMPORTANCE_LABELS[opt]}</span>
+          )}
+        />
       </div>
 
       {/* Slider de progression */}
