@@ -635,7 +635,9 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
         .eq('id', note.id)
         .select()
         .single()
-      if (!error && data) {
+      if (error) {
+        showToast(`Erreur : ${error.message}`, 'error')
+      } else if (data) {
         setProjects(ps =>
           ps.map(p => {
             if (p.id !== projectId) return p
@@ -665,7 +667,9 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
         })
         .select()
         .single()
-      if (!error && data) {
+      if (error) {
+        showToast(`Erreur : ${error.message}`, 'error')
+      } else if (data) {
         setProjects(ps =>
           ps.map(p => {
             if (p.id !== projectId) return p
@@ -688,7 +692,9 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
 
   async function handleDeleteNote(target: { id: string; projectId: string; subprojectId?: string }) {
     const { error } = await supabase.from('notes').delete().eq('id', target.id)
-    if (!error) {
+    if (error) {
+      showToast(`Erreur : ${error.message}`, 'error')
+    } else {
       setProjects(ps =>
         ps.map(p => {
           if (p.id !== target.projectId) return p
