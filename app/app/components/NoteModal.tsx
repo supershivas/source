@@ -3,7 +3,6 @@ import { useEffect, useState } from 'react'
 
 export interface NoteFormValues {
   text: string
-  date: string
 }
 
 interface NoteModalProps {
@@ -13,7 +12,7 @@ interface NoteModalProps {
 }
 
 export default function NoteModal({ initial, onSave, onClose }: NoteModalProps) {
-  const [values, setValues] = useState<NoteFormValues>(initial || { text: '', date: '' })
+  const [text, setText] = useState(initial?.text || '')
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
@@ -29,9 +28,9 @@ export default function NoteModal({ initial, onSave, onClose }: NoteModalProps) 
   })
 
   async function handleSubmit() {
-    if (!values.text.trim() || saving) return
+    if (!text.trim() || saving) return
     setSaving(true)
-    await onSave(values)
+    await onSave({ text })
     setSaving(false)
   }
 
@@ -39,39 +38,19 @@ export default function NoteModal({ initial, onSave, onClose }: NoteModalProps) 
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-box" style={{ maxWidth: 420 }} onClick={e => e.stopPropagation()}>
         <h2 className="text-lg font-semibold mb-4">{initial ? 'Modifier la note' : 'Nouvelle note'}</h2>
-
-        <div className="flex flex-col gap-3">
-          <textarea
-            autoFocus
-            rows={4}
-            className="w-full rounded-lg border px-3 py-2 text-sm t-border"
-            value={values.text}
-            onChange={e => setValues(v => ({ ...v, text: e.target.value }))}
-            onKeyDown={e => {
-              if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
-                e.preventDefault()
-                handleSubmit()
-              }
-            }}
-          />
-          <div>
-            <label className="text-xs t-text-muted block mb-1">Date et heure (optionnelles)</label>
-            <input
-              type="datetime-local"
-              className="w-full rounded-lg border px-3 py-2 text-sm t-border"
-              value={values.date}
-              onChange={e => setValues(v => ({ ...v, date: e.target.value }))}
-            />
-          </div>
-        </div>
-
+        <textarea
+          autoFocus
+          rows={4}
+          className="w-full rounded-lg border px-3 py-2 text-sm t-border"
+          value={text}
+          onChange={e => setText(e.target.value)}
+          onKeyDown={e => {
+            if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); handleSubmit() }
+          }}
+        />
         <div className="flex justify-end gap-2 mt-5">
           <button onClick={onClose} className="btn-ghost">Annuler</button>
-          <button
-            onClick={handleSubmit}
-            disabled={saving || !values.text.trim()}
-            className="btn-primary disabled:opacity-50"
-          >
+          <button onClick={handleSubmit} disabled={saving || !text.trim()} className="btn-primary disabled:opacity-50">
             {initial ? 'Enregistrer' : 'Ajouter'}
           </button>
         </div>

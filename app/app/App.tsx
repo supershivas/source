@@ -631,7 +631,7 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
     if (note) {
       const { data, error } = await supabase
         .from('notes')
-        .update({ text: values.text, date: values.date || null })
+        .update({ text: values.text })
         .eq('id', note.id)
         .select()
         .single()
@@ -661,7 +661,7 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
         .from('notes')
         .insert({
           text: values.text,
-          date: values.date || null,
+          date: new Date().toISOString(),
           project_id: subprojectId ? null : projectId,
           subproject_id: subprojectId || null,
         })
@@ -1045,7 +1045,7 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
 
       {noteModalTarget && (
         <NoteModal
-          initial={noteModalTarget.note ? { text: noteModalTarget.note.text, date: noteModalTarget.note.date || '' } : undefined}
+          initial={noteModalTarget.note ? { text: noteModalTarget.note.text } : undefined}
           onSave={handleSaveNote}
           onClose={() => setNoteModalTarget(null)}
         />
