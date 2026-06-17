@@ -124,10 +124,23 @@ export default function DetailPanel({
 }: DetailPanelProps) {
   const panelRef = useRef<HTMLDivElement>(null)
   const [localProgress, setLocalProgress] = useState(project.progress ?? 0)
+  const [newNoteId, setNewNoteId] = useState<string | null>(null)
+  const prevNoteIdsRef = useRef<Set<string>>(new Set((project.notes || []).map(n => n.id)))
 
   useEffect(() => {
     setLocalProgress(project.progress ?? 0)
   }, [project.progress])
+
+  useEffect(() => {
+    const prev = prevNoteIdsRef.current
+    const current = project.notes || []
+    const added = current.find(n => !prev.has(n.id))
+    if (added) {
+      setNewNoteId(added.id)
+      setTimeout(() => setNewNoteId(null), 600)
+    }
+    prevNoteIdsRef.current = new Set(current.map(n => n.id))
+  }, [project.notes])
 
   useEffect(() => {
     function onClickOutside(e: MouseEvent) {
@@ -307,7 +320,7 @@ export default function DetailPanel({
         {notes.length === 0 && <p className="text-xs t-text-muted">Aucune note.</p>}
         <div className="flex flex-col gap-1.5">
           {notes.map(n => (
-            <div key={n.id} className="flex items-start gap-2 rounded border t-border px-2 py-1.5">
+            <div key={n.id} className={`flex items-start gap-2 rounded border t-border px-2 py-1.5${n.id === newNoteId ? ' note-enter' : ''}`}>
               <span className="text-xs t-text-muted shrink-0 whitespace-nowrap">
                 {fmtDate(n.created_at)}
               </span>
