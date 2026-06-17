@@ -442,6 +442,11 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
     }
   }
 
+  async function handleChangeProgress(p: Project, progress: number) {
+    const { error } = await supabase.from('projects').update({ progress }).eq('id', p.id)
+    if (!error) updateProject(p.id, { progress })
+  }
+
   function handleCopyNumber(number: string) {
     navigator.clipboard.writeText(number)
     showToast('Numéro copié ✓')
@@ -964,11 +969,12 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
 
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
               <SortableContext items={visibleProjects.map(p => p.id)} strategy={verticalListSortingStrategy}>
-                <div className="flex flex-col gap-2" style={{ maxWidth: '680px' }}>
+                <div className="flex flex-col gap-2 mx-auto w-full" style={{ maxWidth: '800px' }}>
                   {visibleProjects.map(p => (
                     <SortableProjectCard
                       key={p.id}
                       project={p}
+                      dimmed={!!selectedDetailId && selectedDetailId !== p.id}
                       onOpenDetail={() => setSelectedDetailId(p.id)}
                       onChangeStatus={status => handleChangeStatus(p, status)}
                       onChangeSubStatus={(sub, status) => handleChangeSubStatus(p.id, sub, status)}
@@ -1091,6 +1097,9 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
           onDuplicate={() => handleDuplicateProject(selectedDetailProject)}
           onArchive={() => handleArchiveProject(selectedDetailProject)}
           onDelete={() => setDeleteTarget({ type: 'project', id: selectedDetailProject.id })}
+          onChangeStatus={status => handleChangeStatus(selectedDetailProject, status)}
+          onChangeImportance={importance => handleChangeImportance(selectedDetailProject, importance)}
+          onChangeProgress={progress => handleChangeProgress(selectedDetailProject, progress)}
           onAddSubproject={() => setSubModalTarget({ parentId: selectedDetailProject.id })}
           onEditSubproject={sub => setSubModalTarget({ parentId: selectedDetailProject.id, sub })}
           onDeleteSubproject={sub =>

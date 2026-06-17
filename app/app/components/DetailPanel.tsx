@@ -1,7 +1,7 @@
 'use client'
-import { useEffect, useRef } from 'react'
-import { Note, Project, Subproject } from '../types'
-import { STATUS_LABELS, IMPORTANCE_LABELS, toEU } from '../constants'
+import { useEffect, useRef, useState } from 'react'
+import { Note, Project, Subproject, Status, Importance } from '../types'
+import { STATUS_LABELS, IMPORTANCE_LABELS, STATUS_ORDER, IMPORTANCE_ORDER, toEU } from '../constants'
 
 interface DetailPanelProps {
   project: Project
@@ -11,6 +11,9 @@ interface DetailPanelProps {
   onDuplicate: () => void
   onArchive: () => void
   onDelete: () => void
+  onChangeStatus: (status: Status) => void
+  onChangeImportance: (importance: Importance) => void
+  onChangeProgress: (progress: number) => void
   onAddSubproject: () => void
   onEditSubproject: (sub: Subproject) => void
   onDeleteSubproject: (sub: Subproject) => void
@@ -27,6 +30,9 @@ export default function DetailPanel({
   onDuplicate,
   onArchive,
   onDelete,
+  onChangeStatus,
+  onChangeImportance,
+  onChangeProgress,
   onAddSubproject,
   onEditSubproject,
   onDeleteSubproject,
@@ -35,6 +41,11 @@ export default function DetailPanel({
   onDeleteNote,
 }: DetailPanelProps) {
   const panelRef = useRef<HTMLDivElement>(null)
+  const [localProgress, setLocalProgress] = useState(project.progress ?? 0)
+
+  useEffect(() => {
+    setLocalProgress(project.progress ?? 0)
+  }, [project.progress])
 
   useEffect(() => {
     function onClickOutside(e: MouseEvent) {
@@ -85,18 +96,49 @@ export default function DetailPanel({
       </div>
 
       <span className="text-xs t-text-muted">{project.number}</span>
-      <h2 className="text-lg font-semibold mb-2">{project.name}</h2>
+      <h2 className="text-lg font-semibold mb-3">{project.name}</h2>
 
+      {/* Statut + Importance inline */}
       <div className="flex items-center gap-2 mb-3">
-        <span className={`status-badge s-${project.status}`}>{STATUS_LABELS[project.status]}</span>
-        <span className="text-xs t-text-muted">{IMPORTANCE_LABELS[project.importance]}</span>
+        <select
+          value={project.status}
+          onChange={e => onChangeStatus(e.target.value as Status)}
+          className={`status-badge s-${project.status}`}
+          style={{ border: 'none', cursor: 'pointer', font: 'inherit', appearance: 'none', WebkitAppearance: 'none', paddingRight: '0.5rem' }}
+        >
+          {STATUS_ORDER.map(s => (
+            <option key={s} value={s}>{STATUS_LABELS[s]}</option>
+          ))}
+        </select>
+        <select
+          value={project.importance}
+          onChange={e => onChangeImportance(e.target.value as Importance)}
+          className={`imp-tag imp-tag-${project.importance}`}
+          style={{ border: 'none', cursor: 'pointer', font: 'inherit', appearance: 'none', WebkitAppearance: 'none', paddingRight: '0.5rem' }}
+        >
+          {IMPORTANCE_ORDER.map(i => (
+            <option key={i} value={i}>{IMPORTANCE_LABELS[i]}</option>
+          ))}
+        </select>
       </div>
 
-      <div className="prog-wrap mb-3">
-        <div className="prog-bar-bg">
-          <div className="prog-fill-bg" style={{ width: `${project.progress ?? 0}%`, background: 'var(--accent)' }} />
+      {/* Slider de progression */}
+      <div className="mb-4">
+        <div className="flex items-center gap-2 mb-1">
+          <input
+            type="range"
+            min={0}
+            max={100}
+            step={5}
+            value={localProgress}
+            onChange={e => setLocalProgress(Number(e.target.value))}
+            onMouseUp={e => onChangeProgress(Number((e.target as HTMLInputElement).value))}
+            onTouchEnd={e => onChangeProgress(Number((e.target as HTMLInputElement).value))}
+            className="flex-1"
+            style={{ accentColor: 'var(--accent)', cursor: 'pointer' }}
+          />
+          <span className="prog-pct" style={{ minWidth: '2.5rem', textAlign: 'right' }}>{localProgress}%</span>
         </div>
-        <span className="prog-pct">{project.progress ?? 0}%</span>
       </div>
 
       <div className="flex flex-wrap gap-3 text-xs t-text-muted mb-4">
