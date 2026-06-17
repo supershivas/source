@@ -251,20 +251,45 @@ export default function DetailPanel({
           </button>
         </div>
         {subprojects.length === 0 && <p className="text-xs t-text-muted">Aucun sous-projet.</p>}
-        <div className="flex flex-col gap-1.5">
+        <div className="flex flex-col gap-2">
           {subprojects.map(s => (
-            <div key={s.id} className="flex items-center gap-2 rounded border t-border px-2 py-1.5">
-              <span className="text-xs t-text-muted shrink-0">{s.number}</span>
-              <span className="flex-1 text-sm truncate">{s.name}</span>
-              <span className={`status-badge s-${s.status}`} style={{ fontSize: '0.62rem', padding: '2px 7px' }}>
-                {STATUS_LABELS[s.status]}
-              </span>
-              <button onClick={() => onEditSubproject(s)} className="sidebar-icon-btn rounded p-1" style={{ color: 'var(--text-muted)' }}>
-                <i className="ti ti-edit" />
-              </button>
-              <button onClick={() => onDeleteSubproject(s)} className="sidebar-icon-btn rounded p-1" style={{ color: 'var(--text-muted)' }}>
-                <i className="ti ti-trash" />
-              </button>
+            <div key={s.id} className="rounded border t-border overflow-hidden">
+              <div className="flex items-center gap-2 px-2 py-1.5">
+                <span className="text-xs t-text-muted shrink-0">{s.number}</span>
+                <span className="flex-1 text-sm truncate">{s.name}</span>
+                <span className={`status-badge s-${s.status}`} style={{ fontSize: '0.62rem', padding: '2px 7px' }}>
+                  {STATUS_LABELS[s.status]}
+                </span>
+                <button onClick={() => onAddNote(s.id)} className="sidebar-icon-btn rounded p-1" title="Ajouter une note" style={{ color: 'var(--accent)' }}>
+                  <i className="ti ti-plus" style={{ fontSize: '0.75rem' }} />
+                </button>
+                <button onClick={() => onEditSubproject(s)} className="sidebar-icon-btn rounded p-1" style={{ color: 'var(--text-muted)' }}>
+                  <i className="ti ti-edit" />
+                </button>
+                <button onClick={() => onDeleteSubproject(s)} className="sidebar-icon-btn rounded p-1" style={{ color: 'var(--text-muted)' }}>
+                  <i className="ti ti-trash" />
+                </button>
+              </div>
+              {(s.notes || []).length > 0 && (
+                <div className="border-t t-border">
+                  {(s.notes || []).map(n => (
+                    <div key={n.id} className="flex items-start gap-2 px-2 py-1.5 border-b t-border last:border-b-0" style={{ background: 'var(--hover-bg, rgba(0,0,0,0.02))' }}>
+                      {n.date && (
+                        <span className="text-xs t-text-muted shrink-0 whitespace-nowrap">
+                          {new Date(n.date).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      )}
+                      <span className="flex-1 text-xs">{n.text}</span>
+                      <button onClick={() => onEditNote(n, s.id)} className="sidebar-icon-btn rounded p-0.5" style={{ color: 'var(--text-muted)' }}>
+                        <i className="ti ti-edit" style={{ fontSize: '0.75rem' }} />
+                      </button>
+                      <button onClick={() => onDeleteNote(n, s.id)} className="sidebar-icon-btn rounded p-0.5" style={{ color: 'var(--text-muted)' }}>
+                        <i className="ti ti-trash" style={{ fontSize: '0.75rem' }} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -281,7 +306,11 @@ export default function DetailPanel({
         <div className="flex flex-col gap-1.5">
           {notes.map(n => (
             <div key={n.id} className="flex items-start gap-2 rounded border t-border px-2 py-1.5">
-              {n.date && <span className="text-xs t-text-muted shrink-0">{n.date}</span>}
+              {n.date && (
+                <span className="text-xs t-text-muted shrink-0 whitespace-nowrap">
+                  {new Date(n.date).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                </span>
+              )}
               <span className="flex-1 text-sm">{n.text}</span>
               <button onClick={() => onEditNote(n)} className="sidebar-icon-btn rounded p-1" style={{ color: 'var(--text-muted)' }}>
                 <i className="ti ti-edit" />
