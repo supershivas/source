@@ -661,7 +661,6 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
         .from('notes')
         .insert({
           text: values.text,
-          date: new Date().toISOString(),
           project_id: subprojectId ? null : projectId,
           subproject_id: subprojectId || null,
         })

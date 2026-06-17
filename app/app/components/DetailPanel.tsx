@@ -138,7 +138,11 @@ export default function DetailPanel({
   }, [onClose])
 
   const subprojects = (project.subprojects || []).filter(s => !s.archived)
-  const notes = project.notes || []
+  const notes = [...(project.notes || [])].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+
+  function fmtDate(iso: string) {
+    return new Date(iso).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' })
+  }
 
   return (
     <div
@@ -272,13 +276,11 @@ export default function DetailPanel({
               </div>
               {(s.notes || []).length > 0 && (
                 <div className="border-t t-border">
-                  {(s.notes || []).map(n => (
+                  {[...(s.notes || [])].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).map(n => (
                     <div key={n.id} className="flex items-start gap-2 px-2 py-1.5 border-b t-border last:border-b-0" style={{ background: 'var(--hover-bg, rgba(0,0,0,0.02))' }}>
-                      {n.date && (
-                        <span className="text-xs t-text-muted shrink-0 whitespace-nowrap">
-                          {new Date(n.date).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' })}
-                        </span>
-                      )}
+                      <span className="text-xs t-text-muted shrink-0 whitespace-nowrap">
+                        {fmtDate(n.created_at)}
+                      </span>
                       <span className="flex-1 text-xs">{n.text}</span>
                       <button onClick={() => onEditNote(n, s.id)} className="sidebar-icon-btn rounded p-0.5" style={{ color: 'var(--text-muted)' }}>
                         <i className="ti ti-edit" style={{ fontSize: '0.75rem' }} />
@@ -306,11 +308,9 @@ export default function DetailPanel({
         <div className="flex flex-col gap-1.5">
           {notes.map(n => (
             <div key={n.id} className="flex items-start gap-2 rounded border t-border px-2 py-1.5">
-              {n.date && (
-                <span className="text-xs t-text-muted shrink-0 whitespace-nowrap">
-                  {new Date(n.date).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' })}
-                </span>
-              )}
+              <span className="text-xs t-text-muted shrink-0 whitespace-nowrap">
+                {fmtDate(n.created_at)}
+              </span>
               <span className="flex-1 text-sm">{n.text}</span>
               <button onClick={() => onEditNote(n)} className="sidebar-icon-btn rounded p-1" style={{ color: 'var(--text-muted)' }}>
                 <i className="ti ti-edit" />
