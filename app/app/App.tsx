@@ -521,7 +521,7 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
     for (const n of p.notes || []) {
       const { data: newNote } = await supabase
         .from('notes')
-        .insert({ text: n.text, date: n.date, project_id: newProject.id })
+        .insert({ text: n.text, project_id: newProject.id })
         .select()
         .single()
       if (newNote) newNotes.push(newNote)
