@@ -6,6 +6,7 @@ import ProjectCard from './ProjectCard'
 
 interface SortableProjectCardProps {
   project: Project
+  dimmed?: boolean
   onOpenDetail: () => void
   onChangeStatus: (status: Status) => void
   onChangeSubStatus: (sub: Subproject, status: Status) => void
@@ -26,17 +27,17 @@ interface SortableProjectCardProps {
   onDeleteNote: (note: Note, subprojectId?: string) => void
 }
 
-export default function SortableProjectCard(props: SortableProjectCardProps) {
+export default function SortableProjectCard({ dimmed, ...props }: SortableProjectCardProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: props.project.id })
 
   const style = {
     transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
+    transition: transition || 'opacity 0.2s',
+    opacity: isDragging ? 0.5 : dimmed ? 0.35 : 1,
   }
 
   return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+    <div ref={setNodeRef} style={style} {...attributes} {...listeners} data-card-id={props.project.id}>
       <ProjectCard {...props} />
     </div>
   )

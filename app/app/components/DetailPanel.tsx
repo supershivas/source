@@ -1,15 +1,19 @@
 'use client'
-import { useEffect, useRef } from 'react'
-import { Note, Project, Subproject } from '../types'
-import { STATUS_LABELS, IMPORTANCE_LABELS, toEU } from '../constants'
+import { useEffect, useRef, useState } from 'react'
+import { Note, Project, Subproject, Status, Importance } from '../types'
+import { STATUS_LABELS, IMPORTANCE_LABELS, STATUS_ORDER, IMPORTANCE_ORDER, toEU } from '../constants'
 
 interface DetailPanelProps {
   project: Project
+  panelPos?: { top: number; left: number; connectorW: number; connectorTop: number; color: string }
   onClose: () => void
   onEdit: () => void
   onDuplicate: () => void
   onArchive: () => void
   onDelete: () => void
+  onChangeStatus: (status: Status) => void
+  onChangeImportance: (importance: Importance) => void
+  onChangeProgress: (progress: number) => void
   onAddSubproject: () => void
   onEditSubproject: (sub: Subproject) => void
   onDeleteSubproject: (sub: Subproject) => void
@@ -18,13 +22,77 @@ interface DetailPanelProps {
   onDeleteNote: (note: Note, subprojectId?: string) => void
 }
 
+function InlineDropdown<T extends string>({
+  value,
+  options,
+  labels,
+  onChange,
+  triggerClassName,
+  renderOption,
+}: {
+  value: T
+  options: T[]
+  labels: Record<T, string>
+  onChange: (v: T) => void
+  triggerClassName?: string
+  renderOption?: (v: T) => React.ReactNode
+}) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!open) return
+    function onDown(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('mousedown', onDown)
+    return () => document.removeEventListener('mousedown', onDown)
+  }, [open])
+
+  return (
+    <div ref={ref} className="relative" onMouseDown={e => e.stopPropagation()}>
+      <button
+        type="button"
+        onClick={() => setOpen(o => !o)}
+        className={triggerClassName}
+        style={{ cursor: 'pointer', border: 'none', font: 'inherit' }}
+      >
+        {labels[value]}
+        <i className="ti ti-chevron-down" style={{ fontSize: '0.6rem', marginLeft: '4px', opacity: 0.6 }} />
+      </button>
+      {open && (
+        <div
+          className="absolute z-50 mt-1 rounded-lg overflow-hidden"
+          style={{ background: 'var(--card-bg, var(--bg-card))', border: '1px solid var(--border)', boxShadow: '0 8px 24px rgba(0,0,0,0.12)', minWidth: '140px', top: '100%', left: 0 }}
+        >
+          {options.map(opt => (
+            <button
+              key={opt}
+              type="button"
+              onMouseDown={e => { e.stopPropagation(); onChange(opt); setOpen(false) }}
+              className="w-full text-left px-3 py-2 text-sm flex items-center gap-2"
+              style={{ background: opt === value ? 'var(--hover-bg, rgba(0,0,0,0.05))' : 'transparent' }}
+            >
+              {renderOption ? renderOption(opt) : labels[opt]}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function DetailPanel({
   project,
+  panelPos,
   onClose,
   onEdit,
   onDuplicate,
   onArchive,
   onDelete,
+  onChangeStatus,
+  onChangeImportance,
+  onChangeProgress,
   onAddSubproject,
   onEditSubproject,
   onDeleteSubproject,
@@ -33,6 +101,11 @@ export default function DetailPanel({
   onDeleteNote,
 }: DetailPanelProps) {
   const panelRef = useRef<HTMLDivElement>(null)
+  const [localProgress, setLocalProgress] = useState(project.progress ?? 0)
+
+  useEffect(() => {
+    setLocalProgress(project.progress ?? 0)
+  }, [project.progress])
 
   useEffect(() => {
     function onClickOutside(e: MouseEvent) {
@@ -48,8 +121,14 @@ export default function DetailPanel({
   return (
     <div
       ref={panelRef}
-      className="fixed top-20 right-5 z-40 flex w-[420px] max-w-[90vw] max-h-[calc(100vh-6rem)] flex-col overflow-y-auto rounded-lg t-bg-card p-4"
-      style={{ boxShadow: 'var(--card-shadow)', borderLeft: '3px solid var(--accent)' }}
+      className="fixed z-40 flex w-[400px] max-w-[90vw] max-h-[calc(100vh-6rem)] flex-col overflow-y-auto rounded-lg t-bg-card p-4 detail-panel-enter"
+      style={{
+        boxShadow: 'var(--card-shadow)',
+        borderLeft: `3px solid ${panelPos?.color || 'var(--accent)'}`,
+        top: panelPos ? panelPos.top : '5rem',
+        left: panelPos ? panelPos.left : undefined,
+        right: panelPos ? undefined : '1.25rem',
+      }}
     >
       <div className="flex items-center justify-between mb-3">
         <button onClick={onClose} className="sidebar-icon-btn rounded p-1" style={{ color: 'var(--text-muted)' }}>
@@ -77,18 +156,49 @@ export default function DetailPanel({
       </div>
 
       <span className="text-xs t-text-muted">{project.number}</span>
-      <h2 className="text-lg font-semibold mb-2">{project.name}</h2>
+      <h2 className="text-lg font-semibold mb-3">{project.name}</h2>
 
+      {/* Statut + Importance — dropdowns inline */}
       <div className="flex items-center gap-2 mb-3">
-        <span className={`status-badge s-${project.status}`}>{STATUS_LABELS[project.status]}</span>
-        <span className="text-xs t-text-muted">{IMPORTANCE_LABELS[project.importance]}</span>
+        <InlineDropdown<Status>
+          value={project.status}
+          options={STATUS_ORDER}
+          labels={STATUS_LABELS}
+          onChange={onChangeStatus}
+          triggerClassName={`status-badge s-${project.status} flex items-center`}
+          renderOption={opt => (
+            <span className={`status-badge s-${opt}`} style={{ pointerEvents: 'none' }}>{STATUS_LABELS[opt]}</span>
+          )}
+        />
+        <InlineDropdown<Importance>
+          value={project.importance}
+          options={IMPORTANCE_ORDER}
+          labels={IMPORTANCE_LABELS}
+          onChange={onChangeImportance}
+          triggerClassName={`imp-tag imp-tag-${project.importance} flex items-center`}
+          renderOption={opt => (
+            <span className={`imp-tag imp-tag-${opt}`} style={{ pointerEvents: 'none' }}>{IMPORTANCE_LABELS[opt]}</span>
+          )}
+        />
       </div>
 
-      <div className="prog-wrap mb-3">
-        <div className="prog-bar-bg">
-          <div className="prog-fill-bg" style={{ width: `${project.progress ?? 0}%`, background: 'var(--accent)' }} />
+      {/* Slider de progression */}
+      <div className="mb-4">
+        <div className="flex items-center gap-2 mb-1">
+          <input
+            type="range"
+            min={0}
+            max={100}
+            step={5}
+            value={localProgress}
+            onChange={e => setLocalProgress(Number(e.target.value))}
+            onMouseUp={e => onChangeProgress(Number((e.target as HTMLInputElement).value))}
+            onTouchEnd={e => onChangeProgress(Number((e.target as HTMLInputElement).value))}
+            className="flex-1"
+            style={{ accentColor: 'var(--accent)', cursor: 'pointer' }}
+          />
+          <span className="prog-pct" style={{ minWidth: '2.5rem', textAlign: 'right' }}>{localProgress}%</span>
         </div>
-        <span className="prog-pct">{project.progress ?? 0}%</span>
       </div>
 
       <div className="flex flex-wrap gap-3 text-xs t-text-muted mb-4">

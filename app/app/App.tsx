@@ -14,7 +14,7 @@ import TrashView from './components/TrashView'
 import SettingsModal, { useSettingsPrefs } from './components/SettingsModal'
 import YearModal from './components/YearModal'
 import ToastStack, { Toast } from './components/ToastStack'
-import { STATUS_LABELS, IMPORTANCE_LABELS, AUTO_PROGRESS, toEU } from './constants'
+import { STATUS_LABELS, IMPORTANCE_LABELS, AUTO_PROGRESS, STATUS_ACCENT, toEU } from './constants'
 import DetailPanel from './components/DetailPanel'
 import { DndContext, DragEndEvent, PointerSensor, useSensor, useSensors, closestCenter } from '@dnd-kit/core'
 import { SortableContext, arrayMove, verticalListSortingStrategy } from '@dnd-kit/sortable'
@@ -48,6 +48,8 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
   const [noteModalTarget, setNoteModalTarget] = useState<NoteModalTarget | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null)
   const [selectedDetailId, setSelectedDetailId] = useState<string | null>(null)
+  const [panelPos, setPanelPos] = useState<{ top: number; left: number; connectorW: number; connectorTop: number; color: string } | null>(null)
+  const [panelReady, setPanelReady] = useState(false)
   const [toasts, setToasts] = useState<Toast[]>([])
   const [sidebarW, setSidebarW] = useState(264)
   const [isMobile, setIsMobile] = useState(false)
@@ -187,6 +189,34 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
     () => projects.find(p => p.id === selectedDetailId) || null,
     [projects, selectedDetailId]
   )
+
+  useEffect(() => {
+    if (!selectedDetailId || !selectedDetailProject) { setPanelPos(null); setPanelReady(false); return }
+    const PANEL_W = 400
+    const GAP = 12
+    function compute() {
+      const card = document.querySelector<HTMLElement>(`[data-card-id="${selectedDetailId}"]`)
+      if (!card) return
+      const rect = card.getBoundingClientRect()
+      const vw = window.innerWidth
+      const vh = window.innerHeight
+      const spaceRight = vw - rect.right - GAP
+      if (spaceRight < PANEL_W + GAP) { setPanelPos(null); setPanelReady(true); return }
+      const panelH = Math.min(vh - 96, 600)
+      const top = Math.max(80, Math.min(rect.top, vh - panelH - 8))
+      const connectorTop = rect.top + Math.min(24, rect.height / 2)
+      const color = STATUS_ACCENT[selectedDetailProject.status] || 'var(--border)'
+      setPanelPos({ top, left: rect.right + GAP, connectorW: GAP, connectorTop, color })
+      setPanelReady(true)
+    }
+    compute()
+    window.addEventListener('resize', compute)
+    document.getElementById('main')?.addEventListener('scroll', compute)
+    return () => {
+      window.removeEventListener('resize', compute)
+      document.getElementById('main')?.removeEventListener('scroll', compute)
+    }
+  }, [selectedDetailId, selectedDetailProject])
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
@@ -412,6 +442,11 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
       updateProject(p.id, { importance })
       showToast('Priorité mise à jour ✓')
     }
+  }
+
+  async function handleChangeProgress(p: Project, progress: number) {
+    const { error } = await supabase.from('projects').update({ progress }).eq('id', p.id)
+    if (!error) updateProject(p.id, { progress })
   }
 
   function handleCopyNumber(number: string) {
@@ -936,11 +971,12 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
 
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
               <SortableContext items={visibleProjects.map(p => p.id)} strategy={verticalListSortingStrategy}>
-                <div className="flex flex-col gap-2">
+                <div className="flex flex-col gap-2 mx-auto w-full" style={{ maxWidth: '800px' }}>
                   {visibleProjects.map(p => (
                     <SortableProjectCard
                       key={p.id}
                       project={p}
+                      dimmed={!!selectedDetailId && selectedDetailId !== p.id}
                       onOpenDetail={() => setSelectedDetailId(p.id)}
                       onChangeStatus={status => handleChangeStatus(p, status)}
                       onChangeSubStatus={(sub, status) => handleChangeSubStatus(p.id, sub, status)}
@@ -1048,14 +1084,24 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
         <YearModal onConfirm={year => addYear(yearModalCat, year)} onClose={() => setYearModalCat(null)} />
       )}
 
-      {selectedDetailProject && (
+      {selectedDetailProject && panelReady && panelPos && (
+        <div
+          className="fixed z-39 pointer-events-none detail-connector"
+          style={{ top: panelPos.connectorTop, left: panelPos.left - panelPos.connectorW, width: panelPos.connectorW, height: 2, background: panelPos.color, opacity: 0.5 }}
+        />
+      )}
+      {selectedDetailProject && panelReady && (
         <DetailPanel
           project={selectedDetailProject}
+          panelPos={panelPos ?? undefined}
           onClose={() => setSelectedDetailId(null)}
           onEdit={() => setModalProject(selectedDetailProject)}
           onDuplicate={() => handleDuplicateProject(selectedDetailProject)}
           onArchive={() => handleArchiveProject(selectedDetailProject)}
           onDelete={() => setDeleteTarget({ type: 'project', id: selectedDetailProject.id })}
+          onChangeStatus={status => handleChangeStatus(selectedDetailProject, status)}
+          onChangeImportance={importance => handleChangeImportance(selectedDetailProject, importance)}
+          onChangeProgress={progress => handleChangeProgress(selectedDetailProject, progress)}
           onAddSubproject={() => setSubModalTarget({ parentId: selectedDetailProject.id })}
           onEditSubproject={sub => setSubModalTarget({ parentId: selectedDetailProject.id, sub })}
           onDeleteSubproject={sub =>
