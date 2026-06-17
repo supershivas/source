@@ -220,7 +220,7 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
-      if ((e.metaKey || e.ctrlKey) && e.key === '/') {
+      if ((e.metaKey || e.ctrlKey) && (e.key === '/' || e.key === 'k')) {
         e.preventDefault()
         searchInputRef.current?.focus()
         searchInputRef.current?.select()
@@ -793,7 +793,7 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
             <input
               ref={searchInputRef}
               type="text"
-              placeholder="Rechercher…  ⌘/"
+              placeholder="Rechercher…  ⌘K"
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
               className="flex-1 outline-none bg-transparent min-w-0"
