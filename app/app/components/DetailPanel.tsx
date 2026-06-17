@@ -291,10 +291,10 @@ export default function DetailPanel({
                 <div className="border-t t-border">
                   {[...(s.notes || [])].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).map(n => (
                     <div key={n.id} className="flex items-start gap-2 px-2 py-1.5 border-b t-border last:border-b-0" style={{ background: 'var(--hover-bg, rgba(0,0,0,0.02))' }}>
-                      <span className="text-xs t-text-muted shrink-0 whitespace-nowrap">
-                        {fmtDate(n.created_at)}
-                      </span>
-                      <span className="flex-1 text-xs">{n.text}</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs">{n.text}</p>
+                        <span className="text-xs t-text-muted">{fmtDate(n.created_at)}</span>
+                      </div>
                       <button onClick={() => onEditNote(n, s.id)} className="sidebar-icon-btn rounded p-0.5" style={{ color: 'var(--text-muted)' }}>
                         <i className="ti ti-edit" style={{ fontSize: '0.75rem' }} />
                       </button>
@@ -321,10 +321,10 @@ export default function DetailPanel({
         <div className="flex flex-col gap-1.5">
           {notes.map(n => (
             <div key={n.id} className={`flex items-start gap-2 rounded border t-border px-2 py-1.5${n.id === newNoteId ? ' note-enter' : ''}`}>
-              <span className="text-xs t-text-muted shrink-0 whitespace-nowrap">
-                {fmtDate(n.created_at)}
-              </span>
-              <span className="flex-1 text-sm">{n.text}</span>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm">{n.text}</p>
+                <span className="text-xs t-text-muted">{fmtDate(n.created_at)}</span>
+              </div>
               <button onClick={() => onEditNote(n)} className="sidebar-icon-btn rounded p-1" style={{ color: 'var(--text-muted)' }}>
                 <i className="ti ti-edit" />
               </button>
