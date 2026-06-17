@@ -49,6 +49,7 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null)
   const [selectedDetailId, setSelectedDetailId] = useState<string | null>(null)
   const [panelPos, setPanelPos] = useState<{ top: number; left: number; connectorW: number; connectorTop: number; color: string } | null>(null)
+  const [panelReady, setPanelReady] = useState(false)
   const [toasts, setToasts] = useState<Toast[]>([])
   const [sidebarW, setSidebarW] = useState(264)
   const [isMobile, setIsMobile] = useState(false)
@@ -190,7 +191,7 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
   )
 
   useEffect(() => {
-    if (!selectedDetailId || !selectedDetailProject) { setPanelPos(null); return }
+    if (!selectedDetailId || !selectedDetailProject) { setPanelPos(null); setPanelReady(false); return }
     const PANEL_W = 400
     const GAP = 12
     function compute() {
@@ -200,12 +201,13 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
       const vw = window.innerWidth
       const vh = window.innerHeight
       const spaceRight = vw - rect.right - GAP
-      if (spaceRight < PANEL_W + GAP) { setPanelPos(null); return }
+      if (spaceRight < PANEL_W + GAP) { setPanelPos(null); setPanelReady(true); return }
       const panelH = Math.min(vh - 96, 600)
       const top = Math.max(80, Math.min(rect.top, vh - panelH - 8))
       const connectorTop = rect.top + Math.min(24, rect.height / 2)
       const color = STATUS_ACCENT[selectedDetailProject.status] || 'var(--border)'
       setPanelPos({ top, left: rect.right + GAP, connectorW: GAP, connectorTop, color })
+      setPanelReady(true)
     }
     compute()
     window.addEventListener('resize', compute)
@@ -1082,13 +1084,13 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
         <YearModal onConfirm={year => addYear(yearModalCat, year)} onClose={() => setYearModalCat(null)} />
       )}
 
-      {selectedDetailProject && panelPos && (
+      {selectedDetailProject && panelReady && panelPos && (
         <div
-          className="fixed z-39 pointer-events-none"
+          className="fixed z-39 pointer-events-none detail-connector"
           style={{ top: panelPos.connectorTop, left: panelPos.left - panelPos.connectorW, width: panelPos.connectorW, height: 2, background: panelPos.color, opacity: 0.5 }}
         />
       )}
-      {selectedDetailProject && (
+      {selectedDetailProject && panelReady && (
         <DetailPanel
           project={selectedDetailProject}
           panelPos={panelPos ?? undefined}

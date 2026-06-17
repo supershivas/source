@@ -121,7 +121,7 @@ export default function DetailPanel({
   return (
     <div
       ref={panelRef}
-      className="fixed z-40 flex w-[400px] max-w-[90vw] max-h-[calc(100vh-6rem)] flex-col overflow-y-auto rounded-lg t-bg-card p-4"
+      className="fixed z-40 flex w-[400px] max-w-[90vw] max-h-[calc(100vh-6rem)] flex-col overflow-y-auto rounded-lg t-bg-card p-4 detail-panel-enter"
       style={{
         boxShadow: 'var(--card-shadow)',
         borderLeft: `3px solid ${panelPos?.color || 'var(--accent)'}`,
