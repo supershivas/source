@@ -1099,7 +1099,7 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
         <DetailPanel
           project={selectedDetailProject}
           panelPos={panelPos ?? undefined}
-          onClose={() => setSelectedDetailId(null)}
+          onClose={noteModalTarget || deleteTarget ? () => {} : () => setSelectedDetailId(null)}
           onEdit={() => setModalProject(selectedDetailProject)}
           onDuplicate={() => handleDuplicateProject(selectedDetailProject)}
           onArchive={() => handleArchiveProject(selectedDetailProject)}
