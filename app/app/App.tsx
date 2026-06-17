@@ -936,7 +936,7 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
 
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
               <SortableContext items={visibleProjects.map(p => p.id)} strategy={verticalListSortingStrategy}>
-                <div className="flex flex-col gap-2">
+                <div className="flex flex-col gap-2 max-w-2xl">
                   {visibleProjects.map(p => (
                     <SortableProjectCard
                       key={p.id}
