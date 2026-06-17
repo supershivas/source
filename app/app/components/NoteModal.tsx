@@ -55,9 +55,9 @@ export default function NoteModal({ initial, onSave, onClose }: NoteModalProps) 
             }}
           />
           <div>
-            <label className="text-xs t-text-muted">Date (optionnelle)</label>
+            <label className="text-xs t-text-muted block mb-1">Date et heure (optionnelles)</label>
             <input
-              type="date"
+              type="datetime-local"
               className="w-full rounded-lg border px-3 py-2 text-sm t-border"
               value={values.date}
               onChange={e => setValues(v => ({ ...v, date: e.target.value }))}
@@ -66,9 +66,7 @@ export default function NoteModal({ initial, onSave, onClose }: NoteModalProps) 
         </div>
 
         <div className="flex justify-end gap-2 mt-5">
-          <button onClick={onClose} className="btn-ghost">
-            Annuler
-          </button>
+          <button onClick={onClose} className="btn-ghost">Annuler</button>
           <button
             onClick={handleSubmit}
             disabled={saving || !values.text.trim()}
