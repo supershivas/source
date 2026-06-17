@@ -245,7 +245,7 @@ export default function ProjectCard({
             <div className="flex flex-col gap-1.5">
               {notes.map(n => (
                 <div key={n.id} className="flex items-start gap-2 rounded border t-border px-2 py-1.5">
-                  {n.date && <span className="text-xs t-text-muted shrink-0">{n.date}</span>}
+                  <span className="text-xs t-text-muted shrink-0">{new Date(n.created_at).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>
                   <span className="flex-1 text-sm">{n.text}</span>
                   <button onClick={() => onEditNote(n)} className="sidebar-icon-btn rounded p-1" style={{ color: 'var(--text-muted)' }}>
                     <i className="ti ti-edit" />
