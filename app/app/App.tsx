@@ -982,7 +982,7 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
                       key={p.id}
                       project={p}
                       dimmed={!!selectedDetailId && selectedDetailId !== p.id}
-                      onOpenDetail={() => setSelectedDetailId(p.id)}
+                      onOpenDetail={() => { if (selectedDetailId !== p.id) setSelectedDetailId(p.id) }}
                       onChangeStatus={status => handleChangeStatus(p, status)}
                       onChangeSubStatus={(sub, status) => handleChangeSubStatus(p.id, sub, status)}
                       onReorderSubprojects={reordered => handleReorderSubprojects(p.id, reordered)}
