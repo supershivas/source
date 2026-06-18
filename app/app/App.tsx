@@ -49,6 +49,7 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null)
   const [selectedDetailId, setSelectedDetailId] = useState<string | null>(null)
   const closingDetailIdRef = useRef<string | null>(null)
+  const detailPanelRef = useRef<HTMLDivElement>(null)
   const [panelPos, setPanelPos] = useState<{ top: number; left: number; connectorW: number; connectorTop: number; color: string } | null>(null)
   const [panelReady, setPanelReady] = useState(false)
   const [toasts, setToasts] = useState<Toast[]>([])
@@ -248,6 +249,18 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
     document.addEventListener('keydown', onKeyDown)
     return () => document.removeEventListener('keydown', onKeyDown)
   }, [exportCSV, selectedDetailId])
+
+  useEffect(() => {
+    if (!selectedDetailId) return
+    function onMouseDown(e: MouseEvent) {
+      if (noteModalTarget || deleteTarget || subModalTarget) return
+      if (detailPanelRef.current && detailPanelRef.current.contains(e.target as Node)) return
+      closingDetailIdRef.current = selectedDetailId
+      setSelectedDetailId(null)
+    }
+    document.addEventListener('mousedown', onMouseDown)
+    return () => document.removeEventListener('mousedown', onMouseDown)
+  }, [selectedDetailId, noteModalTarget, deleteTarget, subModalTarget])
 
   const visibleProjects = useMemo(() => {
     let list = projects.filter(
@@ -1103,8 +1116,9 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
       {selectedDetailProject && panelReady && (
         <DetailPanel
           project={selectedDetailProject}
+          panelRef={detailPanelRef}
           panelPos={panelPos ?? undefined}
-          onClose={noteModalTarget || deleteTarget || subModalTarget ? () => {} : () => { closingDetailIdRef.current = selectedDetailId; setSelectedDetailId(null) }}
+          onClose={() => setSelectedDetailId(null)}
           onEdit={() => setModalProject(selectedDetailProject)}
           onDuplicate={() => handleDuplicateProject(selectedDetailProject)}
           onArchive={() => handleArchiveProject(selectedDetailProject)}
