@@ -111,7 +111,7 @@ export default function ProjectCard({
           </div>
 
           {/* Ligne 2 : statut + barre de progression + métadonnées */}
-          <div className="flex items-center gap-2 min-w-0" onClick={e => e.stopPropagation()}>
+          <div className="flex items-center gap-2 min-w-0">
             <InlineDropdown<Status>
               value={project.status}
               options={STATUS_ORDER}
@@ -146,19 +146,17 @@ export default function ProjectCard({
           </div>
         </div>
 
-        <div onClick={e => e.stopPropagation()}>
-          <InlineDropdown<Importance>
-            value={project.importance}
-            options={IMPORTANCE_ORDER}
-            labels={IMPORTANCE_LABELS}
-            onChange={onChangeImportance}
-            triggerClassName={`imp-tag imp-tag-${project.importance} flex items-center shrink-0`}
-            triggerStyle={{ fontSize: '0.62rem', padding: '2px 7px' }}
-            renderOption={opt => (
-              <span className={`imp-tag imp-tag-${opt}`} style={{ pointerEvents: 'none' }}>{IMPORTANCE_LABELS[opt]}</span>
-            )}
-          />
-        </div>
+        <InlineDropdown<Importance>
+          value={project.importance}
+          options={IMPORTANCE_ORDER}
+          labels={IMPORTANCE_LABELS}
+          onChange={onChangeImportance}
+          triggerClassName={`imp-tag imp-tag-${project.importance} flex items-center shrink-0`}
+          triggerStyle={{ fontSize: '0.62rem', padding: '2px 7px' }}
+          renderOption={opt => (
+            <span className={`imp-tag imp-tag-${opt}`} style={{ pointerEvents: 'none' }}>{IMPORTANCE_LABELS[opt]}</span>
+          )}
+        />
         <button
           onClick={e => { e.stopPropagation(); onArchive() }}
           title={project.archived ? 'Désarchiver' : 'Archiver'}
