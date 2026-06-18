@@ -48,6 +48,7 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
   const [noteModalTarget, setNoteModalTarget] = useState<NoteModalTarget | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null)
   const [selectedDetailId, setSelectedDetailId] = useState<string | null>(null)
+  const closingDetailIdRef = useRef<string | null>(null)
   const [panelPos, setPanelPos] = useState<{ top: number; left: number; connectorW: number; connectorTop: number; color: string } | null>(null)
   const [panelReady, setPanelReady] = useState(false)
   const [toasts, setToasts] = useState<Toast[]>([])
@@ -982,7 +983,11 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
                       key={p.id}
                       project={p}
                       dimmed={!!selectedDetailId && selectedDetailId !== p.id}
-                      onOpenDetail={() => { if (selectedDetailId !== p.id) setSelectedDetailId(p.id) }}
+                      onOpenDetail={() => {
+                        if (closingDetailIdRef.current === p.id) { closingDetailIdRef.current = null; return }
+                        closingDetailIdRef.current = null
+                        setSelectedDetailId(p.id)
+                      }}
                       onChangeStatus={status => handleChangeStatus(p, status)}
                       onChangeSubStatus={(sub, status) => handleChangeSubStatus(p.id, sub, status)}
                       onReorderSubprojects={reordered => handleReorderSubprojects(p.id, reordered)}
@@ -1099,7 +1104,7 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
         <DetailPanel
           project={selectedDetailProject}
           panelPos={panelPos ?? undefined}
-          onClose={noteModalTarget || deleteTarget || subModalTarget ? () => {} : () => setSelectedDetailId(null)}
+          onClose={noteModalTarget || deleteTarget || subModalTarget ? () => {} : () => { closingDetailIdRef.current = selectedDetailId; setSelectedDetailId(null) }}
           onEdit={() => setModalProject(selectedDetailProject)}
           onDuplicate={() => handleDuplicateProject(selectedDetailProject)}
           onArchive={() => handleArchiveProject(selectedDetailProject)}
