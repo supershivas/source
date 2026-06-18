@@ -118,13 +118,14 @@ export default function ProjectCard({
               labels={STATUS_LABELS}
               onChange={onChangeStatus}
               triggerClassName={`status-badge s-${project.status} flex items-center`}
+              triggerStyle={{ fontSize: '0.62rem', padding: '2px 7px' }}
               renderOption={opt => (
                 <span className={`status-badge s-${opt}`} style={{ pointerEvents: 'none' }}>{STATUS_LABELS[opt]}</span>
               )}
             />
             <div className="prog-wrap" style={{ width: 100, flexShrink: 0 }}>
               <div className="prog-bar-bg">
-                <div className="prog-fill-bg" style={{ width: `${project.progress ?? 0}%`, background: 'var(--accent)' }} />
+                <div className="prog-fill-bg" style={{ width: `${project.progress ?? 0}%`, background: (project.progress ?? 0) >= 100 ? 'var(--s-done-fg)' : 'var(--accent)' }} />
               </div>
               <span className="prog-pct">{project.progress ?? 0}%</span>
             </div>
@@ -152,6 +153,7 @@ export default function ProjectCard({
             labels={IMPORTANCE_LABELS}
             onChange={onChangeImportance}
             triggerClassName={`imp-tag imp-tag-${project.importance} flex items-center shrink-0`}
+            triggerStyle={{ fontSize: '0.62rem', padding: '2px 7px' }}
             renderOption={opt => (
               <span className={`imp-tag imp-tag-${opt}`} style={{ pointerEvents: 'none' }}>{IMPORTANCE_LABELS[opt]}</span>
             )}

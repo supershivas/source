@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useRef, useState, ReactNode } from 'react'
+import React, { useEffect, useRef, useState, ReactNode } from 'react'
 
 export default function InlineDropdown<T extends string>({
   value,
@@ -7,6 +7,7 @@ export default function InlineDropdown<T extends string>({
   labels,
   onChange,
   triggerClassName,
+  triggerStyle,
   renderOption,
 }: {
   value: T
@@ -14,6 +15,7 @@ export default function InlineDropdown<T extends string>({
   labels: Record<T, string>
   onChange: (v: T) => void
   triggerClassName?: string
+  triggerStyle?: React.CSSProperties
   renderOption?: (v: T) => ReactNode
 }) {
   const [open, setOpen] = useState(false)
@@ -47,7 +49,7 @@ export default function InlineDropdown<T extends string>({
         type="button"
         onClick={open ? () => setOpen(false) : openMenu}
         className={triggerClassName}
-        style={{ cursor: 'pointer', border: 'none', font: 'inherit' }}
+        style={{ cursor: 'pointer', border: 'none', font: 'inherit', ...triggerStyle }}
       >
         {labels[value]}
         <i className="ti ti-chevron-down" style={{ fontSize: '0.6rem', marginLeft: '4px', opacity: 0.6 }} />
