@@ -7,6 +7,11 @@ import { IMPORTANCE_LABELS, IMPORTANCE_ORDER, STATUS_ACCENT, STATUS_LABELS, STAT
 import SortableSubRow from './SortableSubRow'
 import InlineDropdown from './InlineDropdown'
 
+function nextStatus(status: Status): Status {
+  const i = STATUS_ORDER.indexOf(status)
+  return STATUS_ORDER[(i + 1) % STATUS_ORDER.length]
+}
+
 interface ProjectCardProps {
   project: Project
   onOpenDetail: () => void
