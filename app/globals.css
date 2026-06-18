@@ -191,17 +191,21 @@ input::placeholder, textarea::placeholder {
 @keyframes detail-panel-in {
   from {
     opacity: 0;
-    transform: translateX(-10px) scale(0.97);
+    transform: scale(0.94);
+    filter: blur(3px);
   }
   to {
     opacity: 1;
+    transform: scale(1);
+    filter: blur(0px);
   }
 }
 .detail-panel-enter {
-  animation: detail-panel-in 180ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: detail-panel-in 220ms cubic-bezier(0.34, 1.4, 0.64, 1) both;
+  transform-origin: top right;
 }
 .detail-connector {
-  animation: detail-panel-in 180ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: detail-panel-in 220ms cubic-bezier(0.34, 1.4, 0.64, 1) both;
 }
 @keyframes note-slide-in {
   from {
