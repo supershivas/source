@@ -43,7 +43,7 @@ export default function InlineDropdown<T extends string>({
   }, [open])
 
   return (
-    <div className="relative" onMouseDown={e => e.stopPropagation()}>
+    <div className="relative" onMouseDown={e => e.stopPropagation()} onClick={e => e.stopPropagation()}>
       <button
         ref={triggerRef}
         type="button"
