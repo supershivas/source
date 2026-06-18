@@ -585,7 +585,7 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
         .eq('id', sub.id)
         .select()
         .single()
-      if (!error && data) {
+      if (error) { showToast(error.message, 'error') } else if (data) {
         setProjects(ps =>
           ps.map(p =>
             p.id === parentId
@@ -601,7 +601,7 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
         .insert({ ...values, parent_id: parentId, trashed: false, archived: false })
         .select()
         .single()
-      if (!error && data) {
+      if (error) { showToast(error.message, 'error') } else if (data) {
         setProjects(ps =>
           ps.map(p => (p.id === parentId ? { ...p, subprojects: [...(p.subprojects || []), { ...data, notes: [] }] } : p))
         )
