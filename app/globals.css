@@ -192,12 +192,10 @@ input::placeholder, textarea::placeholder {
   from {
     opacity: 0;
     transform: scale(0.94);
-    filter: blur(3px);
   }
   to {
     opacity: 1;
     transform: scale(1);
-    filter: blur(0px);
   }
 }
 .detail-panel-enter {
