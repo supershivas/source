@@ -5,6 +5,7 @@ import { SortableContext, arrayMove, verticalListSortingStrategy } from '@dnd-ki
 import { Importance, Note, Project, Status, Subproject } from '../types'
 import { IMPORTANCE_LABELS, IMPORTANCE_ORDER, STATUS_ACCENT, STATUS_LABELS, STATUS_ORDER, dlStatus, toEU } from '../constants'
 import SortableSubRow from './SortableSubRow'
+import InlineDropdown from './InlineDropdown'
 
 interface ProjectCardProps {
   project: Project
@@ -28,15 +29,6 @@ interface ProjectCardProps {
   onDeleteNote: (note: Note, subprojectId?: string) => void
 }
 
-function nextStatus(status: Status): Status {
-  const i = STATUS_ORDER.indexOf(status)
-  return STATUS_ORDER[(i + 1) % STATUS_ORDER.length]
-}
-
-function nextImportance(importance: Importance): Importance {
-  const i = IMPORTANCE_ORDER.indexOf(importance)
-  return IMPORTANCE_ORDER[(i + 1) % IMPORTANCE_ORDER.length]
-}
 
 export default function ProjectCard({
   project,
@@ -113,19 +105,24 @@ export default function ProjectCard({
             <span className="text-sm font-semibold truncate">{project.name}</span>
           </div>
 
-          {/* Ligne 2 : barre de progression + métadonnées */}
-          <div className="flex items-center gap-2 min-w-0">
-            <button
-              onClick={e => { e.stopPropagation(); onChangeStatus(nextStatus(project.status)) }}
-              title="Cliquer pour changer le statut"
-              className="prog-wrap"
-              style={{ width: 140, flexShrink: 0, border: 'none', background: 'none', padding: 0, cursor: 'pointer' }}
-            >
+          {/* Ligne 2 : statut + barre de progression + métadonnées */}
+          <div className="flex items-center gap-2 min-w-0" onClick={e => e.stopPropagation()}>
+            <InlineDropdown<Status>
+              value={project.status}
+              options={STATUS_ORDER}
+              labels={STATUS_LABELS}
+              onChange={onChangeStatus}
+              triggerClassName={`status-badge s-${project.status} flex items-center`}
+              renderOption={opt => (
+                <span className={`status-badge s-${opt}`} style={{ pointerEvents: 'none' }}>{STATUS_LABELS[opt]}</span>
+              )}
+            />
+            <div className="prog-wrap" style={{ width: 100, flexShrink: 0 }}>
               <div className="prog-bar-bg">
                 <div className="prog-fill-bg" style={{ width: `${project.progress ?? 0}%`, background: 'var(--accent)' }} />
               </div>
               <span className="prog-pct">{project.progress ?? 0}%</span>
-            </button>
+            </div>
             <div className="flex items-center gap-1.5 min-w-0 overflow-hidden">
               {project.editor && (
                 <span className="tag-chip"><i className="ti ti-building" style={{ fontSize: '0.6rem' }} />{project.editor}</span>
@@ -143,14 +140,18 @@ export default function ProjectCard({
           </div>
         </div>
 
-        <button
-          onClick={e => { e.stopPropagation(); onChangeImportance(nextImportance(project.importance)) }}
-          title="Cliquer pour changer la priorité"
-          className={`imp-tag imp-tag-${project.importance} shrink-0`}
-          style={{ font: 'inherit' }}
-        >
-          {IMPORTANCE_LABELS[project.importance]}
-        </button>
+        <div onClick={e => e.stopPropagation()}>
+          <InlineDropdown<Importance>
+            value={project.importance}
+            options={IMPORTANCE_ORDER}
+            labels={IMPORTANCE_LABELS}
+            onChange={onChangeImportance}
+            triggerClassName={`imp-tag imp-tag-${project.importance} flex items-center shrink-0`}
+            renderOption={opt => (
+              <span className={`imp-tag imp-tag-${opt}`} style={{ pointerEvents: 'none' }}>{IMPORTANCE_LABELS[opt]}</span>
+            )}
+          />
+        </div>
         <button
           onClick={e => { e.stopPropagation(); onArchive() }}
           title={project.archived ? 'Désarchiver' : 'Archiver'}
