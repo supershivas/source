@@ -1,10 +1,11 @@
 'use client'
-import { useEffect, useRef, useState, ReactNode } from 'react'
+import React, { useEffect, useRef, useState, ReactNode } from 'react'
 import { Note, Project, Subproject, Status, Importance } from '../types'
 import { STATUS_LABELS, IMPORTANCE_LABELS, STATUS_ORDER, IMPORTANCE_ORDER, toEU } from '../constants'
 
 interface DetailPanelProps {
   project: Project
+  panelRef: React.RefObject<HTMLDivElement | null>
   panelPos?: { top: number; left: number; connectorW: number; connectorTop: number; color: string }
   onClose: () => void
   onEdit: () => void
@@ -106,6 +107,7 @@ function InlineDropdown<T extends string>({
 
 export default function DetailPanel({
   project,
+  panelRef,
   panelPos,
   onClose,
   onEdit,
@@ -122,7 +124,6 @@ export default function DetailPanel({
   onEditNote,
   onDeleteNote,
 }: DetailPanelProps) {
-  const panelRef = useRef<HTMLDivElement>(null)
   const [localProgress, setLocalProgress] = useState(project.progress ?? 0)
   const [newNoteId, setNewNoteId] = useState<string | null>(null)
   const prevNoteIdsRef = useRef<Set<string>>(new Set((project.notes || []).map(n => n.id)))
@@ -141,14 +142,6 @@ export default function DetailPanel({
     }
     prevNoteIdsRef.current = new Set(current.map(n => n.id))
   }, [project.notes])
-
-  useEffect(() => {
-    function onClickOutside(e: MouseEvent) {
-      if (panelRef.current && !panelRef.current.contains(e.target as Node)) onClose()
-    }
-    document.addEventListener('mousedown', onClickOutside)
-    return () => document.removeEventListener('mousedown', onClickOutside)
-  }, [onClose])
 
   const subprojects = (project.subprojects || []).filter(s => !s.archived)
   const notes = [...(project.notes || [])].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
