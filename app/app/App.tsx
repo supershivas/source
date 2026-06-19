@@ -405,6 +405,7 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
         .insert(payload)
         .select()
         .single()
+      if (error) console.error('[create project]', error, JSON.stringify(payload))
       if (!error && data) {
         let notes: import('./types').Note[] = []
         if (initialNote.trim()) {
@@ -419,7 +420,7 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
         setSelectedCat(values.cat)
         setSelectedYear(values.year)
         showToast('Projet créé ✓')
-      } else if (error) showToast('Erreur lors de la création', 'error')
+      } else if (error) showToast(`${error.code} : ${error.message}`, 'error')
     }
     setModalProject(undefined)
   }
