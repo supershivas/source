@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd /home/user/source && BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null) && if [ \"$BRANCH\" != 'main' ] && [ \"$BRANCH\" != 'HEAD' ] && git diff --quiet origin/main..HEAD 2>/dev/null && ! git diff --quiet origin/$BRANCH..HEAD 2>/dev/null; then echo '{\"systemMessage\": \"Branche poussée. Pensez à créer la PR sur GitHub pour déclencher le déploiement Vercel.\"}'; fi",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}
