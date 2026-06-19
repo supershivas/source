@@ -398,8 +398,6 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
         deadline: dbValues.deadline || null,
         editor: dbValues.editor || null,
         client: dbValues.client || null,
-        trashed: false,
-        archived: false,
         sort_order: maxSort + 1,
       }
       const { data, error } = await supabase
@@ -421,7 +419,7 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
         setSelectedCat(values.cat)
         setSelectedYear(values.year)
         showToast('Projet créé ✓')
-      } else if (error) showToast(`Erreur : ${error.message}`, 'error')
+      } else if (error) showToast('Erreur lors de la création', 'error')
     }
     setModalProject(undefined)
   }
@@ -525,8 +523,6 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
         date: p.date,
         deadline: p.deadline,
         ended: null,
-        archived: false,
-        trashed: false,
         sort_order: maxSort + 1,
       })
       .select()
@@ -543,8 +539,6 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
           name: s.name,
           status: s.status,
           progress: s.progress,
-          archived: false,
-          trashed: false,
         })
         .select()
         .single()
@@ -574,8 +568,6 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
         name: `${sub.name} (copie)`,
         status: sub.status,
         progress: sub.progress,
-        archived: false,
-        trashed: false,
       })
       .select()
       .single()
@@ -632,7 +624,7 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
     } else {
       const { data, error } = await supabase
         .from('subprojects')
-        .insert({ ...values, parent_id: parentId, trashed: false, archived: false })
+        .insert({ ...values, parent_id: parentId })
         .select()
         .single()
       if (error) { showToast(error.message, 'error') } else if (data) {
