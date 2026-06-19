@@ -362,10 +362,11 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
 
   // ── Projects ──
   async function handleSaveProject(values: ProjectFormValues) {
+    const { initialNote, ...dbValues } = values
     if (modalProject) {
       const { data, error } = await supabase
         .from('projects')
-        .update({ ...values, updated_at: new Date().toISOString() })
+        .update({ ...dbValues, updated_at: new Date().toISOString() })
         .eq('id', modalProject.id)
         .select()
         .single()
@@ -377,11 +378,20 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
       const maxSort = projects.reduce((m, p) => Math.max(m, p.sort_order || 0), 0)
       const { data, error } = await supabase
         .from('projects')
-        .insert({ ...values, trashed: false, archived: false, sort_order: maxSort + 1 })
+        .insert({ ...dbValues, user_id: userId, trashed: false, archived: false, sort_order: maxSort + 1 })
         .select()
         .single()
       if (!error && data) {
-        setProjects(ps => [...ps, { ...data, subprojects: [], notes: [] }])
+        let notes: import('./types').Note[] = []
+        if (initialNote.trim()) {
+          const { data: noteData } = await supabase
+            .from('notes')
+            .insert({ text: initialNote.trim(), date: null, project_id: data.id })
+            .select()
+            .single()
+          if (noteData) notes = [noteData]
+        }
+        setProjects(ps => [...ps, { ...data, subprojects: [], notes }])
         setSelectedCat(values.cat)
         setSelectedYear(values.year)
         showToast('Projet créé ✓')
