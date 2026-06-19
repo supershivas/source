@@ -392,9 +392,19 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
       } else if (error) showToast('Erreur lors de la mise à jour', 'error')
     } else {
       const maxSort = projects.reduce((m, p) => Math.max(m, p.sort_order || 0), 0)
+      const payload = {
+        ...dbValues,
+        date: dbValues.date || null,
+        deadline: dbValues.deadline || null,
+        editor: dbValues.editor || null,
+        client: dbValues.client || null,
+        trashed: false,
+        archived: false,
+        sort_order: maxSort + 1,
+      }
       const { data, error } = await supabase
         .from('projects')
-        .insert({ ...dbValues, user_id: userId, trashed: false, archived: false, sort_order: maxSort + 1 })
+        .insert(payload)
         .select()
         .single()
       if (!error && data) {
@@ -411,7 +421,7 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
         setSelectedCat(values.cat)
         setSelectedYear(values.year)
         showToast('Projet créé ✓')
-      } else if (error) showToast('Erreur lors de la création', 'error')
+      } else if (error) showToast(`Erreur : ${error.message}`, 'error')
     }
     setModalProject(undefined)
   }
