@@ -379,10 +379,23 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
   // ── Projects ──
   async function handleSaveProject(values: ProjectFormValues) {
     const { initialNote, ...dbValues } = values
+    const cleanProject = {
+      number: dbValues.number,
+      name: dbValues.name,
+      cat: dbValues.cat,
+      year: dbValues.year,
+      status: dbValues.status,
+      progress: dbValues.progress,
+      importance: dbValues.importance,
+      editor: dbValues.editor || null,
+      client: dbValues.client || null,
+      date: dbValues.date || null,
+      deadline: dbValues.deadline || null,
+    }
     if (modalProject) {
       const { data, error } = await supabase
         .from('projects')
-        .update({ ...dbValues, updated_at: new Date().toISOString() })
+        .update({ ...cleanProject, updated_at: new Date().toISOString() })
         .eq('id', modalProject.id)
         .select()
         .single()
@@ -393,12 +406,8 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
     } else {
       const maxSort = projects.reduce((m, p) => Math.max(m, p.sort_order || 0), 0)
       const payload = {
-        ...dbValues,
+        ...cleanProject,
         user_id: userId,
-        date: dbValues.date || null,
-        deadline: dbValues.deadline || null,
-        editor: dbValues.editor || null,
-        client: dbValues.client || null,
         archived: false,
         sort_order: maxSort + 1,
       }
@@ -412,7 +421,7 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
         if (initialNote.trim()) {
           const { data: noteData } = await supabase
             .from('notes')
-            .insert({ text: initialNote.trim(), date: null, project_id: data.id })
+            .insert({ text: initialNote.trim(), project_id: data.id })
             .select()
             .single()
           if (noteData) notes = [noteData]
@@ -427,10 +436,12 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
   }
 
   async function handleDeleteProject(id: string) {
-    const { error } = await supabase.from('projects').update({ trashed: true }).eq('id', id)
+    await supabase.from('subprojects').delete().eq('parent_id', id)
+    await supabase.from('notes').delete().eq('project_id', id)
+    const { error } = await supabase.from('projects').delete().eq('id', id)
     if (!error) {
-      updateProject(id, { trashed: true })
-      showToast('Projet déplacé dans la corbeille')
+      setProjects(ps => ps.filter(p => p.id !== id))
+      showToast('Projet supprimé')
       setSelectedDetailId(prev => (prev === id ? null : prev))
     }
     setDeleteTarget(null)
@@ -585,11 +596,7 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
   }
 
   async function handleRestoreProject(id: string) {
-    const { error } = await supabase.from('projects').update({ trashed: false }).eq('id', id)
-    if (!error) {
-      updateProject(id, { trashed: false })
-      showToast('Projet restauré')
-    }
+    showToast('Corbeille non disponible (colonne absente en DB)')
   }
 
   async function handleDeleteProjectForever(id: string) {
@@ -611,7 +618,7 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
     if (sub) {
       const { data, error } = await supabase
         .from('subprojects')
-        .update({ ...values, updated_at: new Date().toISOString() })
+        .update({ ...values, deadline: values.deadline || null })
         .eq('id', sub.id)
         .select()
         .single()
@@ -628,7 +635,7 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
     } else {
       const { data, error } = await supabase
         .from('subprojects')
-        .insert({ ...values, parent_id: parentId })
+        .insert({ ...values, deadline: values.deadline || null, parent_id: parentId })
         .select()
         .single()
       if (error) { showToast(error.message, 'error') } else if (data) {
