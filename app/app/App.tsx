@@ -394,10 +394,12 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
       const maxSort = projects.reduce((m, p) => Math.max(m, p.sort_order || 0), 0)
       const payload = {
         ...dbValues,
+        user_id: userId,
         date: dbValues.date || null,
         deadline: dbValues.deadline || null,
         editor: dbValues.editor || null,
         client: dbValues.client || null,
+        archived: false,
         sort_order: maxSort + 1,
       }
       const { data, error } = await supabase
@@ -405,7 +407,6 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
         .insert(payload)
         .select()
         .single()
-      if (error) console.error('[create project]', error, JSON.stringify(payload))
       if (!error && data) {
         let notes: import('./types').Note[] = []
         if (initialNote.trim()) {
@@ -420,7 +421,7 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
         setSelectedCat(values.cat)
         setSelectedYear(values.year)
         showToast('Projet créé ✓')
-      } else if (error) showToast(`${error.code} : ${error.message}`, 'error')
+      } else if (error) showToast('Erreur lors de la création', 'error')
     }
     setModalProject(undefined)
   }
@@ -524,6 +525,8 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
         date: p.date,
         deadline: p.deadline,
         ended: null,
+        user_id: userId,
+        archived: false,
         sort_order: maxSort + 1,
       })
       .select()
