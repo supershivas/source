@@ -2,12 +2,21 @@ import Link from 'next/link'
 
 export default function Home() {
   return (
-    <main className="t-bg-app flex min-h-screen flex-col items-center justify-center gap-6">
-      <h1 className="text-3xl font-semibold t-text">Source</h1>
+    <main style={{ background: '#1C1C1E', minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '32px' }}>
+      <h1 style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: '48px', fontWeight: 700, color: 'rgba(255,255,255,0.92)', letterSpacing: '-0.02em', margin: 0 }}>
+        Source
+      </h1>
       <Link
         href="/login"
-        className="rounded-lg px-6 py-3 text-sm font-medium"
-        style={{ background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-fg)' }}
+        style={{
+          background: '#C0392B',
+          color: '#fff',
+          borderRadius: '10px',
+          padding: '11px 28px',
+          fontSize: '14px',
+          fontWeight: 600,
+          textDecoration: 'none',
+        }}
       >
         Se connecter
       </Link>
