@@ -64,6 +64,7 @@ export default function ProjectCard({
   const [archiving, setArchiving] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
+  const cardRef = useRef<HTMLDivElement>(null)
   const archiveCalledRef = useRef(false)
 
   useEffect(() => {
@@ -116,14 +117,16 @@ export default function ProjectCard({
       const rect = btn.getBoundingClientRect()
       spawnFireworks(rect.left + rect.width / 2, rect.top + rect.height / 2)
       setArchiving(true)
-      setTimeout(() => {
-        setArchiving(false)
-        if (!archiveCalledRef.current) {
-          archiveCalledRef.current = true
-          onArchive()
-        }
-      }, 580)
     } else {
+      onArchive()
+    }
+  }
+
+  function handleAnimationEnd() {
+    if (archiving && !archiveCalledRef.current) {
+      archiveCalledRef.current = true
+      // Masquer immédiatement via DOM pour éviter le flash de démontage React
+      if (cardRef.current) cardRef.current.style.visibility = 'hidden'
       onArchive()
     }
   }
@@ -146,9 +149,11 @@ export default function ProjectCard({
 
   return (
     <div
+      ref={cardRef}
       className={`t-bg-card rounded-lg p-3 cursor-grab active:cursor-grabbing relative overflow-visible${archiving ? ' card-archiving' : ''}`}
       style={{ boxShadow: 'var(--card-shadow)', borderLeft: `3px solid ${STATUS_ACCENT[project.status]}` }}
       onClick={onOpenDetail}
+      onAnimationEnd={handleAnimationEnd}
     >
       <div className="flex items-center gap-3">
         {onToggleSelect && (
