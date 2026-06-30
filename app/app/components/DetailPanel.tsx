@@ -30,79 +30,6 @@ type EditableField = 'name' | 'number' | 'editor' | 'client' | 'date' | 'deadlin
 
 function isStatusNote(text: string) { return text.startsWith('→ ') }
 
-function Timeline({ date, deadline, ended }: { date?: string | null; deadline?: string | null; ended?: string | null }) {
-  const today = new Date()
-  const dates: { key: string; label: string; iso: string; color: string }[] = []
-  if (date) dates.push({ key: 'start', label: 'Début', iso: date, color: '#16a34a' })
-  if (deadline) dates.push({ key: 'dl', label: 'Deadline', iso: deadline, color: '#dc2626' })
-  if (ended) dates.push({ key: 'end', label: 'Fin', iso: ended, color: '#6366f1' })
-
-  if (dates.length < 2) {
-    return (
-      <div className="flex gap-4 flex-wrap mb-4">
-        {dates.map(d => (
-          <span key={d.key} style={{ fontSize: '0.72rem', color: d.color, fontWeight: 600 }}>
-            {d.label} : {toEU(d.iso)}
-          </span>
-        ))}
-        {dates.length === 0 && <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>Aucune date renseignée</span>}
-      </div>
-    )
-  }
-
-  const allTs = dates.map(d => new Date(d.iso).getTime())
-  const minTs = Math.min(...allTs)
-  const maxTs = Math.max(...allTs)
-  const range = maxTs - minTs || 1
-  const todayTs = today.getTime()
-  const todayPct = Math.max(0, Math.min(100, ((todayTs - minTs) / range) * 100))
-  const fillPct = Math.min(todayPct, 100)
-
-  function pct(iso: string) { return Math.max(0, Math.min(100, ((new Date(iso).getTime() - minTs) / range) * 100)) }
-  function fmtShort(iso: string) {
-    const d = new Date(iso)
-    return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`
-  }
-
-  return (
-    <div className="mb-4" style={{ paddingBottom: 36 }}>
-      <div style={{ position: 'relative', height: 4, background: 'var(--border)', borderRadius: 2, margin: '0 8px' }}>
-        {/* filled */}
-        <div style={{ position: 'absolute', left: 0, top: 0, height: '100%', width: `${fillPct}%`, background: 'linear-gradient(90deg,#16a34a,#dc2626)', borderRadius: 2 }} />
-
-        {/* dots */}
-        {dates.map(d => {
-          const p = pct(d.iso)
-          const isFirst = p < 15
-          const isLast = p > 80
-          return (
-            <div key={d.key} style={{ position: 'absolute', top: '50%', left: `${p}%`, transform: 'translate(-50%,-50%)' }}>
-              <div style={{ width: 11, height: 11, borderRadius: '50%', background: d.color, border: '2px solid var(--card-bg)', boxShadow: `0 0 0 1.5px ${d.color}` }} />
-              <div style={{
-                position: 'absolute', top: 13,
-                left: 0,
-                transform: isFirst ? 'translateX(-8%)' : isLast ? 'translateX(-82%)' : 'translateX(-42%)',
-                fontSize: '0.6rem', whiteSpace: 'nowrap', textAlign: 'center', lineHeight: 1.35,
-              }}>
-                <span style={{ display: 'block', color: 'var(--text-muted)' }}>{d.label}</span>
-                <span style={{ display: 'block', fontWeight: 700, color: d.color }}>{fmtShort(d.iso)}</span>
-              </div>
-            </div>
-          )
-        })}
-
-        {/* today */}
-        {todayPct > 2 && todayPct < 98 && (
-          <div style={{ position: 'absolute', top: '50%', left: `${todayPct}%`, transform: 'translate(-50%,-50%)' }}>
-            <div style={{ width: 1.5, height: 22, background: 'var(--text-muted)', position: 'absolute', top: '50%', left: 0, transform: 'translate(-50%,-50%)' }} />
-            <div style={{ position: 'absolute', bottom: 14, left: '50%', transform: 'translateX(-50%)', fontSize: '0.55rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>auj.</div>
-          </div>
-        )}
-      </div>
-    </div>
-  )
-}
-
 export default function DetailPanel({
   project,
   panelRef,
@@ -313,22 +240,86 @@ export default function DetailPanel({
           <span className="t-text-muted shrink-0" style={{ width: 72, fontSize: '0.72rem' }}>Client</span>
           <InlineText field="client" placeholder="—" />
         </div>
-        <div className="flex items-center gap-2">
-          <span className="t-text-muted shrink-0" style={{ width: 72, fontSize: '0.72rem' }}>Début</span>
-          <InlineDate field="date" placeholder="—" />
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="t-text-muted shrink-0" style={{ width: 72, fontSize: '0.72rem' }}>Deadline</span>
-          <InlineDate field="deadline" placeholder="—" />
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="t-text-muted shrink-0" style={{ width: 72, fontSize: '0.72rem' }}>Fin</span>
-          <InlineDate field="ended" placeholder="—" />
-        </div>
       </div>
 
-      {/* Timeline B2 */}
-      <Timeline date={project.date} deadline={project.deadline} ended={project.ended} />
+      {/* Timeline — toujours 3 points fixes, cliquables */}
+      {(() => {
+        const pts = [
+          { field: 'date' as const,     label: 'Début',    color: '#16a34a', pos: 0 },
+          { field: 'deadline' as const, label: 'Deadline', color: '#dc2626', pos: 50 },
+          { field: 'ended' as const,    label: 'Fin',      color: '#6366f1', pos: 100 },
+        ]
+        // today position: based on date + deadline if available
+        const d0 = project.date ? new Date(project.date).getTime() : null
+        const d1 = project.deadline ? new Date(project.deadline).getTime() : null
+        const d2 = project.ended ? new Date(project.ended).getTime() : null
+        const knownTs = [d0, d1, d2].filter(Boolean) as number[]
+        const minTs = knownTs.length ? Math.min(...knownTs) : null
+        const maxTs = knownTs.length > 1 ? Math.max(...knownTs) : null
+        const todayTs = new Date().getTime()
+        const todayPct = (minTs && maxTs && maxTs > minTs)
+          ? Math.max(2, Math.min(98, ((todayTs - minTs) / (maxTs - minTs)) * 100))
+          : null
+
+        function fmtShort(iso: string) {
+          const d = new Date(iso)
+          return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`
+        }
+
+        return (
+          <div className="mb-4" style={{ paddingBottom: 40 }}>
+            <div style={{ position: 'relative', height: 4, background: 'var(--border)', borderRadius: 2, margin: '0 8px' }}>
+              {/* fill bar start→today */}
+              {todayPct && d0 && (
+                <div style={{ position: 'absolute', left: 0, top: 0, height: '100%', width: `${todayPct / 2}%`, background: 'linear-gradient(90deg,#16a34a,#dc2626)', borderRadius: 2, opacity: 0.7 }} />
+              )}
+
+              {/* 3 fixed dots */}
+              {pts.map(pt => {
+                const iso = pt.field === 'date' ? project.date : pt.field === 'deadline' ? project.deadline : project.ended
+                const empty = !iso
+                return (
+                  <div key={pt.field} style={{ position: 'absolute', top: '50%', left: `${pt.pos}%`, transform: 'translate(-50%,-50%)', cursor: 'pointer' }} onClick={() => setEditing(pt.field)}>
+                    <div style={{
+                      width: 11, height: 11, borderRadius: '50%',
+                      background: empty ? 'var(--border)' : pt.color,
+                      border: `2px solid var(--card-bg)`,
+                      boxShadow: `0 0 0 1.5px ${empty ? 'var(--border)' : pt.color}`,
+                      transition: 'background 0.15s',
+                    }} />
+                    <div style={{
+                      position: 'absolute', top: 13, left: 0,
+                      transform: pt.pos === 0 ? 'translateX(-8%)' : pt.pos === 100 ? 'translateX(-82%)' : 'translateX(-42%)',
+                      fontSize: '0.6rem', whiteSpace: 'nowrap', textAlign: 'center', lineHeight: 1.35,
+                    }}>
+                      <span style={{ display: 'block', color: 'var(--text-muted)' }}>{pt.label}</span>
+                      {editing === pt.field ? (
+                        <DateInput
+                          value={iso || ''}
+                          onChange={v => { onUpdateField({ [pt.field]: v || null }); setEditing(null) }}
+                          className="inline-edit-input text-xs"
+                        />
+                      ) : (
+                        <span style={{ display: 'block', fontWeight: iso ? 700 : 400, color: iso ? pt.color : 'var(--text-muted)', fontStyle: iso ? 'normal' : 'italic' }}>
+                          {iso ? fmtShort(iso) : '—'}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
+
+              {/* today marker */}
+              {todayPct && (
+                <div style={{ position: 'absolute', top: '50%', left: `${todayPct / 2}%`, transform: 'translate(-50%,-50%)', pointerEvents: 'none' }}>
+                  <div style={{ width: 1.5, height: 22, background: 'var(--text-muted)', position: 'absolute', top: '50%', left: 0, transform: 'translate(-50%,-50%)' }} />
+                  <div style={{ position: 'absolute', bottom: 14, left: '50%', transform: 'translateX(-50%)', fontSize: '0.55rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>auj.</div>
+                </div>
+              )}
+            </div>
+          </div>
+        )
+      })()}
 
       {/* Divider */}
       <div style={{ height: 1, background: 'var(--border)', margin: '0 0 16px' }} />

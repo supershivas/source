@@ -259,9 +259,12 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
       }
       const target = e.target as HTMLElement
       if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT') return
-      if (e.key === 'Escape' && selectedDetailId) {
-        setSelectedDetailId(null)
-        return
+      if (e.key === 'Escape') {
+        if (selectedDetailId) { setSelectedDetailId(null); return }
+        if (showCalendar || showDashboard || showArchived || showTrash) {
+          setShowCalendar(false); setShowDashboard(false); setShowArchived(false); setShowTrash(false)
+          return
+        }
       }
       if (e.key === 'n' || e.key === 'N') {
         e.preventDefault()
@@ -277,7 +280,7 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
     }
     document.addEventListener('keydown', onKeyDown)
     return () => document.removeEventListener('keydown', onKeyDown)
-  }, [exportCSV, selectedDetailId])
+  }, [exportCSV, selectedDetailId, showCalendar, showDashboard, showArchived, showTrash])
 
   useEffect(() => {
     if (!selectedDetailId) return
@@ -1042,15 +1045,22 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
               <i className="ti ti-menu-2" />
             </button>
           )}
-          <h1 className="text-lg font-semibold">
-            {showTrash
-              ? 'Corbeille'
-              : showCalendar
-              ? 'Calendrier'
-              : `${selectedCat === 'pro' ? 'Pro' : 'Perso'} · ${selectedYear}${
-                  showDashboard ? ' · Dashboard' : showArchived ? ' · Archivés' : ''
-                }`}
-          </h1>
+          {(() => {
+            const isSpecial = showTrash || showCalendar || showDashboard || showArchived
+            const specialLabel = showTrash ? 'Corbeille' : showCalendar ? 'Calendrier' : showDashboard ? 'Dashboard' : 'Archivés'
+            const baseLabel = `${selectedCat === 'pro' ? 'Pro' : 'Perso'} · ${selectedYear}`
+            const goBack = () => { setShowTrash(false); setShowCalendar(false); setShowDashboard(false); setShowArchived(false) }
+            if (isSpecial) return (
+              <h1 className="text-lg font-semibold flex items-center gap-1.5">
+                <button onClick={goBack} className="flex items-center gap-1 hover:opacity-70 transition-opacity" style={{ color: 'var(--text-muted)', fontWeight: 400, fontSize: '1rem' }}>
+                  {baseLabel}
+                </button>
+                <span style={{ color: 'var(--text-muted)', fontWeight: 300 }}>›</span>
+                <span>{specialLabel}</span>
+              </h1>
+            )
+            return <h1 className="text-lg font-semibold">{baseLabel}</h1>
+          })()}
         </div>
 
         {showTrash ? (
