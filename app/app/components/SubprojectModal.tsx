@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import { Status } from '../types'
 import { STATUS_LABELS, STATUS_ORDER, AUTO_PROGRESS } from '../constants'
+import DateInput from './DateInput'
 
 export interface SubprojectFormValues {
   number: string
@@ -102,12 +103,10 @@ export default function SubprojectModal({ initial, parentNumber, onSave, onClose
             </div>
             <div className="flex-1">
               <label className="text-xs t-text-muted">Échéance</label>
-              <input
-                type="date"
-                lang="fr-FR"
-                className="w-full rounded-lg border px-3 py-2 text-sm t-border"
+              <DateInput
                 value={values.deadline}
-                onChange={e => setValues(v => ({ ...v, deadline: e.target.value }))}
+                onChange={v => setValues(vs => ({ ...vs, deadline: v }))}
+                className="w-full rounded-lg border px-3 py-2 text-sm t-border"
               />
             </div>
           </div>
