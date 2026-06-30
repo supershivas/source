@@ -282,8 +282,23 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
     return () => document.removeEventListener('keydown', onKeyDown)
   }, [exportCSV, selectedDetailId, showCalendar, showDashboard, showArchived, showTrash])
 
-  // Le panneau se ferme uniquement via le bouton X, la touche Escape,
-  // ou en cliquant sur une autre carte.
+  useEffect(() => {
+    if (!selectedDetailId) return
+    function onMouseDown(e: MouseEvent) {
+      if (noteModalTarget || deleteTarget || subModalTarget) return
+      const t = e.target as Element
+      // Si la cible a été retirée du DOM avant que ce handler ne s'exécute
+      // (ex : option d'un InlineDropdown qui se ferme via setOpen(false)),
+      // le clic était "à l'intérieur" — ne pas fermer le panneau.
+      if (!document.contains(t)) return
+      if (t.closest('[data-detail-panel]')) return
+      if (t.closest(`[data-card-id="${selectedDetailId}"]`)) return
+      closingDetailIdRef.current = selectedDetailId
+      setSelectedDetailId(null)
+    }
+    document.addEventListener('mousedown', onMouseDown)
+    return () => document.removeEventListener('mousedown', onMouseDown)
+  }, [selectedDetailId, noteModalTarget, deleteTarget, subModalTarget])
 
   const visibleProjects = useMemo(() => {
     let list = projects.filter(
