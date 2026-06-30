@@ -506,6 +506,12 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
     const { error } = await supabase.from('projects').update(patch).eq('id', p.id)
     if (!error) {
       updateProject(p.id, patch)
+      // Auto-note de changement de statut
+      const noteText = `→ ${STATUS_LABELS[status]}`
+      const { data: noteData } = await supabase.from('notes').insert({ text: noteText, project_id: p.id }).select().single()
+      if (noteData) {
+        setProjects(ps => ps.map(proj => proj.id === p.id ? { ...proj, notes: [...(proj.notes || []), noteData] } : proj))
+      }
       showToast('Statut mis à jour ✓')
     }
   }

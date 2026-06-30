@@ -1,7 +1,7 @@
 'use client'
 import React, { useEffect, useRef, useState } from 'react'
 import { Note, Project, Subproject, Status, Importance } from '../types'
-import { STATUS_LABELS, IMPORTANCE_LABELS, STATUS_ORDER, IMPORTANCE_ORDER, toEU } from '../constants'
+import { STATUS_LABELS, STATUS_ACCENT, IMPORTANCE_LABELS, STATUS_ORDER, IMPORTANCE_ORDER, toEU } from '../constants'
 import InlineDropdown from './InlineDropdown'
 import DateInput from './DateInput'
 
@@ -28,6 +28,81 @@ interface DetailPanelProps {
 
 type EditableField = 'name' | 'number' | 'editor' | 'client' | 'date' | 'deadline' | 'ended'
 
+function isStatusNote(text: string) { return text.startsWith('→ ') }
+
+function Timeline({ date, deadline, ended }: { date?: string | null; deadline?: string | null; ended?: string | null }) {
+  const today = new Date()
+  const dates: { key: string; label: string; iso: string; color: string }[] = []
+  if (date) dates.push({ key: 'start', label: 'Début', iso: date, color: '#16a34a' })
+  if (deadline) dates.push({ key: 'dl', label: 'Deadline', iso: deadline, color: '#dc2626' })
+  if (ended) dates.push({ key: 'end', label: 'Fin', iso: ended, color: '#6366f1' })
+
+  if (dates.length < 2) {
+    return (
+      <div className="flex gap-4 flex-wrap mb-4">
+        {dates.map(d => (
+          <span key={d.key} style={{ fontSize: '0.72rem', color: d.color, fontWeight: 600 }}>
+            {d.label} : {toEU(d.iso)}
+          </span>
+        ))}
+        {dates.length === 0 && <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>Aucune date renseignée</span>}
+      </div>
+    )
+  }
+
+  const allTs = dates.map(d => new Date(d.iso).getTime())
+  const minTs = Math.min(...allTs)
+  const maxTs = Math.max(...allTs)
+  const range = maxTs - minTs || 1
+  const todayTs = today.getTime()
+  const todayPct = Math.max(0, Math.min(100, ((todayTs - minTs) / range) * 100))
+  const fillPct = Math.min(todayPct, 100)
+
+  function pct(iso: string) { return Math.max(0, Math.min(100, ((new Date(iso).getTime() - minTs) / range) * 100)) }
+  function fmtShort(iso: string) {
+    const d = new Date(iso)
+    return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`
+  }
+
+  return (
+    <div className="mb-4" style={{ paddingBottom: 36 }}>
+      <div style={{ position: 'relative', height: 4, background: 'var(--border)', borderRadius: 2, margin: '0 8px' }}>
+        {/* filled */}
+        <div style={{ position: 'absolute', left: 0, top: 0, height: '100%', width: `${fillPct}%`, background: 'linear-gradient(90deg,#16a34a,#dc2626)', borderRadius: 2 }} />
+
+        {/* dots */}
+        {dates.map(d => {
+          const p = pct(d.iso)
+          const isFirst = p < 15
+          const isLast = p > 80
+          return (
+            <div key={d.key} style={{ position: 'absolute', top: '50%', left: `${p}%`, transform: 'translate(-50%,-50%)' }}>
+              <div style={{ width: 11, height: 11, borderRadius: '50%', background: d.color, border: '2px solid var(--card-bg)', boxShadow: `0 0 0 1.5px ${d.color}` }} />
+              <div style={{
+                position: 'absolute', top: 13,
+                left: 0,
+                transform: isFirst ? 'translateX(-8%)' : isLast ? 'translateX(-82%)' : 'translateX(-42%)',
+                fontSize: '0.6rem', whiteSpace: 'nowrap', textAlign: 'center', lineHeight: 1.35,
+              }}>
+                <span style={{ display: 'block', color: 'var(--text-muted)' }}>{d.label}</span>
+                <span style={{ display: 'block', fontWeight: 700, color: d.color }}>{fmtShort(d.iso)}</span>
+              </div>
+            </div>
+          )
+        })}
+
+        {/* today */}
+        {todayPct > 2 && todayPct < 98 && (
+          <div style={{ position: 'absolute', top: '50%', left: `${todayPct}%`, transform: 'translate(-50%,-50%)' }}>
+            <div style={{ width: 1.5, height: 22, background: 'var(--text-muted)', position: 'absolute', top: '50%', left: 0, transform: 'translate(-50%,-50%)' }} />
+            <div style={{ position: 'absolute', bottom: 14, left: '50%', transform: 'translateX(-50%)', fontSize: '0.55rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>auj.</div>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
 export default function DetailPanel({
   project,
   panelRef,
@@ -39,7 +114,7 @@ export default function DetailPanel({
   onDelete,
   onChangeStatus,
   onChangeImportance,
-  onChangeProgress,
+  onChangeProgress: _onChangeProgress,
   onUpdateField,
   onAddSubproject,
   onEditSubproject,
@@ -48,7 +123,6 @@ export default function DetailPanel({
   onEditNote,
   onDeleteNote,
 }: DetailPanelProps) {
-  const [localProgress, setLocalProgress] = useState(project.progress ?? 0)
   const [newNoteId, setNewNoteId] = useState<string | null>(null)
   const prevNoteIdsRef = useRef<Set<string>>(new Set((project.notes || []).map(n => n.id)))
   const [editing, setEditing] = useState<EditableField | null>(null)
@@ -56,8 +130,7 @@ export default function DetailPanel({
   const inputRef = useRef<HTMLInputElement>(null)
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => { setLocalProgress(project.progress ?? 0) }, [project.progress])
+  const [noteTab, setNoteTab] = useState<'all' | 'notes' | 'history'>('all')
 
   useEffect(() => {
     const prev = prevNoteIdsRef.current
@@ -71,7 +144,6 @@ export default function DetailPanel({
     if (editing && inputRef.current) inputRef.current.focus()
   }, [editing])
 
-  // Close "···" menu on outside click
   useEffect(() => {
     if (!menuOpen) return
     function onDown(e: MouseEvent) {
@@ -82,8 +154,7 @@ export default function DetailPanel({
   }, [menuOpen])
 
   function startEdit(field: EditableField) {
-    const val = (project[field] as string | null | undefined) || ''
-    setDraft(val)
+    setDraft((project[field] as string | null | undefined) || '')
     setEditing(field)
   }
 
@@ -103,13 +174,20 @@ export default function DetailPanel({
   }
 
   const subprojects = (project.subprojects || []).filter(s => !s.archived)
-  const notes = [...(project.notes || [])].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+  const allNotes = [...(project.notes || [])].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+  const visibleNotes = noteTab === 'all' ? allNotes : noteTab === 'notes' ? allNotes.filter(n => !isStatusNote(n.text)) : allNotes.filter(n => isStatusNote(n.text))
 
   function fmtDate(iso: string) {
     return new Date(iso).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' })
   }
 
-  // Generic text field renderer
+  // Finds the status from a status-note text (e.g. "→ Ongoing" → 'ongoing')
+  function statusFromNote(text: string): Status | null {
+    const label = text.slice(2).trim()
+    const entry = Object.entries(STATUS_LABELS).find(([, l]) => l === label)
+    return entry ? (entry[0] as Status) : null
+  }
+
   function InlineText({ field, placeholder, className = '', large = false }: { field: EditableField; placeholder: string; className?: string; large?: boolean }) {
     const val = (project[field] as string | null | undefined) || ''
     if (editing === field) {
@@ -136,7 +214,6 @@ export default function DetailPanel({
     )
   }
 
-  // Date field renderer
   function InlineDate({ field, placeholder }: { field: 'date' | 'deadline' | 'ended'; placeholder: string }) {
     const val = (project[field] as string | null | undefined) || ''
     if (editing === field) {
@@ -207,7 +284,7 @@ export default function DetailPanel({
       </div>
 
       {/* Statut + Importance */}
-      <div className="flex items-center gap-2 mb-3">
+      <div className="flex items-center gap-2 mb-4">
         <InlineDropdown<Status>
           value={project.status}
           options={STATUS_ORDER}
@@ -226,23 +303,8 @@ export default function DetailPanel({
         />
       </div>
 
-      {/* Progression */}
-      <div className="mb-4">
-        <div className="flex items-center gap-2">
-          <input
-            type="range" min={0} max={100} step={5}
-            value={localProgress}
-            onChange={e => setLocalProgress(Number(e.target.value))}
-            onMouseUp={e => onChangeProgress(Number((e.target as HTMLInputElement).value))}
-            onTouchEnd={e => onChangeProgress(Number((e.target as HTMLInputElement).value))}
-            className="flex-1" style={{ accentColor: 'var(--accent)', cursor: 'pointer' }}
-          />
-          <span className="prog-pct" style={{ minWidth: '2.5rem', textAlign: 'right' }}>{localProgress}%</span>
-        </div>
-      </div>
-
       {/* Champs éditables */}
-      <div className="mb-4 flex flex-col gap-2 text-sm">
+      <div className="mb-3 flex flex-col gap-2 text-sm">
         <div className="flex items-center gap-2">
           <span className="t-text-muted shrink-0" style={{ width: 72, fontSize: '0.72rem' }}>Éditeur</span>
           <InlineText field="editor" placeholder="—" />
@@ -265,10 +327,16 @@ export default function DetailPanel({
         </div>
       </div>
 
+      {/* Timeline B2 */}
+      <Timeline date={project.date} deadline={project.deadline} ended={project.ended} />
+
+      {/* Divider */}
+      <div style={{ height: 1, background: 'var(--border)', margin: '0 0 16px' }} />
+
       {/* Sous-projets */}
       <div className="mb-4">
-        <div className="flex items-center justify-between mb-1">
-          <span className="text-xs font-medium t-text-muted uppercase">Sous-projets ({subprojects.length})</span>
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-xs font-semibold t-text-muted uppercase tracking-wide">Sous-projets ({subprojects.length})</span>
           <button onClick={onAddSubproject} className="text-xs" style={{ color: 'var(--accent)' }}>+ Ajouter</button>
         </div>
         {subprojects.length === 0 && <p className="text-xs t-text-muted">Aucun sous-projet.</p>}
@@ -312,28 +380,64 @@ export default function DetailPanel({
         </div>
       </div>
 
-      {/* Notes */}
+      <div style={{ height: 1, background: 'var(--border)', margin: '0 0 16px' }} />
+
+      {/* Notes + historique statuts */}
       <div>
-        <div className="flex items-center justify-between mb-1">
-          <span className="text-xs font-medium t-text-muted uppercase">Notes</span>
-          <button onClick={() => onAddNote()} className="text-xs" style={{ color: 'var(--accent)' }}>+ Ajouter</button>
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-xs font-semibold t-text-muted uppercase tracking-wide">Notes & historique</span>
+          <button onClick={() => onAddNote()} className="text-xs" style={{ color: 'var(--accent)' }}>+ Note</button>
         </div>
-        {notes.length === 0 && <p className="text-xs t-text-muted">Aucune note.</p>}
-        <div className="flex flex-col gap-1.5">
-          {notes.map(n => (
-            <div key={n.id} className={`flex items-start gap-2 rounded border t-border px-2 py-1.5${n.id === newNoteId ? ' note-enter' : ''}`}>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm">{n.text}</p>
-                <span className="text-xs t-text-muted">{fmtDate(n.created_at)}</span>
-              </div>
-              <button onClick={() => onEditNote(n)} className="sidebar-icon-btn rounded p-1" style={{ color: 'var(--text-muted)' }}>
-                <i className="ti ti-edit" />
-              </button>
-              <button onClick={() => onDeleteNote(n)} className="sidebar-icon-btn rounded p-1" style={{ color: 'var(--text-muted)' }}>
-                <i className="ti ti-trash" />
-              </button>
-            </div>
+
+        {/* Tabs */}
+        <div className="flex gap-1 mb-3">
+          {(['all', 'notes', 'history'] as const).map(tab => (
+            <button
+              key={tab}
+              onClick={() => setNoteTab(tab)}
+              style={{
+                fontSize: '0.68rem', padding: '3px 10px', borderRadius: 6,
+                border: '1px solid var(--border)', cursor: 'pointer',
+                background: noteTab === tab ? 'var(--text-primary)' : 'transparent',
+                color: noteTab === tab ? 'var(--card-bg)' : 'var(--text-muted)',
+              }}
+            >
+              {tab === 'all' ? 'Tout' : tab === 'notes' ? 'Notes' : 'Historique'}
+            </button>
           ))}
+        </div>
+
+        {visibleNotes.length === 0 && <p className="text-xs t-text-muted">Aucune entrée.</p>}
+        <div className="flex flex-col gap-1.5">
+          {visibleNotes.map(n => {
+            if (isStatusNote(n.text)) {
+              const s = statusFromNote(n.text)
+              const color = s ? STATUS_ACCENT[s] : 'var(--text-muted)'
+              return (
+                <div key={n.id} className="flex items-center gap-2 rounded px-2 py-1.5" style={{ border: '1px solid var(--border)', background: 'var(--hover-bg, rgba(0,0,0,0.015))' }}>
+                  <span style={{ width: 7, height: 7, borderRadius: '50%', background: color, flexShrink: 0, display: 'inline-block' }} />
+                  <span className="flex-1 text-xs" style={{ color: 'var(--text-secondary)' }}>
+                    Statut → <strong>{n.text.slice(2)}</strong>
+                  </span>
+                  <span className="text-xs t-text-muted shrink-0">{fmtDate(n.created_at)}</span>
+                </div>
+              )
+            }
+            return (
+              <div key={n.id} className={`flex items-start gap-2 rounded border t-border px-2 py-1.5${n.id === newNoteId ? ' note-enter' : ''}`}>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm">{n.text}</p>
+                  <span className="text-xs t-text-muted">{fmtDate(n.created_at)}</span>
+                </div>
+                <button onClick={() => onEditNote(n)} className="sidebar-icon-btn rounded p-1" style={{ color: 'var(--text-muted)' }}>
+                  <i className="ti ti-edit" />
+                </button>
+                <button onClick={() => onDeleteNote(n)} className="sidebar-icon-btn rounded p-1" style={{ color: 'var(--text-muted)' }}>
+                  <i className="ti ti-trash" />
+                </button>
+              </div>
+            )
+          })}
         </div>
       </div>
     </div>
