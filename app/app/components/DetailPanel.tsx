@@ -71,6 +71,11 @@ export default function DetailPanel({
     if (editing && inputRef.current) inputRef.current.focus()
   }, [editing])
 
+  // Commit toute édition en cours lors de la fermeture du panneau
+  const commitEditRef = useRef(commitEdit)
+  commitEditRef.current = commitEdit
+  useEffect(() => () => { commitEditRef.current() }, [])
+
   useEffect(() => {
     if (!menuOpen) return
     function onDown(e: MouseEvent) {
@@ -205,10 +210,10 @@ export default function DetailPanel({
 
       {/* Numéro + Nom */}
       <div className="mb-1">
-        <InlineText field="number" placeholder="Numéro" className="t-text-muted font-mono text-xs block mb-1" />
+        {InlineText({ field: 'number', placeholder: 'Numéro', className: 't-text-muted font-mono text-xs block mb-1' })}
       </div>
       <div className="mb-3">
-        <InlineText field="name" placeholder="Nom du projet" large />
+        {InlineText({ field: 'name', placeholder: 'Nom du projet', large: true })}
       </div>
 
       {/* Statut + Importance */}
@@ -235,11 +240,11 @@ export default function DetailPanel({
       <div className="mb-3 flex flex-col gap-2 text-sm">
         <div className="flex items-center gap-2">
           <span className="t-text-muted shrink-0" style={{ width: 72, fontSize: '0.72rem' }}>Éditeur</span>
-          <InlineText field="editor" placeholder="—" />
+          {InlineText({ field: 'editor', placeholder: '—' })}
         </div>
         <div className="flex items-center gap-2">
           <span className="t-text-muted shrink-0" style={{ width: 72, fontSize: '0.72rem' }}>Client</span>
-          <InlineText field="client" placeholder="—" />
+          {InlineText({ field: 'client', placeholder: '—' })}
         </div>
       </div>
 
