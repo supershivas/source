@@ -287,6 +287,9 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
     function onMouseDown(e: MouseEvent) {
       if (noteModalTarget || deleteTarget || subModalTarget) return
       if (detailPanelRef.current && detailPanelRef.current.contains(e.target as Node)) return
+      // Ne pas fermer si le clic est sur la carte du projet sélectionné
+      const card = document.querySelector(`[data-card-id="${selectedDetailId}"]`)
+      if (card && card.contains(e.target as Node)) return
       closingDetailIdRef.current = selectedDetailId
       setSelectedDetailId(null)
     }
