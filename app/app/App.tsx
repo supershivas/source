@@ -287,7 +287,10 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
     function onMouseDown(e: MouseEvent) {
       if (noteModalTarget || deleteTarget || subModalTarget) return
       const t = e.target as Element
-      // Rester ouvert si clic dans le panneau ou sur la carte sélectionnée (ou leurs menus fixed)
+      // Si la cible a été retirée du DOM avant que ce handler ne s'exécute
+      // (ex : option d'un InlineDropdown qui se ferme via setOpen(false)),
+      // le clic était "à l'intérieur" — ne pas fermer le panneau.
+      if (!document.contains(t)) return
       if (t.closest('[data-detail-panel]')) return
       if (t.closest(`[data-card-id="${selectedDetailId}"]`)) return
       closingDetailIdRef.current = selectedDetailId

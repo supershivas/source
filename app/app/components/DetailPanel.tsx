@@ -97,7 +97,7 @@ export default function DetailPanel({
 
   function onKeyDown(e: React.KeyboardEvent) {
     if (e.key === 'Enter') { e.preventDefault(); commitEdit() }
-    if (e.key === 'Escape') cancelEdit()
+    if (e.key === 'Escape') { e.nativeEvent.stopPropagation(); cancelEdit() }
   }
 
   const subprojects = (project.subprojects || []).filter(s => !s.archived)
@@ -412,6 +412,9 @@ export default function DetailPanel({
                     Statut → <strong>{n.text.slice(2)}</strong>
                   </span>
                   <span className="text-xs t-text-muted shrink-0">{fmtDate(n.created_at)}</span>
+                  <button onClick={() => onDeleteNote(n)} className="sidebar-icon-btn rounded p-1" style={{ color: 'var(--text-muted)' }}>
+                    <i className="ti ti-x" style={{ fontSize: '0.7rem' }} />
+                  </button>
                 </div>
               )
             }
