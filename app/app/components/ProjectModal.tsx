@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Category, Importance, Status } from '../types'
 import { STATUS_LABELS, STATUS_ORDER, IMPORTANCE_LABELS, IMPORTANCE_ORDER, AUTO_PROGRESS } from '../constants'
+import DateInput from './DateInput'
 
 export interface ProjectFormValues {
   number: string
@@ -161,22 +162,18 @@ export default function ProjectModal({ project, defaultCat, defaultYear, editors
           <div className="flex gap-3">
             <div className="flex-1">
               <label className="text-xs font-semibold t-text-muted uppercase tracking-wide">Date de début</label>
-              <input
-                type="date"
-                lang="fr-FR"
-                className="w-full rounded-lg border px-3 py-2 text-sm t-border mt-1"
+              <DateInput
                 value={values.date}
-                onChange={e => setValues(v => ({ ...v, date: e.target.value }))}
+                onChange={v => setValues(vs => ({ ...vs, date: v }))}
+                className="w-full rounded-lg border px-3 py-2 text-sm t-border mt-1"
               />
             </div>
             <div className="flex-1">
               <label className="text-xs font-semibold t-text-muted uppercase tracking-wide">✈ Deadline</label>
-              <input
-                type="date"
-                lang="fr-FR"
-                className="w-full rounded-lg border px-3 py-2 text-sm t-border mt-1"
+              <DateInput
                 value={values.deadline}
-                onChange={e => setValues(v => ({ ...v, deadline: e.target.value }))}
+                onChange={v => setValues(vs => ({ ...vs, deadline: v }))}
+                className="w-full rounded-lg border px-3 py-2 text-sm t-border mt-1"
               />
             </div>
           </div>

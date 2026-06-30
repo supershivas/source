@@ -1,5 +1,5 @@
 'use client'
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { DndContext, DragEndEvent, PointerSensor, closestCenter, useSensor, useSensors } from '@dnd-kit/core'
 import { SortableContext, arrayMove, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { Importance, Note, Project, Status, Subproject } from '../types'
@@ -58,7 +58,18 @@ export default function ProjectCard({
 }: ProjectCardProps) {
   const [expanded, setExpanded] = useState(false)
   const [archiving, setArchiving] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
+  const menuRef = useRef<HTMLDivElement>(null)
   const archiveCalledRef = useRef(false)
+
+  useEffect(() => {
+    if (!menuOpen) return
+    function onDown(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false)
+    }
+    document.addEventListener('mousedown', onDown)
+    return () => document.removeEventListener('mousedown', onDown)
+  }, [menuOpen])
 
   function spawnFireworks(originX: number, originY: number) {
     const colors = ['#ef4444', '#dc2626', '#c0392b', '#f97316', '#fb923c', '#fbbf24', '#ff6b6b']
@@ -213,6 +224,9 @@ export default function ProjectCard({
             <span className={`imp-tag imp-tag-${opt}`} style={{ pointerEvents: 'none' }}>{IMPORTANCE_LABELS[opt]}</span>
           )}
         />
+        <button onClick={e => { e.stopPropagation(); onEdit() }} className="sidebar-icon-btn rounded p-1" title="Modifier" style={{ color: 'var(--text-primary)' }}>
+          <i className="ti ti-edit" />
+        </button>
         <button
           onClick={handleArchiveClick}
           title={project.archived ? 'Désarchiver' : 'Archiver'}
@@ -221,20 +235,37 @@ export default function ProjectCard({
         >
           <i className={`ti ti-archive${project.archived ? '-off' : ''}`} />
         </button>
-        <button
-          onClick={e => { e.stopPropagation(); onDuplicate() }}
-          title="Dupliquer"
-          className="sidebar-icon-btn rounded p-1"
-          style={{ color: 'var(--text-muted)' }}
-        >
-          <i className="ti ti-copy" />
-        </button>
-        <button onClick={e => { e.stopPropagation(); onEdit() }} className="sidebar-icon-btn rounded p-1" style={{ color: 'var(--text-muted)' }}>
-          <i className="ti ti-edit" />
-        </button>
-        <button onClick={e => { e.stopPropagation(); onDelete() }} className="sidebar-icon-btn rounded p-1" style={{ color: 'var(--text-muted)' }}>
-          <i className="ti ti-trash" />
-        </button>
+        <div ref={menuRef} className="relative" onClick={e => e.stopPropagation()}>
+          <button
+            onClick={() => setMenuOpen(o => !o)}
+            className="sidebar-icon-btn rounded p-1"
+            title="Plus d'actions"
+            style={{ color: 'var(--text-muted)' }}
+          >
+            <i className="ti ti-dots" />
+          </button>
+          {menuOpen && (
+            <div
+              className="absolute right-0 top-full mt-1 rounded-lg shadow-lg z-30 flex flex-col py-1"
+              style={{ background: 'var(--card-bg)', border: '1px solid var(--border)', minWidth: 140 }}
+            >
+              <button
+                onClick={() => { setMenuOpen(false); onDuplicate() }}
+                className="flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-[var(--hover-bg)] text-left"
+                style={{ color: 'var(--text-secondary)' }}
+              >
+                <i className="ti ti-copy" style={{ fontSize: '0.85rem' }} /> Dupliquer
+              </button>
+              <button
+                onClick={() => { setMenuOpen(false); onDelete() }}
+                className="flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-[var(--hover-bg)] text-left"
+                style={{ color: '#ef4444' }}
+              >
+                <i className="ti ti-trash" style={{ fontSize: '0.85rem' }} /> Supprimer
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       {expanded && (
