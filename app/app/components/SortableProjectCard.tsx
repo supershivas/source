@@ -7,6 +7,8 @@ import ProjectCard from './ProjectCard'
 interface SortableProjectCardProps {
   project: Project
   dimmed?: boolean
+  isSelected?: boolean
+  onToggleSelect?: () => void
   onOpenDetail: () => void
   onChangeStatus: (status: Status) => void
   onChangeSubStatus: (sub: Subproject, status: Status) => void

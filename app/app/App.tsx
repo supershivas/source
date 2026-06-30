@@ -16,6 +16,9 @@ import YearModal from './components/YearModal'
 import ToastStack, { Toast } from './components/ToastStack'
 import { STATUS_LABELS, IMPORTANCE_LABELS, AUTO_PROGRESS, STATUS_ACCENT, toEU } from './constants'
 import DetailPanel from './components/DetailPanel'
+import CommandPalette from './components/CommandPalette'
+import CalendarView from './components/CalendarView'
+import BulkActionBar from './components/BulkActionBar'
 import { DndContext, DragEndEvent, PointerSensor, useSensor, useSensors, closestCenter } from '@dnd-kit/core'
 import { SortableContext, arrayMove, verticalListSortingStrategy } from '@dnd-kit/sortable'
 
@@ -149,6 +152,9 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
   const [showArchived, setShowArchived] = useState(false)
   const [showTrash, setShowTrash] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
+  const [showCalendar, setShowCalendar] = useState(false)
+  const [showCommandPalette, setShowCommandPalette] = useState(false)
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const { prefs, setPrefs } = useSettingsPrefs()
 
   const [extraYears, setExtraYears] = useState<Record<Category, number[]>>({ pro: [], perso: [] })
@@ -248,8 +254,7 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
     function onKeyDown(e: KeyboardEvent) {
       if ((e.metaKey || e.ctrlKey) && (e.key === '/' || e.key === 'k')) {
         e.preventDefault()
-        searchInputRef.current?.focus()
-        searchInputRef.current?.select()
+        setShowCommandPalette(true)
         return
       }
       const target = e.target as HTMLElement
@@ -774,6 +779,41 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
     setDeleteTarget(null)
   }
 
+  function toggleSelect(id: string) {
+    setSelectedIds(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  async function handleBulkStatus(status: Status) {
+    const ids = [...selectedIds]
+    const progress = AUTO_PROGRESS[status]
+    const patch: Partial<Project> = progress == null ? { status } : { status, progress }
+    setProjects(ps => ps.map(p => ids.includes(p.id) ? { ...p, ...patch } : p))
+    await Promise.all(ids.map(id => supabase.from('projects').update(patch).eq('id', id)))
+    showToast(`Statut mis à jour (${ids.length})`)
+    setSelectedIds(new Set())
+  }
+
+  async function handleBulkArchive() {
+    const ids = [...selectedIds]
+    setProjects(ps => ps.map(p => ids.includes(p.id) ? { ...p, archived: true } : p))
+    await Promise.all(ids.map(id => supabase.from('projects').update({ archived: true }).eq('id', id)))
+    showToast(`${ids.length} projet${ids.length > 1 ? 's' : ''} archivé${ids.length > 1 ? 's' : ''}`, 'archive')
+    setSelectedIds(new Set())
+  }
+
+  async function handleBulkDelete() {
+    const ids = [...selectedIds]
+    setProjects(ps => ps.filter(p => !ids.includes(p.id)))
+    await Promise.all(ids.map(id => supabase.from('projects').delete().eq('id', id)))
+    showToast(`${ids.length} projet${ids.length > 1 ? 's' : ''} supprimé${ids.length > 1 ? 's' : ''}`)
+    setSelectedIds(new Set())
+  }
+
   function handleConfirmDelete() {
     if (!deleteTarget) return
     if (deleteTarget.type === 'project') handleDeleteProject(deleteTarget.id)
@@ -918,7 +958,22 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
         <div className="px-2 py-2 space-y-1" style={{ borderTop: '1px solid var(--sidebar-border)' }}>
           <button
             onClick={() => {
+              setShowCalendar(v => !v)
+              setShowDashboard(false)
+              setShowArchived(false)
+              setShowTrash(false)
+              if (isMobile) setMobileSidebarOpen(false)
+            }}
+            className={`sidebar-item-hover w-full flex items-center gap-2 text-left text-sm ${showCalendar ? 'sidebar-selected' : ''}`}
+            style={{ padding: '8px 12px', borderRadius: 6, color: showCalendar ? 'var(--sidebar-selected-fg)' : 'var(--sidebar-muted)' }}
+          >
+            <i className="ti ti-calendar" style={{ fontSize: '15px', flexShrink: 0 }} />
+            <span className="flex-1">Calendrier</span>
+          </button>
+          <button
+            onClick={() => {
               setShowDashboard(v => !v)
+              setShowCalendar(false)
               setShowArchived(false)
               setShowTrash(false)
               if (isMobile) setMobileSidebarOpen(false)
@@ -984,6 +1039,8 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
           <h1 className="text-lg font-semibold">
             {showTrash
               ? 'Corbeille'
+              : showCalendar
+              ? 'Calendrier'
               : `${selectedCat === 'pro' ? 'Pro' : 'Perso'} · ${selectedYear}${
                   showDashboard ? ' · Dashboard' : showArchived ? ' · Archivés' : ''
                 }`}
@@ -996,6 +1053,8 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
             onRestore={handleRestoreProject}
             onDeleteForever={id => setDeleteTarget({ type: 'project-permanent', id })}
           />
+        ) : showCalendar ? (
+          <CalendarView projects={projects} onOpenProject={id => { setSelectedDetailId(id); setShowCalendar(false) }} />
         ) : showDashboard ? (
           <Dashboard projects={projects} selectedCat={selectedCat} selectedYear={selectedYear} />
         ) : (
@@ -1043,6 +1102,8 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
                       key={p.id}
                       project={p}
                       dimmed={!!selectedDetailId && selectedDetailId !== p.id}
+                      isSelected={selectedIds.has(p.id)}
+                      onToggleSelect={() => toggleSelect(p.id)}
                       onOpenDetail={() => {
                         if (closingDetailIdRef.current === p.id) { closingDetailIdRef.current = null; return }
                         closingDetailIdRef.current = null
@@ -1217,6 +1278,29 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
       )}
 
       <ToastStack toasts={toasts} />
+
+      {showCommandPalette && (
+        <CommandPalette
+          projects={projects.filter(p => !p.trashed)}
+          onClose={() => setShowCommandPalette(false)}
+          onOpenProject={id => { setShowCommandPalette(false); setSelectedDetailId(id) }}
+          onNewProject={() => setModalProject(null)}
+          onShowDashboard={() => { setShowDashboard(true); setShowCalendar(false); setShowTrash(false); setShowArchived(false) }}
+          onShowCalendar={() => { setShowCalendar(true); setShowDashboard(false); setShowTrash(false); setShowArchived(false) }}
+          onExportCSV={exportCSV}
+          onShowSettings={() => setShowSettings(true)}
+        />
+      )}
+
+      {selectedIds.size > 0 && (
+        <BulkActionBar
+          count={selectedIds.size}
+          onSetStatus={handleBulkStatus}
+          onArchive={handleBulkArchive}
+          onDelete={handleBulkDelete}
+          onDeselect={() => setSelectedIds(new Set())}
+        />
+      )}
     </div>
   )
 }

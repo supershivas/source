@@ -14,6 +14,8 @@ function nextStatus(status: Status): Status {
 
 interface ProjectCardProps {
   project: Project
+  isSelected?: boolean
+  onToggleSelect?: () => void
   onOpenDetail: () => void
   onChangeStatus: (status: Status) => void
   onChangeSubStatus: (sub: Subproject, status: Status) => void
@@ -37,6 +39,8 @@ interface ProjectCardProps {
 
 export default function ProjectCard({
   project,
+  isSelected,
+  onToggleSelect,
   onOpenDetail,
   onChangeStatus,
   onChangeSubStatus,
@@ -147,6 +151,20 @@ export default function ProjectCard({
       onClick={onOpenDetail}
     >
       <div className="flex items-center gap-3">
+        {onToggleSelect && (
+          <button
+            onClick={e => { e.stopPropagation(); onToggleSelect() }}
+            className="card-select-btn shrink-0"
+            style={{
+              width: 18, height: 18, borderRadius: 4, border: `2px solid ${isSelected ? 'var(--accent)' : 'var(--border)'}`,
+              background: isSelected ? 'var(--accent)' : 'transparent',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              cursor: 'pointer', flexShrink: 0, transition: 'all 0.15s',
+            }}
+          >
+            {isSelected && <i className="ti ti-check" style={{ fontSize: '0.6rem', color: '#fff' }} />}
+          </button>
+        )}
         <button onClick={e => { e.stopPropagation(); setExpanded(ex => !ex) }} className="t-text-muted shrink-0">
           <i className={`ti ti-chevron-${expanded ? 'down' : 'right'}`} />
         </button>
