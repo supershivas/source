@@ -7,9 +7,10 @@ export const STATUS_LABELS: Record<Status, string> = {
   sent: 'Sent to client',
   done: 'Done',
   hold: 'On hold',
+  cancelled: 'Annulé',
 }
 
-export const STATUS_ORDER: Status[] = ['ready', 'ongoing', 'review', 'sent', 'done', 'hold']
+export const STATUS_ORDER: Status[] = ['ready', 'ongoing', 'review', 'sent', 'done', 'hold', 'cancelled']
 
 export const AUTO_PROGRESS: Record<Status, number | null> = {
   ready: 0,
@@ -18,6 +19,7 @@ export const AUTO_PROGRESS: Record<Status, number | null> = {
   sent: 80,
   done: 100,
   hold: null,
+  cancelled: null,
 }
 
 export const IMPORTANCE_LABELS: Record<Importance, string> = {
@@ -35,6 +37,7 @@ export const STATUS_BADGE_CLASS: Record<Status, string> = {
   sent: 's-sent',
   done: 's-done',
   hold: 's-hold',
+  cancelled: 's-cancelled',
 }
 
 export const PROG_COLOR: Record<Status, string> = {
@@ -44,6 +47,7 @@ export const PROG_COLOR: Record<Status, string> = {
   sent: '#D4537E',
   done: '#639922',
   hold: '#888780',
+  cancelled: '#7C6F8A',
 }
 
 export const IMPORTANCE_COLOR: Record<Importance, string> = {
@@ -59,6 +63,7 @@ export const STATUS_ACCENT: Record<Status, string> = {
   sent: 'var(--s-sent-fg)',
   done: 'var(--s-done-fg)',
   hold: 'var(--s-hold-fg)',
+  cancelled: 'var(--s-cancelled-fg)',
 }
 
 export function toEU(iso?: string | null) {

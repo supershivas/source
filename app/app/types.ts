@@ -1,4 +1,4 @@
-export type Status = 'ready' | 'ongoing' | 'review' | 'sent' | 'done' | 'hold'
+export type Status = 'ready' | 'ongoing' | 'review' | 'sent' | 'done' | 'hold' | 'cancelled'
 export type Importance = 'low' | 'medium' | 'high'
 export type Category = 'pro' | 'perso'
 
