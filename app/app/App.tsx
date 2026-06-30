@@ -101,6 +101,30 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
     setTimeout(() => setToasts(ts => ts.filter(t => t.id !== id)), 2800)
   }
 
+  async function handleUpdateProjectField(p: Project, patch: Partial<Project>) {
+    const oldPatch: Partial<Project> = {}
+    for (const k of Object.keys(patch) as (keyof Project)[]) {
+      (oldPatch as Record<string, unknown>)[k] = p[k]
+    }
+    updateProject(p.id, patch)
+    const { error } = await supabase.from('projects').update(patch).eq('id', p.id)
+    if (error) { updateProject(p.id, oldPatch); showToast('Erreur lors de la sauvegarde', 'error'); return }
+    const id = Date.now() + Math.random()
+    const timer = setTimeout(() => setToasts(ts => ts.filter(t => t.id !== id)), 3500)
+    setToasts(ts => [...ts, {
+      id, message: 'Modifié', type: 'success' as const,
+      action: {
+        label: 'Annuler',
+        onClick: async () => {
+          clearTimeout(timer)
+          setToasts(ts => ts.filter(t => t.id !== id))
+          updateProject(p.id, oldPatch)
+          await supabase.from('projects').update(oldPatch).eq('id', p.id)
+        },
+      },
+    }])
+  }
+
   const searchInputRef = useRef<HTMLInputElement>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [filterStatus, setFilterStatus] = useState<Status | ''>('')
@@ -1143,6 +1167,7 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
           panelPos={panelPos ?? undefined}
           onClose={() => setSelectedDetailId(null)}
           onEdit={() => setModalProject(selectedDetailProject)}
+          onUpdateField={patch => handleUpdateProjectField(selectedDetailProject, patch)}
           onDuplicate={() => handleDuplicateProject(selectedDetailProject)}
           onArchive={() => handleArchiveProject(selectedDetailProject)}
           onDelete={() => setDeleteTarget({ type: 'project', id: selectedDetailProject.id })}
