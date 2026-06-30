@@ -452,7 +452,7 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
     const { error } = await supabase.from('projects').update({ archived }).eq('id', p.id)
     if (!error) {
       updateProject(p.id, { archived })
-      showToast(archived ? 'Projet archivé' : 'Projet désarchivé')
+      showToast(archived ? 'Projet archivé' : 'Projet désarchivé', archived ? 'archive' : 'success')
     }
   }
 
@@ -467,7 +467,7 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
             : p
         )
       )
-      showToast(archived ? 'Sous-projet archivé' : 'Sous-projet restauré')
+      showToast(archived ? 'Sous-projet archivé' : 'Sous-projet restauré', archived ? 'archive' : 'success')
     }
   }
 

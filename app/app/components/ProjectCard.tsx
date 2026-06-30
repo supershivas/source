@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { DndContext, DragEndEvent, PointerSensor, closestCenter, useSensor, useSensors } from '@dnd-kit/core'
 import { SortableContext, arrayMove, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { Importance, Note, Project, Status, Subproject } from '../types'
@@ -57,6 +57,38 @@ export default function ProjectCard({
   onDeleteNote,
 }: ProjectCardProps) {
   const [expanded, setExpanded] = useState(false)
+  const [archiving, setArchiving] = useState(false)
+  const [particles, setParticles] = useState<{ id: number; angle: number; dist: number; color: string }[]>([])
+  const archiveCalledRef = useRef(false)
+
+  function handleArchiveClick(e: React.MouseEvent) {
+    e.stopPropagation()
+    if (!project.archived && !archiving) {
+      archiveCalledRef.current = false
+      const colors = ['#ef4444', '#dc2626', '#b91c1c', '#f97316', '#fb923c']
+      const count = 12
+      setParticles(
+        Array.from({ length: count }, (_, i) => ({
+          id: i,
+          angle: (i / count) * 360 + Math.random() * (360 / count),
+          dist: 35 + Math.random() * 28,
+          color: colors[Math.floor(Math.random() * colors.length)],
+        }))
+      )
+      setArchiving(true)
+      setTimeout(() => {
+        setParticles([])
+        setArchiving(false)
+        if (!archiveCalledRef.current) {
+          archiveCalledRef.current = true
+          onArchive()
+        }
+      }, 580)
+    } else {
+      onArchive()
+    }
+  }
+
   const subprojects = project.subprojects || []
   const notes = project.notes || []
   const subSensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }))
@@ -75,10 +107,17 @@ export default function ProjectCard({
 
   return (
     <div
-      className="t-bg-card rounded-lg p-3 cursor-grab active:cursor-grabbing"
+      className={`t-bg-card rounded-lg p-3 cursor-grab active:cursor-grabbing relative overflow-visible${archiving ? ' card-archiving' : ''}`}
       style={{ boxShadow: 'var(--card-shadow)', borderLeft: `3px solid ${STATUS_ACCENT[project.status]}` }}
       onClick={onOpenDetail}
     >
+      {particles.map(p => (
+        <div
+          key={p.id}
+          className="fw-particle"
+          style={{ '--fw-angle': `${p.angle}deg`, '--fw-dist': `${p.dist}px`, background: p.color } as React.CSSProperties}
+        />
+      ))}
       <div className="flex items-center gap-3">
         <button onClick={e => { e.stopPropagation(); setExpanded(ex => !ex) }} className="t-text-muted shrink-0">
           <i className={`ti ti-chevron-${expanded ? 'down' : 'right'}`} />
@@ -158,7 +197,7 @@ export default function ProjectCard({
           )}
         />
         <button
-          onClick={e => { e.stopPropagation(); onArchive() }}
+          onClick={handleArchiveClick}
           title={project.archived ? 'Désarchiver' : 'Archiver'}
           className="sidebar-icon-btn rounded p-1"
           style={{ color: 'var(--text-muted)' }}
