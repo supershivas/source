@@ -222,6 +222,29 @@ input::placeholder, textarea::placeholder {
 .detail-connector {
   animation: detail-panel-in 220ms cubic-bezier(0.34, 1.4, 0.64, 1) both;
 }
+
+/* ─── Inline editing dans le panneau de détails ──────────────────────────────*/
+.inline-edit-display {
+  display: block; cursor: text; border-radius: 4px; padding: 2px 4px; margin: -2px -4px;
+  transition: background 0.12s;
+  border-bottom: 1px dashed transparent;
+}
+.inline-edit-display:hover {
+  background: var(--hover-bg);
+  border-bottom-color: var(--border);
+}
+.inline-edit-input {
+  background: transparent;
+  border: none;
+  border-bottom: 1.5px solid var(--accent);
+  outline: none;
+  padding: 2px 4px;
+  margin: -2px -4px;
+  border-radius: 4px 4px 0 0;
+  color: var(--text-primary);
+  font-family: inherit;
+  display: block;
+}
 @keyframes note-slide-in {
   from {
     opacity: 0;

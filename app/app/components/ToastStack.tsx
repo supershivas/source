@@ -2,6 +2,7 @@ interface Toast {
   id: number
   message: string
   type: 'success' | 'error' | 'info' | 'archive'
+  action?: { label: string; onClick: () => void }
 }
 
 interface ToastStackProps {
@@ -28,12 +29,21 @@ export default function ToastStack({ toasts }: ToastStackProps) {
         return (
           <div
             key={t.id}
-            className={`flex items-center gap-2 rounded-lg px-3.5 py-2 text-sm font-medium shadow-lg toast-animate-in${isArchive ? ' toast-archive' : ''}`}
+            className={`flex items-center gap-2 rounded-lg px-3.5 py-2 text-sm font-medium shadow-lg toast-animate-in${isArchive ? ' toast-archive' : ''}${t.action ? ' pointer-events-auto' : ''}`}
             style={{ background: c.bg, color: c.fg }}
           >
             <i className={`ti ${c.icon}`} />
             <span>{t.message}</span>
             {isArchive && <span style={{ marginLeft: 2, fontSize: '0.9em' }}>✦</span>}
+            {t.action && (
+              <button
+                onClick={t.action.onClick}
+                className="ml-1 rounded px-2 py-0.5 text-xs font-semibold"
+                style={{ background: 'rgba(255,255,255,0.18)', color: c.fg, border: '1px solid rgba(255,255,255,0.3)' }}
+              >
+                {t.action.label}
+              </button>
+            )}
           </div>
         )
       })}
