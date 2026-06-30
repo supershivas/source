@@ -104,6 +104,7 @@ export default function SubprojectModal({ initial, parentNumber, onSave, onClose
               <label className="text-xs t-text-muted">Échéance</label>
               <input
                 type="date"
+                lang="fr-FR"
                 className="w-full rounded-lg border px-3 py-2 text-sm t-border"
                 value={values.deadline}
                 onChange={e => setValues(v => ({ ...v, deadline: e.target.value }))}

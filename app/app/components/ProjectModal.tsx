@@ -163,6 +163,7 @@ export default function ProjectModal({ project, defaultCat, defaultYear, editors
               <label className="text-xs font-semibold t-text-muted uppercase tracking-wide">Date de début</label>
               <input
                 type="date"
+                lang="fr-FR"
                 className="w-full rounded-lg border px-3 py-2 text-sm t-border mt-1"
                 value={values.date}
                 onChange={e => setValues(v => ({ ...v, date: e.target.value }))}
@@ -172,6 +173,7 @@ export default function ProjectModal({ project, defaultCat, defaultYear, editors
               <label className="text-xs font-semibold t-text-muted uppercase tracking-wide">✈ Deadline</label>
               <input
                 type="date"
+                lang="fr-FR"
                 className="w-full rounded-lg border px-3 py-2 text-sm t-border mt-1"
                 value={values.deadline}
                 onChange={e => setValues(v => ({ ...v, deadline: e.target.value }))}

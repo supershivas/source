@@ -58,26 +58,50 @@ export default function ProjectCard({
 }: ProjectCardProps) {
   const [expanded, setExpanded] = useState(false)
   const [archiving, setArchiving] = useState(false)
-  const [particles, setParticles] = useState<{ id: number; angle: number; dist: number; color: string }[]>([])
   const archiveCalledRef = useRef(false)
+
+  function spawnFireworks(originX: number, originY: number) {
+    const colors = ['#ef4444', '#dc2626', '#c0392b', '#f97316', '#fb923c', '#fbbf24', '#ff6b6b']
+    const count = 55
+    for (let i = 0; i < count; i++) {
+      const el = document.createElement('div')
+      const angle = Math.random() * Math.PI * 2
+      const speed = 120 + Math.random() * 380
+      const size = 5 + Math.random() * 9
+      const color = colors[Math.floor(Math.random() * colors.length)]
+      const lifetime = 800 + Math.random() * 700
+      const isRect = Math.random() > 0.6
+      el.style.cssText = `position:fixed;left:${originX}px;top:${originY}px;width:${size}px;height:${isRect ? size * 0.4 : size}px;border-radius:${isRect ? 2 : 50}%;background:${color};pointer-events:none;z-index:9999;transform:translate(-50%,-50%);will-change:transform,opacity`
+      document.body.appendChild(el)
+      const vx = Math.cos(angle) * speed
+      const vy = Math.sin(angle) * speed
+      const gravity = 420
+      const start = performance.now()
+      const tick = (now: number) => {
+        const t = (now - start) / 1000
+        const x = originX + vx * t
+        const y = originY + vy * t + 0.5 * gravity * t * t
+        const progress = (now - start) / lifetime
+        const opacity = Math.max(0, 1 - progress * progress)
+        el.style.left = `${x}px`
+        el.style.top = `${y}px`
+        el.style.opacity = String(opacity)
+        if (opacity > 0) requestAnimationFrame(tick)
+        else el.remove()
+      }
+      requestAnimationFrame(tick)
+    }
+  }
 
   function handleArchiveClick(e: React.MouseEvent) {
     e.stopPropagation()
     if (!project.archived && !archiving) {
       archiveCalledRef.current = false
-      const colors = ['#ef4444', '#dc2626', '#b91c1c', '#f97316', '#fb923c']
-      const count = 12
-      setParticles(
-        Array.from({ length: count }, (_, i) => ({
-          id: i,
-          angle: (i / count) * 360 + Math.random() * (360 / count),
-          dist: 35 + Math.random() * 28,
-          color: colors[Math.floor(Math.random() * colors.length)],
-        }))
-      )
+      const btn = e.currentTarget as HTMLElement
+      const rect = btn.getBoundingClientRect()
+      spawnFireworks(rect.left + rect.width / 2, rect.top + rect.height / 2)
       setArchiving(true)
       setTimeout(() => {
-        setParticles([])
         setArchiving(false)
         if (!archiveCalledRef.current) {
           archiveCalledRef.current = true
@@ -111,13 +135,6 @@ export default function ProjectCard({
       style={{ boxShadow: 'var(--card-shadow)', borderLeft: `3px solid ${STATUS_ACCENT[project.status]}` }}
       onClick={onOpenDetail}
     >
-      {particles.map(p => (
-        <div
-          key={p.id}
-          className="fw-particle"
-          style={{ '--fw-angle': `${p.angle}deg`, '--fw-dist': `${p.dist}px`, background: p.color } as React.CSSProperties}
-        />
-      ))}
       <div className="flex items-center gap-3">
         <button onClick={e => { e.stopPropagation(); setExpanded(ex => !ex) }} className="t-text-muted shrink-0">
           <i className={`ti ti-chevron-${expanded ? 'down' : 'right'}`} />
