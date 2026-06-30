@@ -61,6 +61,7 @@
   --s-sent-bg:#FBEAF0;    --s-sent-fg:#993356;
   --s-done-bg:#EAF3DE;    --s-done-fg:#3B6D11;
   --s-hold-bg:#F1EFE8;    --s-hold-fg:#5F5E5A;
+  --s-cancelled-bg:#EDE9F4; --s-cancelled-fg:#5B4A72;
 }
 
 /* ─── Variables — Dark ───────────────────────────────────────────────────────*/
@@ -108,6 +109,7 @@ html.dark {
   --s-sent-bg:#2D1520;    --s-sent-fg:#F472B6;
   --s-done-bg:#162510;    --s-done-fg:#86EFAC;
   --s-hold-bg:#2A2825;    --s-hold-fg:#A09890;
+  --s-cancelled-bg:#221A2E; --s-cancelled-fg:#C4A8E8;
 }
 
 /* ─── Base ───────────────────────────────────────────────────────────────────*/
@@ -151,7 +153,8 @@ input::placeholder, textarea::placeholder {
 .s-review  { background: var(--s-review-bg);  color: var(--s-review-fg); }
 .s-sent    { background: var(--s-sent-bg);    color: var(--s-sent-fg); }
 .s-done    { background: var(--s-done-bg);    color: var(--s-done-fg); }
-.s-hold    { background: var(--s-hold-bg);    color: var(--s-hold-fg); }
+.s-hold      { background: var(--s-hold-bg);      color: var(--s-hold-fg); }
+.s-cancelled { background: var(--s-cancelled-bg); color: var(--s-cancelled-fg); }
 
 /* ─── Progress bar ───────────────────────────────────────────────────────────*/
 .prog-wrap { width: 100%; display: flex; align-items: center; gap: 8px; }
