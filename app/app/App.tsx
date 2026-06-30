@@ -282,20 +282,8 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
     return () => document.removeEventListener('keydown', onKeyDown)
   }, [exportCSV, selectedDetailId, showCalendar, showDashboard, showArchived, showTrash])
 
-  useEffect(() => {
-    if (!selectedDetailId) return
-    function onMouseDown(e: MouseEvent) {
-      if (noteModalTarget || deleteTarget || subModalTarget) return
-      const t = e.target as Element
-      // Rester ouvert si clic dans le panneau ou sur la carte sélectionnée (ou leurs menus fixed)
-      if (t.closest('[data-detail-panel]')) return
-      if (t.closest(`[data-card-id="${selectedDetailId}"]`)) return
-      closingDetailIdRef.current = selectedDetailId
-      setSelectedDetailId(null)
-    }
-    document.addEventListener('mousedown', onMouseDown)
-    return () => document.removeEventListener('mousedown', onMouseDown)
-  }, [selectedDetailId, noteModalTarget, deleteTarget, subModalTarget])
+  // Le panneau se ferme uniquement via le bouton X, la touche Escape,
+  // ou en cliquant sur une autre carte.
 
   const visibleProjects = useMemo(() => {
     let list = projects.filter(
