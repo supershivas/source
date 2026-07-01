@@ -294,6 +294,7 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
       if (t.closest('[data-detail-panel]')) return
       if (t.closest(`[data-card-id="${selectedDetailId}"]`)) return
       closingDetailIdRef.current = selectedDetailId
+      setTimeout(() => { closingDetailIdRef.current = null }, 0)
       setSelectedDetailId(null)
     }
     document.addEventListener('mousedown', onMouseDown)
