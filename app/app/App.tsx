@@ -771,6 +771,12 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
     setNoteModalTarget(null)
   }
 
+  async function handleQuickAddNote(projectId: string, text: string) {
+    const { data, error } = await supabase.from('notes').insert({ text, project_id: projectId, subproject_id: null }).select().single()
+    if (error) { showToast(`Erreur : ${error.message}`, 'error'); return }
+    if (data) setProjects(ps => ps.map(p => p.id !== projectId ? p : { ...p, notes: [...(p.notes || []), data] }))
+  }
+
   async function handleDeleteNote(target: { id: string; projectId: string; subprojectId?: string }) {
     const proj = projects.find(p => p.id === target.projectId)
     const deleted = target.subprojectId
@@ -1296,6 +1302,7 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
             setDeleteTarget({ type: 'subproject', id: sub.id, parentId: selectedDetailProject.id })
           }
           onAddNote={subprojectId => setNoteModalTarget({ projectId: selectedDetailProject.id, subprojectId })}
+          onQuickAddNote={text => handleQuickAddNote(selectedDetailProject.id, text)}
           onEditNote={(note, subprojectId) =>
             setNoteModalTarget({ projectId: selectedDetailProject.id, subprojectId, note })
           }
