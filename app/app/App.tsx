@@ -772,6 +772,11 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
   }
 
   async function handleDeleteNote(target: { id: string; projectId: string; subprojectId?: string }) {
+    const proj = projects.find(p => p.id === target.projectId)
+    const deleted = target.subprojectId
+      ? proj?.subprojects?.find(s => s.id === target.subprojectId)?.notes?.find(n => n.id === target.id)
+      : proj?.notes?.find(n => n.id === target.id)
+
     const { error } = await supabase.from('notes').delete().eq('id', target.id)
     if (error) {
       showToast(`Erreur : ${error.message}`, 'error')
@@ -790,7 +795,34 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
           return { ...p, notes: (p.notes || []).filter(n => n.id !== target.id) }
         })
       )
-      showToast('Note supprimée')
+      const id = Date.now() + Math.random()
+      const timer = setTimeout(() => setToasts(ts => ts.filter(t => t.id !== id)), 3500)
+      setToasts(ts => [...ts, {
+        id, message: 'Note supprimée', type: 'success' as const,
+        action: deleted ? {
+          label: 'Annuler',
+          onClick: async () => {
+            clearTimeout(timer)
+            setToasts(ts => ts.filter(t => t.id !== id))
+            const { data: restored } = await supabase.from('notes').insert({
+              text: deleted.text,
+              project_id: deleted.project_id,
+              subproject_id: deleted.subproject_id,
+            }).select().single()
+            if (restored) {
+              setProjects(ps => ps.map(p => {
+                if (p.id !== target.projectId) return p
+                if (target.subprojectId) {
+                  return { ...p, subprojects: (p.subprojects || []).map(s =>
+                    s.id === target.subprojectId ? { ...s, notes: [...(s.notes || []), restored] } : s
+                  )}
+                }
+                return { ...p, notes: [...(p.notes || []), restored] }
+              }))
+            }
+          },
+        } : undefined,
+      }])
     }
     setDeleteTarget(null)
   }
