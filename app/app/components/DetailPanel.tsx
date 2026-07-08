@@ -1,6 +1,6 @@
 'use client'
 import React, { useEffect, useRef, useState } from 'react'
-import { Note, Project, Subproject, Status, Importance } from '../types'
+import { Note, Project, Status, Importance } from '../types'
 import { STATUS_LABELS, STATUS_ACCENT, IMPORTANCE_LABELS, STATUS_ORDER, IMPORTANCE_ORDER, toEU } from '../constants'
 import InlineDropdown from './InlineDropdown'
 import DateInput from './DateInput'
@@ -19,15 +19,13 @@ interface DetailPanelProps {
   onChangeProgress: (progress: number) => void
   onUpdateField: (patch: Partial<Project>) => void
   onAddSubproject: () => void
-  onEditSubproject: (sub: Subproject) => void
-  onDeleteSubproject: (sub: Subproject) => void
-  onAddNote: (subprojectId?: string) => void
   onQuickAddNote: (text: string) => Promise<void>
   onEditNote: (note: Note, subprojectId?: string) => void
   onDeleteNote: (note: Note, subprojectId?: string) => void
 }
 
 type EditableField = 'name' | 'number' | 'editor' | 'client' | 'date' | 'deadline' | 'ended'
+type LogNote = Note & { _subName?: string }
 
 function isStatusNote(text: string) { return text.startsWith('→ ') }
 
@@ -45,9 +43,6 @@ export default function DetailPanel({
   onChangeProgress: _onChangeProgress,
   onUpdateField,
   onAddSubproject,
-  onEditSubproject,
-  onDeleteSubproject,
-  onAddNote,
   onQuickAddNote,
   onEditNote,
   onDeleteNote,
@@ -76,7 +71,6 @@ export default function DetailPanel({
     if (editing && inputRef.current) inputRef.current.focus()
   }, [editing])
 
-  // Commit toute édition en cours lors de la fermeture du panneau
   const commitEditRef = useRef(commitEdit)
   commitEditRef.current = commitEdit
   useEffect(() => () => { commitEditRef.current() }, [])
@@ -108,21 +102,6 @@ export default function DetailPanel({
   function onKeyDown(e: React.KeyboardEvent) {
     if (e.key === 'Enter') { e.preventDefault(); commitEdit() }
     if (e.key === 'Escape') { e.nativeEvent.stopPropagation(); cancelEdit() }
-  }
-
-  const subprojects = (project.subprojects || []).filter(s => !s.archived)
-  const allNotes = [...(project.notes || [])].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-  const visibleNotes = noteTab === 'all' ? allNotes : noteTab === 'notes' ? allNotes.filter(n => !isStatusNote(n.text)) : allNotes.filter(n => isStatusNote(n.text))
-
-  function fmtDate(iso: string) {
-    return new Date(iso).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' })
-  }
-
-  // Finds the status from a status-note text (e.g. "→ Ongoing" → 'ongoing')
-  function statusFromNote(text: string): Status | null {
-    const label = text.slice(2).trim()
-    const entry = Object.entries(STATUS_LABELS).find(([, l]) => l === label)
-    return entry ? (entry[0] as Status) : null
   }
 
   function InlineText({ field, placeholder, className = '', large = false }: { field: EditableField; placeholder: string; className?: string; large?: boolean }) {
@@ -169,6 +148,26 @@ export default function DetailPanel({
     )
   }
 
+  // Merge project notes + subproject notes into one chronological log
+  const subprojectNotes: LogNote[] = (project.subprojects || []).flatMap(s =>
+    (s.notes || []).map(n => ({ ...n, _subName: s.name }))
+  )
+  const allNotes: LogNote[] = [
+    ...(project.notes || []).map(n => ({ ...n, _subName: undefined as string | undefined })),
+    ...subprojectNotes,
+  ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+  const visibleNotes = noteTab === 'all' ? allNotes : noteTab === 'notes' ? allNotes.filter(n => !isStatusNote(n.text)) : allNotes.filter(n => isStatusNote(n.text))
+
+  function fmtDate(iso: string) {
+    return new Date(iso).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' })
+  }
+
+  function statusFromNote(text: string): Status | null {
+    const label = text.slice(2).trim()
+    const entry = Object.entries(STATUS_LABELS).find(([, l]) => l === label)
+    return entry ? (entry[0] as Status) : null
+  }
+
   return (
     <div
       ref={panelRef}
@@ -199,6 +198,9 @@ export default function DetailPanel({
               <div className="absolute right-0 top-full mt-1 rounded-lg shadow-lg z-30 flex flex-col py-1" style={{ background: 'var(--card-bg)', border: '1px solid var(--border)', minWidth: 160 }}>
                 <button onClick={() => { setMenuOpen(false); onEdit() }} className="flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-[var(--hover-bg)] text-left" style={{ color: 'var(--text-secondary)' }}>
                   <i className="ti ti-edit" style={{ fontSize: '0.85rem' }} /> Ouvrir le formulaire
+                </button>
+                <button onClick={() => { setMenuOpen(false); onAddSubproject() }} className="flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-[var(--hover-bg)] text-left" style={{ color: 'var(--text-secondary)' }}>
+                  <i className="ti ti-folders" style={{ fontSize: '0.85rem' }} /> Ajouter un sous-projet
                 </button>
                 <button onClick={() => { setMenuOpen(false); onDuplicate() }} className="flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-[var(--hover-bg)] text-left" style={{ color: 'var(--text-secondary)' }}>
                   <i className="ti ti-copy" style={{ fontSize: '0.85rem' }} /> Dupliquer
@@ -253,14 +255,13 @@ export default function DetailPanel({
         </div>
       </div>
 
-      {/* Timeline — toujours 3 points fixes, cliquables */}
+      {/* Timeline */}
       {(() => {
         const pts = [
           { field: 'date' as const,     label: 'Début',    color: '#16a34a', pos: 0 },
           { field: 'deadline' as const, label: 'Deadline', color: '#dc2626', pos: 50 },
           { field: 'ended' as const,    label: 'Fin',      color: '#6366f1', pos: 100 },
         ]
-        // today position: based on date + deadline if available
         const d0 = project.date ? new Date(project.date).getTime() : null
         const d1 = project.deadline ? new Date(project.deadline).getTime() : null
         const d2 = project.ended ? new Date(project.ended).getTime() : null
@@ -280,12 +281,9 @@ export default function DetailPanel({
         return (
           <div className="mb-4" style={{ paddingBottom: 40 }}>
             <div style={{ position: 'relative', height: 4, background: 'var(--border)', borderRadius: 2, margin: '0 8px' }}>
-              {/* fill bar start→today */}
               {todayPct && d0 && (
                 <div style={{ position: 'absolute', left: 0, top: 0, height: '100%', width: `${todayPct / 2}%`, background: 'linear-gradient(90deg,#16a34a,#dc2626)', borderRadius: 2, opacity: 0.7 }} />
               )}
-
-              {/* 3 fixed dots */}
               {pts.map(pt => {
                 const iso = pt.field === 'date' ? project.date : pt.field === 'deadline' ? project.deadline : project.ended
                 const empty = !iso
@@ -319,8 +317,6 @@ export default function DetailPanel({
                   </div>
                 )
               })}
-
-              {/* today marker */}
               {todayPct && (
                 <div style={{ position: 'absolute', top: '50%', left: `${todayPct / 2}%`, transform: 'translate(-50%,-50%)', pointerEvents: 'none' }}>
                   <div style={{ width: 1.5, height: 22, background: 'var(--text-muted)', position: 'absolute', top: '50%', left: 0, transform: 'translate(-50%,-50%)' }} />
@@ -332,59 +328,9 @@ export default function DetailPanel({
         )
       })()}
 
-      {/* Divider */}
       <div style={{ height: 1, background: 'var(--border)', margin: '0 0 16px' }} />
 
-      {/* Sous-projets */}
-      <div className="mb-4">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-xs font-semibold t-text-muted uppercase tracking-wide">Sous-projets ({subprojects.length})</span>
-          <button onClick={onAddSubproject} className="text-xs" style={{ color: 'var(--accent)' }}>+ Ajouter</button>
-        </div>
-        {subprojects.length === 0 && <p className="text-xs t-text-muted">Aucun sous-projet.</p>}
-        <div className="flex flex-col gap-2">
-          {subprojects.map(s => (
-            <div key={s.id} className="rounded border t-border overflow-hidden">
-              <div className="flex items-center gap-2 px-2 py-1.5">
-                <span className="text-xs t-text-muted shrink-0">{s.number}</span>
-                <span className="flex-1 text-sm truncate">{s.name}</span>
-                <span className={`status-badge s-${s.status}`} style={{ fontSize: '0.62rem', padding: '2px 7px' }}>{STATUS_LABELS[s.status]}</span>
-                <button onClick={() => onAddNote(s.id)} className="sidebar-icon-btn rounded p-1" title="Ajouter une note" style={{ color: 'var(--accent)' }}>
-                  <i className="ti ti-plus" style={{ fontSize: '0.75rem' }} />
-                </button>
-                <button onClick={() => onEditSubproject(s)} className="sidebar-icon-btn rounded p-1" style={{ color: 'var(--text-muted)' }}>
-                  <i className="ti ti-edit" />
-                </button>
-                <button onClick={() => onDeleteSubproject(s)} className="sidebar-icon-btn rounded p-1" style={{ color: 'var(--text-muted)' }}>
-                  <i className="ti ti-trash" />
-                </button>
-              </div>
-              {(s.notes || []).length > 0 && (
-                <div className="border-t t-border">
-                  {[...(s.notes || [])].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).map(n => (
-                    <div key={n.id} className="flex items-start gap-2 px-2 py-1.5 border-b t-border last:border-b-0" style={{ background: 'var(--hover-bg, rgba(0,0,0,0.02))' }}>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs">{n.text}</p>
-                        <span className="text-xs t-text-muted">{fmtDate(n.created_at)}</span>
-                      </div>
-                      <button onClick={() => onEditNote(n, s.id)} className="sidebar-icon-btn rounded p-0.5" style={{ color: 'var(--text-muted)' }}>
-                        <i className="ti ti-edit" style={{ fontSize: '0.75rem' }} />
-                      </button>
-                      <button onClick={() => onDeleteNote(n, s.id)} className="sidebar-icon-btn rounded p-0.5" style={{ color: 'var(--text-muted)' }}>
-                        <i className="ti ti-trash" style={{ fontSize: '0.75rem' }} />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div style={{ height: 1, background: 'var(--border)', margin: '0 0 16px' }} />
-
-      {/* Notes + historique statuts */}
+      {/* Notes + historique (projet + sous-projets fusionnés) */}
       <div>
         <div className="flex items-center justify-between mb-2">
           <span className="text-xs font-semibold t-text-muted uppercase tracking-wide">Notes & historique</span>
@@ -441,7 +387,6 @@ export default function DetailPanel({
           }}
         />
 
-        {/* Tabs */}
         <div className="flex gap-1 mb-3">
           {(['all', 'notes', 'history'] as const).map(tab => (
             <button
@@ -462,6 +407,7 @@ export default function DetailPanel({
         {visibleNotes.length === 0 && <p className="text-xs t-text-muted">Aucune entrée.</p>}
         <div className="flex flex-col gap-1.5">
           {visibleNotes.map(n => {
+            const subprojectId = n.subproject_id || undefined
             if (isStatusNote(n.text)) {
               const s = statusFromNote(n.text)
               const color = s ? STATUS_ACCENT[s] : 'var(--text-muted)'
@@ -469,10 +415,11 @@ export default function DetailPanel({
                 <div key={n.id} className="flex items-center gap-2 rounded px-2 py-1.5" style={{ border: '1px solid var(--border)', background: 'var(--hover-bg, rgba(0,0,0,0.015))' }}>
                   <span style={{ width: 7, height: 7, borderRadius: '50%', background: color, flexShrink: 0, display: 'inline-block' }} />
                   <span className="flex-1 text-xs" style={{ color: 'var(--text-secondary)' }}>
+                    {n._subName && <span className="t-text-muted">↳ {n._subName} · </span>}
                     Statut → <strong>{n.text.slice(2)}</strong>
                   </span>
                   <span className="text-xs t-text-muted shrink-0">{fmtDate(n.created_at)}</span>
-                  <button onClick={() => onDeleteNote(n)} className="sidebar-icon-btn rounded p-1" style={{ color: 'var(--text-muted)' }}>
+                  <button onClick={() => onDeleteNote(n, subprojectId)} className="sidebar-icon-btn rounded p-1" style={{ color: 'var(--text-muted)' }}>
                     <i className="ti ti-x" style={{ fontSize: '0.7rem' }} />
                   </button>
                 </div>
@@ -481,13 +428,14 @@ export default function DetailPanel({
             return (
               <div key={n.id} className={`flex items-start gap-2 rounded border t-border px-2 py-1.5${n.id === newNoteId ? ' note-enter' : ''}`}>
                 <div className="flex-1 min-w-0">
+                  {n._subName && <p className="text-xs t-text-muted mb-0.5">↳ {n._subName}</p>}
                   <p className="text-sm">{n.text}</p>
                   <span className="text-xs t-text-muted">{fmtDate(n.created_at)}</span>
                 </div>
-                <button onClick={() => onEditNote(n)} className="sidebar-icon-btn rounded p-1" style={{ color: 'var(--text-muted)' }}>
+                <button onClick={() => onEditNote(n, subprojectId)} className="sidebar-icon-btn rounded p-1" style={{ color: 'var(--text-muted)' }}>
                   <i className="ti ti-edit" />
                 </button>
-                <button onClick={() => onDeleteNote(n)} className="sidebar-icon-btn rounded p-1" style={{ color: 'var(--text-muted)' }}>
+                <button onClick={() => onDeleteNote(n, subprojectId)} className="sidebar-icon-btn rounded p-1" style={{ color: 'var(--text-muted)' }}>
                   <i className="ti ti-trash" />
                 </button>
               </div>
