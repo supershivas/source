@@ -22,6 +22,7 @@ interface DetailPanelProps {
   onEditSubproject: (sub: Subproject) => void
   onDeleteSubproject: (sub: Subproject) => void
   onAddNote: (subprojectId?: string) => void
+  onQuickAddNote: (text: string) => Promise<void>
   onEditNote: (note: Note, subprojectId?: string) => void
   onDeleteNote: (note: Note, subprojectId?: string) => void
 }
@@ -47,6 +48,7 @@ export default function DetailPanel({
   onEditSubproject,
   onDeleteSubproject,
   onAddNote,
+  onQuickAddNote,
   onEditNote,
   onDeleteNote,
 }: DetailPanelProps) {
@@ -58,6 +60,9 @@ export default function DetailPanel({
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
   const [noteTab, setNoteTab] = useState<'all' | 'notes' | 'history'>('all')
+  const [quickNote, setQuickNote] = useState('')
+  const [quickNoteSubmitting, setQuickNoteSubmitting] = useState(false)
+  const quickNoteRef = useRef<HTMLTextAreaElement>(null)
 
   useEffect(() => {
     const prev = prevNoteIdsRef.current
@@ -383,8 +388,59 @@ export default function DetailPanel({
       <div>
         <div className="flex items-center justify-between mb-2">
           <span className="text-xs font-semibold t-text-muted uppercase tracking-wide">Notes & historique</span>
-          <button onClick={() => onAddNote()} className="text-xs" style={{ color: 'var(--accent)' }}>+ Note</button>
         </div>
+
+        <textarea
+          ref={quickNoteRef}
+          value={quickNote}
+          placeholder="Ajouter une note…"
+          rows={1}
+          disabled={quickNoteSubmitting}
+          onChange={e => {
+            setQuickNote(e.target.value)
+            const el = e.target
+            el.style.height = 'auto'
+            el.style.height = el.scrollHeight + 'px'
+          }}
+          onKeyDown={async e => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+              e.preventDefault()
+              const text = quickNote.trim()
+              if (!text) return
+              setQuickNoteSubmitting(true)
+              await onQuickAddNote(text)
+              setQuickNote('')
+              setQuickNoteSubmitting(false)
+              if (quickNoteRef.current) quickNoteRef.current.style.height = 'auto'
+            }
+            if (e.key === 'Escape') { e.nativeEvent.stopPropagation(); setQuickNote(''); if (quickNoteRef.current) quickNoteRef.current.style.height = 'auto' }
+          }}
+          onBlur={async () => {
+            const text = quickNote.trim()
+            if (!text) return
+            setQuickNoteSubmitting(true)
+            await onQuickAddNote(text)
+            setQuickNote('')
+            setQuickNoteSubmitting(false)
+            if (quickNoteRef.current) quickNoteRef.current.style.height = 'auto'
+          }}
+          onFocus={e => { e.target.style.borderColor = 'var(--accent)' }}
+          onBlurCapture={e => { e.target.style.borderColor = 'var(--border)' }}
+          className="w-full resize-none mb-3"
+          style={{
+            background: 'var(--hover-bg)',
+            border: '1px solid var(--border)',
+            borderRadius: 6,
+            padding: '6px 8px',
+            color: 'var(--text-primary)',
+            fontFamily: 'inherit',
+            fontSize: '0.875rem',
+            lineHeight: '1.5',
+            outline: 'none',
+            overflowY: 'hidden',
+            transition: 'border-color 0.15s',
+          }}
+        />
 
         {/* Tabs */}
         <div className="flex gap-1 mb-3">
