@@ -234,7 +234,7 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
       const vh = window.innerHeight
       const spaceRight = vw - rect.right - GAP
       if (spaceRight < PANEL_W + GAP) { setPanelPos(null); setPanelReady(true); return }
-      const panelH = Math.min(vh - 96, 600)
+      const panelH = vh - 96
       const top = Math.max(80, Math.min(rect.top, vh - panelH - 8))
       const connectorTop = rect.top + Math.min(24, rect.height / 2)
       const color = STATUS_ACCENT[selectedDetailProject.status] || 'var(--border)'
@@ -1168,7 +1168,7 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
                       onOpenDetail={() => {
                         if (closingDetailIdRef.current === p.id) { closingDetailIdRef.current = null; return }
                         closingDetailIdRef.current = null
-                        setSelectedDetailId(p.id)
+                        setSelectedDetailId(prev => prev === p.id ? null : p.id)
                       }}
                       onChangeStatus={status => handleChangeStatus(p, status)}
                       onChangeSubStatus={(sub, status) => handleChangeSubStatus(p.id, sub, status)}
