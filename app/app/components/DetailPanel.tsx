@@ -55,6 +55,7 @@ export default function DetailPanel({
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
   const [noteTab, setNoteTab] = useState<'all' | 'notes' | 'history'>('all')
+  const [visibleCount, setVisibleCount] = useState(5)
   const [quickNote, setQuickNote] = useState('')
   const quickNoteSubmittingRef = useRef(false)
   const quickNoteRef = useRef<HTMLTextAreaElement>(null)
@@ -156,7 +157,9 @@ export default function DetailPanel({
     ...(project.notes || []).map(n => ({ ...n, _subName: undefined as string | undefined })),
     ...subprojectNotes,
   ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-  const visibleNotes = noteTab === 'all' ? allNotes : noteTab === 'notes' ? allNotes.filter(n => !isStatusNote(n.text)) : allNotes.filter(n => isStatusNote(n.text))
+  const filteredNotes = noteTab === 'all' ? allNotes : noteTab === 'notes' ? allNotes.filter(n => !isStatusNote(n.text)) : allNotes.filter(n => isStatusNote(n.text))
+  const visibleNotes = filteredNotes.slice(0, visibleCount)
+  const hiddenCount = filteredNotes.length - visibleNotes.length
 
   function fmtDate(iso: string) {
     return new Date(iso).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' })
@@ -391,7 +394,7 @@ export default function DetailPanel({
           {(['all', 'notes', 'history'] as const).map(tab => (
             <button
               key={tab}
-              onClick={() => setNoteTab(tab)}
+              onClick={() => { setNoteTab(tab); setVisibleCount(5) }}
               style={{
                 fontSize: '0.68rem', padding: '3px 10px', borderRadius: 6,
                 border: '1px solid var(--border)', cursor: 'pointer',
@@ -404,7 +407,16 @@ export default function DetailPanel({
           ))}
         </div>
 
-        {visibleNotes.length === 0 && <p className="text-xs t-text-muted">Aucune entrée.</p>}
+        {filteredNotes.length === 0 && <p className="text-xs t-text-muted">Aucune entrée.</p>}
+        {hiddenCount > 0 && (
+          <button
+            onClick={() => setVisibleCount(c => c + 10)}
+            className="w-full text-xs t-text-muted py-1.5 rounded-lg mb-2"
+            style={{ border: '1px solid var(--border)' }}
+          >
+            Voir les {hiddenCount} précédente{hiddenCount > 1 ? 's' : ''}
+          </button>
+        )}
         <div className="flex flex-col gap-1.5">
           {visibleNotes.map(n => {
             const subprojectId = n.subproject_id || undefined
