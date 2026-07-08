@@ -61,7 +61,7 @@ export default function DetailPanel({
   const menuRef = useRef<HTMLDivElement>(null)
   const [noteTab, setNoteTab] = useState<'all' | 'notes' | 'history'>('all')
   const [quickNote, setQuickNote] = useState('')
-  const [quickNoteSubmitting, setQuickNoteSubmitting] = useState(false)
+  const quickNoteSubmittingRef = useRef(false)
   const quickNoteRef = useRef<HTMLTextAreaElement>(null)
 
   useEffect(() => {
@@ -395,7 +395,6 @@ export default function DetailPanel({
           value={quickNote}
           placeholder="Ajouter une note…"
           rows={1}
-          disabled={quickNoteSubmitting}
           onChange={e => {
             setQuickNote(e.target.value)
             const el = e.target
@@ -406,22 +405,22 @@ export default function DetailPanel({
             if (e.key === 'Enter' && !e.shiftKey) {
               e.preventDefault()
               const text = quickNote.trim()
-              if (!text) return
-              setQuickNoteSubmitting(true)
+              if (!text || quickNoteSubmittingRef.current) return
+              quickNoteSubmittingRef.current = true
               await onQuickAddNote(text)
               setQuickNote('')
-              setQuickNoteSubmitting(false)
+              quickNoteSubmittingRef.current = false
               if (quickNoteRef.current) quickNoteRef.current.style.height = 'auto'
             }
             if (e.key === 'Escape') { e.nativeEvent.stopPropagation(); setQuickNote(''); if (quickNoteRef.current) quickNoteRef.current.style.height = 'auto' }
           }}
           onBlur={async () => {
             const text = quickNote.trim()
-            if (!text) return
-            setQuickNoteSubmitting(true)
+            if (!text || quickNoteSubmittingRef.current) return
+            quickNoteSubmittingRef.current = true
             await onQuickAddNote(text)
             setQuickNote('')
-            setQuickNoteSubmitting(false)
+            quickNoteSubmittingRef.current = false
             if (quickNoteRef.current) quickNoteRef.current.style.height = 'auto'
           }}
           onFocus={e => { e.target.style.borderColor = 'var(--accent)' }}
