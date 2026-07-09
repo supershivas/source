@@ -612,7 +612,7 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
       )
       // Auto-note sur le sous-projet (visible dans le log du sous-projet et du parent)
       const noteText = `→ ${STATUS_LABELS[status]}`
-      const { data: noteData } = await supabase.from('notes').insert({ text: noteText, project_id: null, subproject_id: sub.id }).select().single()
+      const { data: noteData } = await supabase.from('notes').insert({ text: noteText, project_id: parentId, subproject_id: sub.id }).select().single()
       if (noteData) {
         setProjects(ps => ps.map(p => p.id !== parentId ? p : {
           ...p, subprojects: (p.subprojects || []).map(s => s.id !== sub.id ? s : { ...s, notes: [...(s.notes || []), noteData] }),
@@ -863,7 +863,7 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
   }
 
   async function handleQuickAddSubNote(parentId: string, subprojectId: string, text: string) {
-    const { data, error } = await supabase.from('notes').insert({ text, project_id: null, subproject_id: subprojectId }).select().single()
+    const { data, error } = await supabase.from('notes').insert({ text, project_id: parentId, subproject_id: subprojectId }).select().single()
     if (error) { showToast(`Erreur : ${error.message}`, 'error'); return }
     if (data) {
       setProjects(ps => ps.map(p => p.id !== parentId ? p : {
