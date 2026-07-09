@@ -46,7 +46,16 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
   const router = useRouter()
   const supabase = createClient()
 
-  const [projects, setProjects] = useState<Project[]>(initialProjects)
+  const [projects, setProjects] = useState<Project[]>(() =>
+    initialProjects.map(p => ({
+      ...p,
+      subprojects: (p.subprojects || []).map(s => ({
+        ...s,
+        notes: (p.notes || []).filter(n => n.subproject_id === s.id),
+      })),
+      notes: (p.notes || []).filter(n => !n.subproject_id),
+    }))
+  )
   const [selectedCat, setSelectedCat] = useState<Category>('pro')
   const [selectedYear, setSelectedYear] = useState<number>(
     initialProjects.find(p => p.cat === 'pro')?.year || new Date().getFullYear()
