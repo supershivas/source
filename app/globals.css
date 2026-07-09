@@ -264,6 +264,16 @@ input::placeholder, textarea::placeholder {
   animation: note-slide-in 280ms cubic-bezier(0.22, 1, 0.36, 1) both;
   overflow: hidden;
 }
+@keyframes subs-in {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes subs-out {
+  from { opacity: 1; transform: translateY(0); }
+  to   { opacity: 0; transform: translateY(-6px); }
+}
+.subs-enter { animation: subs-in  180ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+.subs-exit  { animation: subs-out 140ms ease-in both; }
 
 /* ─── Mobile / PWA UX — depuis supershivas/design-system/mobile.css ─────────*/
 @import './mobile.css';
