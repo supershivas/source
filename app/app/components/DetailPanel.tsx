@@ -9,6 +9,7 @@ interface DetailPanelProps {
   project: Project
   panelRef: React.RefObject<HTMLDivElement | null>
   panelPos?: { top: number; left: number; connectorW: number; connectorTop: number; color: string }
+  mobile?: boolean
   onClose: () => void
   onEdit: () => void
   onDuplicate: () => void
@@ -33,6 +34,7 @@ export default function DetailPanel({
   project,
   panelRef,
   panelPos,
+  mobile,
   onClose,
   onEdit,
   onDuplicate,
@@ -175,8 +177,14 @@ export default function DetailPanel({
     <div
       ref={panelRef}
       data-detail-panel
-      className="fixed z-40 flex w-[420px] max-w-[90vw] max-h-[calc(100vh-6rem)] flex-col overflow-y-auto rounded-lg t-bg-card p-4 detail-panel-enter"
-      style={{
+      className={mobile
+        ? 'fixed inset-0 z-50 flex flex-col overflow-y-auto t-bg-card p-4 detail-panel-enter'
+        : 'fixed z-40 flex w-[420px] max-w-[90vw] max-h-[calc(100vh-6rem)] flex-col overflow-y-auto rounded-lg t-bg-card p-4 detail-panel-enter'
+      }
+      style={mobile ? {
+        boxShadow: 'var(--card-shadow)',
+        borderTop: `3px solid ${panelPos?.color || 'var(--accent)'}`,
+      } : {
         boxShadow: 'var(--card-shadow)',
         borderLeft: `3px solid ${panelPos?.color || 'var(--accent)'}`,
         top: panelPos ? panelPos.top : '5rem',
