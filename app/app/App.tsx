@@ -87,7 +87,10 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
   useEffect(() => {
     const mq = window.matchMedia('(max-width: 640px)')
     setIsMobile(mq.matches)
-    const onChange = (e: MediaQueryListEvent) => setIsMobile(e.matches)
+    const onChange = (e: MediaQueryListEvent) => {
+      setIsMobile(e.matches)
+      if (e.matches) setSidebarW(264)
+    }
     mq.addEventListener('change', onChange)
     return () => mq.removeEventListener('change', onChange)
   }, [])
@@ -1459,7 +1462,7 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
       )}
 
       {/* Connecteur panneau projet */}
-      {selectedDetailProject && panelReady && panelPos && (
+      {selectedDetailProject && panelReady && panelPos && !isMobile && (
         <div
           className="fixed z-39 pointer-events-none detail-connector"
           style={{ top: panelPos.connectorTop, left: panelPos.left - panelPos.connectorW, width: panelPos.connectorW, height: 2, background: panelPos.color, opacity: 0.5 }}
@@ -1470,6 +1473,7 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
           project={selectedDetailProject}
           panelRef={detailPanelRef}
           panelPos={panelPos ?? undefined}
+          mobile={isMobile}
           onClose={() => setSelectedDetailId(null)}
           onEdit={() => setModalProject(selectedDetailProject)}
           onUpdateField={patch => handleUpdateProjectField(selectedDetailProject, patch)}
@@ -1491,7 +1495,7 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
       )}
 
       {/* Connecteur panneau sous-projet */}
-      {selectedDetailSub && panelReady && panelPos && (
+      {selectedDetailSub && panelReady && panelPos && !isMobile && (
         <div
           className="fixed z-39 pointer-events-none detail-connector"
           style={{ top: panelPos.connectorTop, left: panelPos.left - panelPos.connectorW, width: panelPos.connectorW, height: 2, background: panelPos.color, opacity: 0.5 }}
@@ -1503,6 +1507,7 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
           parentName={selectedDetailSubParent?.name || ''}
           panelRef={detailPanelRef}
           panelPos={panelPos ?? undefined}
+          mobile={isMobile}
           onClose={() => { setSelectedDetailSubId(null); setSelectedDetailParentId(null) }}
           onEdit={() => setSubModalTarget({ parentId: selectedDetailParentId, sub: selectedDetailSub })}
           onDuplicate={() => setDuplicateSubTarget({ sub: selectedDetailSub, parentId: selectedDetailParentId })}
