@@ -32,8 +32,8 @@ export default function SortableProjectCard({ dimmed, ...props }: SortableProjec
   }
 
   return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners} data-card-id={props.project.id}>
-      <ProjectCard {...props} />
+    <div ref={setNodeRef} style={style} data-card-id={props.project.id}>
+      <ProjectCard {...props} dragHandleProps={{ ...listeners, ...attributes }} />
     </div>
   )
 }

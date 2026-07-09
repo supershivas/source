@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { Note, Status, Subproject } from '../types'
 import { STATUS_LABELS, STATUS_ACCENT, STATUS_ORDER, toEU, dlStatus } from '../constants'
 import InlineDropdown from './InlineDropdown'
@@ -13,6 +13,7 @@ interface SubprojectCardProps {
   onEdit: () => void
   onDelete: () => void
   onDuplicate: () => void
+  dragHandleProps?: React.HTMLAttributes<HTMLElement>
 }
 
 export default function SubprojectCard({
@@ -24,6 +25,7 @@ export default function SubprojectCard({
   onEdit,
   onDelete,
   onDuplicate,
+  dragHandleProps,
 }: SubprojectCardProps) {
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
@@ -43,7 +45,7 @@ export default function SubprojectCard({
 
   return (
     <div
-      className="t-bg-card rounded-lg p-3 cursor-pointer relative overflow-visible"
+      className="t-bg-card rounded-lg p-3 relative overflow-visible"
       style={{
         boxShadow: 'var(--card-shadow)',
         borderLeft: `3px solid ${STATUS_ACCENT[sub.status]}`,
@@ -54,6 +56,16 @@ export default function SubprojectCard({
       onClick={onOpenDetail}
     >
       <div className="flex items-center gap-3">
+        {/* Grip handle */}
+        <span
+          {...dragHandleProps}
+          className="shrink-0 t-text-muted"
+          style={{ cursor: 'grab', touchAction: 'none', display: 'flex', alignItems: 'center' }}
+          title="Glisser pour réordonner"
+          onClick={e => e.stopPropagation()}
+        >
+          <i className="ti ti-grip-vertical" style={{ fontSize: '0.85rem' }} />
+        </span>
         <div className="flex-1 min-w-0 flex flex-col gap-1">
           <div className="flex items-center gap-2 min-w-0 proj-num-row">
             <span className="text-xs t-text-muted shrink-0 whitespace-nowrap" style={{ fontFamily: 'ui-monospace, monospace' }}>

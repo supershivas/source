@@ -1,5 +1,5 @@
 'use client'
-import { useRef, useState, useEffect } from 'react'
+import React, { useRef, useState, useEffect } from 'react'
 import { Importance, Note, Project, Status, Subproject } from '../types'
 import { IMPORTANCE_LABELS, IMPORTANCE_ORDER, STATUS_ACCENT, STATUS_LABELS, STATUS_ORDER, dlStatus, toEU } from '../constants'
 import InlineDropdown from './InlineDropdown'
@@ -19,6 +19,7 @@ interface ProjectCardProps {
   onArchive: () => void
   onDuplicate: () => void
   onAddSubproject: () => void
+  dragHandleProps?: React.HTMLAttributes<HTMLElement>
 }
 
 export default function ProjectCard({
@@ -36,6 +37,7 @@ export default function ProjectCard({
   onArchive,
   onDuplicate,
   onAddSubproject: _onAddSubproject,
+  dragHandleProps,
 }: ProjectCardProps) {
   const [archiving, setArchiving] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
@@ -114,7 +116,7 @@ export default function ProjectCard({
   return (
     <div
       ref={cardRef}
-      className={`t-bg-card rounded-lg p-3 cursor-grab active:cursor-grabbing relative overflow-visible${archiving ? ' card-archiving' : ''}`}
+      className={`t-bg-card rounded-lg p-3 cursor-pointer relative overflow-visible${archiving ? ' card-archiving' : ''}`}
       style={{ boxShadow: 'var(--card-shadow)', borderLeft: `3px solid ${STATUS_ACCENT[project.status]}` }}
       onClick={onOpenDetail}
       onAnimationEnd={handleAnimationEnd}
@@ -134,11 +136,23 @@ export default function ProjectCard({
             {isSelected && <i className="ti ti-check" style={{ fontSize: '0.6rem', color: '#fff' }} />}
           </button>
         )}
+        {/* Grip handle — drag uniquement via cette zone */}
+        <span
+          {...dragHandleProps}
+          className="shrink-0 t-text-muted"
+          style={{ cursor: 'grab', touchAction: 'none', display: 'flex', alignItems: 'center' }}
+          title="Glisser pour réordonner"
+          onClick={e => e.stopPropagation()}
+        >
+          <i className="ti ti-grip-vertical" style={{ fontSize: '0.85rem' }} />
+        </span>
+
         {/* Chevron collapse/expand des sous-projets */}
         <button
-          onClick={e => { e.stopPropagation(); onToggleExpand?.() }}
-          className="t-text-muted shrink-0"
-          title={isExpanded ? 'Replier les sous-projets' : 'Déplier les sous-projets'}
+          onClick={e => { e.stopPropagation(); if (subprojects.length > 0) onToggleExpand?.() }}
+          className="shrink-0"
+          title={subprojects.length > 0 ? (isExpanded ? 'Replier les sous-projets' : 'Déplier les sous-projets') : undefined}
+          style={{ color: subprojects.length > 0 ? 'var(--accent)' : 'var(--border)', cursor: subprojects.length > 0 ? 'pointer' : 'default' }}
         >
           <i className={`ti ti-chevron-${isExpanded ? 'down' : 'right'}`} />
         </button>

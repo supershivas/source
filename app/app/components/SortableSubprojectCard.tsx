@@ -25,8 +25,8 @@ export default function SortableSubprojectCard({ dimmed, ...props }: SortableSub
   }
 
   return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners} data-card-id={props.sub.id}>
-      <SubprojectCard dimmed={dimmed} {...props} />
+    <div ref={setNodeRef} style={style} data-card-id={props.sub.id}>
+      <SubprojectCard dimmed={dimmed} {...props} dragHandleProps={{ ...listeners, ...attributes }} />
     </div>
   )
 }
