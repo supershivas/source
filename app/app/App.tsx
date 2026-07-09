@@ -23,6 +23,7 @@ import DuplicateSubModal from './components/DuplicateSubModal'
 import CommandPalette from './components/CommandPalette'
 import CalendarView from './components/CalendarView'
 import BulkActionBar from './components/BulkActionBar'
+import CollapseTransition from './components/CollapseTransition'
 import { DndContext, DragEndEvent, PointerSensor, useSensor, useSensors, closestCenter } from '@dnd-kit/core'
 import { SortableContext, arrayMove, verticalListSortingStrategy } from '@dnd-kit/sortable'
 
@@ -1312,42 +1313,40 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
                         />
 
                         {/* Sous-projets inline */}
-                        {isExpanded && visibleSubs.length > 0 && (
-                          <DndContext sensors={subSensors} collisionDetection={closestCenter} onDragEnd={e => handleSubDragEnd(p.id, e)}>
-                            <SortableContext items={visibleSubs.map(s => s.id)} strategy={verticalListSortingStrategy}>
-                              {visibleSubs.map(s => (
-                                <SortableSubprojectCard
-                                  key={s.id}
-                                  sub={s}
-                                  parentId={p.id}
-                                  dimmed={
-                                    !!(selectedDetailId && selectedDetailId !== p.id) ||
-                                    !!(selectedDetailSubId && selectedDetailSubId !== s.id)
-                                  }
-                                  onOpenDetail={() => {
-                                    if (closingDetailIdRef.current === s.id) { closingDetailIdRef.current = null; return }
-                                    closingDetailIdRef.current = null
-                                    setSelectedDetailId(null)
-                                    if (selectedDetailSubId === s.id) {
-                                      setSelectedDetailSubId(null)
-                                      setSelectedDetailParentId(null)
-                                    } else {
-                                      setSelectedDetailSubId(s.id)
-                                      setSelectedDetailParentId(p.id)
+                        <CollapseTransition show={isExpanded}>
+                          {visibleSubs.length > 0 && (
+                            <DndContext sensors={subSensors} collisionDetection={closestCenter} onDragEnd={e => handleSubDragEnd(p.id, e)}>
+                              <SortableContext items={visibleSubs.map(s => s.id)} strategy={verticalListSortingStrategy}>
+                                {visibleSubs.map(s => (
+                                  <SortableSubprojectCard
+                                    key={s.id}
+                                    sub={s}
+                                    parentId={p.id}
+                                    dimmed={
+                                      !!(selectedDetailId && selectedDetailId !== p.id) ||
+                                      !!(selectedDetailSubId && selectedDetailSubId !== s.id)
                                     }
-                                  }}
-                                  onChangeStatus={status => handleChangeSubStatus(p.id, s, status)}
-                                  onEdit={() => setSubModalTarget({ parentId: p.id, sub: s })}
-                                  onDelete={() => setDeleteTarget({ type: 'subproject', id: s.id, parentId: p.id })}
-                                  onDuplicate={() => setDuplicateSubTarget({ sub: s, parentId: p.id })}
-                                />
-                              ))}
-                            </SortableContext>
-                          </DndContext>
-                        )}
-
-                        {/* Bouton ajouter sous-projet (visible quand déplié) */}
-                        {isExpanded && (
+                                    onOpenDetail={() => {
+                                      if (closingDetailIdRef.current === s.id) { closingDetailIdRef.current = null; return }
+                                      closingDetailIdRef.current = null
+                                      setSelectedDetailId(null)
+                                      if (selectedDetailSubId === s.id) {
+                                        setSelectedDetailSubId(null)
+                                        setSelectedDetailParentId(null)
+                                      } else {
+                                        setSelectedDetailSubId(s.id)
+                                        setSelectedDetailParentId(p.id)
+                                      }
+                                    }}
+                                    onChangeStatus={status => handleChangeSubStatus(p.id, s, status)}
+                                    onEdit={() => setSubModalTarget({ parentId: p.id, sub: s })}
+                                    onDelete={() => setDeleteTarget({ type: 'subproject', id: s.id, parentId: p.id })}
+                                    onDuplicate={() => setDuplicateSubTarget({ sub: s, parentId: p.id })}
+                                  />
+                                ))}
+                              </SortableContext>
+                            </DndContext>
+                          )}
                           <div style={{ marginLeft: 32 }}>
                             <button
                               onClick={() => setSubModalTarget({ parentId: p.id })}
@@ -1358,7 +1357,7 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
                               Ajouter un sous-projet
                             </button>
                           </div>
-                        )}
+                        </CollapseTransition>
                       </React.Fragment>
                     )
                   })}
