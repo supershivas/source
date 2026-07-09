@@ -1263,7 +1263,7 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
               <SortableContext items={visibleProjects.map(p => p.id)} strategy={verticalListSortingStrategy}>
                 <div className="flex flex-col gap-2 mx-auto w-full" style={{ maxWidth: '800px' }}>
                   {visibleProjects.map(p => {
-                    const isExpanded = selectedDetailId === p.id || expandedParents.has(p.id)
+                    const isExpanded = selectedDetailId === p.id || selectedDetailParentId === p.id || expandedParents.has(p.id)
                     const pMatches = !hasActiveFilters || projectMatchesFilters(p)
                     const visibleSubs = (p.subprojects || []).filter(s =>
                       !hasActiveFilters || pMatches || subMatchesFilters(s)
