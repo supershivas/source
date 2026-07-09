@@ -10,7 +10,7 @@ export default async function AppPage() {
 
     const { data: projects, error: projectsError } = await supabase
       .from('projects')
-      .select('*, subprojects(*), notes(*)')
+      .select('*, subprojects(*, notes(*)), notes(*)')
       .order('sort_order', { ascending: true })
 
     if (projectsError) throw projectsError
