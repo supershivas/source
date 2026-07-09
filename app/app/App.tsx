@@ -331,6 +331,9 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
       if (t.closest('[data-detail-panel]')) return
       const activeId = selectedDetailSubId || selectedDetailId
       if (t.closest(`[data-card-id="${activeId}"]`)) return
+      // Ne pas fermer si on clique sur un sous-projet du projet/parent actuellement ouvert
+      const parentId = selectedDetailParentId || selectedDetailId
+      if (parentId && t.closest(`[data-parent-id="${parentId}"]`)) return
       closingDetailIdRef.current = activeId
       setTimeout(() => { closingDetailIdRef.current = null }, 0)
       setSelectedDetailId(null)
@@ -339,7 +342,7 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
     }
     document.addEventListener('mousedown', onMouseDown)
     return () => document.removeEventListener('mousedown', onMouseDown)
-  }, [selectedDetailId, selectedDetailSubId, noteModalTarget, deleteTarget, subModalTarget])
+  }, [selectedDetailId, selectedDetailSubId, selectedDetailParentId, noteModalTarget, deleteTarget, subModalTarget])
 
   // Filter helpers
   function projectMatchesFilters(p: Project): boolean {
