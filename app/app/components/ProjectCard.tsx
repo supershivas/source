@@ -149,7 +149,7 @@ export default function ProjectCard({
 
         {/* Chevron collapse/expand des sous-projets */}
         <button
-          onClick={e => { e.stopPropagation(); if (subprojects.length > 0) onToggleExpand?.() }}
+          onClick={e => { e.stopPropagation(); if (subprojects.length > 0) { onToggleExpand?.(); onOpenDetail() } }}
           className="shrink-0"
           title={subprojects.length > 0 ? (isExpanded ? 'Replier les sous-projets' : 'Déplier les sous-projets') : undefined}
           style={{ color: subprojects.length > 0 ? 'var(--accent)' : 'var(--border)', cursor: subprojects.length > 0 ? 'pointer' : 'default' }}
