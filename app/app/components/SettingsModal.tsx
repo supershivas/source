@@ -154,6 +154,30 @@ export default function SettingsModal({ prefs, onChange, onClose, onLogout, user
             </div>
           </div>
 
+          <div>
+            <p className="t-text-muted text-xs uppercase tracking-wide mb-2">Applications</p>
+            <div className="flex gap-2">
+              {[
+                { name: 'Idée', url: 'https://idee-neon.vercel.app/', favicon: 'https://idee-neon.vercel.app/favicon.ico' },
+                { name: 'AutoCompare', url: 'https://supershivas.github.io/projetV/', favicon: 'https://supershivas.github.io/projetV/favicon.ico' },
+                { name: 'Portfolio', url: 'https://stockportfolio-five.vercel.app/', favicon: 'https://stockportfolio-five.vercel.app/favicon.ico' },
+              ].map(app => (
+                <a
+                  key={app.name}
+                  href={app.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-1 flex flex-col items-center gap-1.5 rounded-xl px-3 py-2.5 transition-colors"
+                  style={{ background: 'var(--hover-bg)' }}
+                  title={app.name}
+                >
+                  <img src={app.favicon} alt="" width={20} height={20} className="rounded-sm" onError={e => { (e.target as HTMLImageElement).style.display = 'none' }} />
+                  <span className="t-text-muted text-[10px]">{app.name}</span>
+                </a>
+              ))}
+            </div>
+          </div>
+
           <button
             onClick={onLogout}
             className="w-full py-3 rounded-xl border text-sm font-medium transition-colors"

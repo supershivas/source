@@ -71,8 +71,8 @@ export default function Dashboard({ projects, selectedCat, selectedYear }: Dashb
 
   const weekBuckets = useMemo(() => {
     const allNotes = scope.flatMap(p => [
-      ...(p.notes || []).map(n => n.date),
-      ...(p.subprojects || []).flatMap(s => (s.notes || []).map(n => n.date)),
+      ...(p.notes || []).map(n => n.created_at),
+      ...(p.subprojects || []).flatMap(s => (s.notes || []).map(n => n.created_at)),
     ])
     const now = new Date()
     const buckets: { label: string; start: Date; count: number }[] = []

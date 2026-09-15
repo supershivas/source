@@ -1,4 +1,5 @@
 'use client'
+import React from 'react'
 import { MouseEvent as ReactMouseEvent, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
@@ -8,6 +9,7 @@ import SubprojectModal, { SubprojectFormValues } from './components/SubprojectMo
 import NoteModal, { NoteFormValues } from './components/NoteModal'
 import ConfirmModal from './components/ConfirmModal'
 import SortableProjectCard from './components/SortableProjectCard'
+import SortableSubprojectCard from './components/SortableSubprojectCard'
 import FilterBar, { SortMode } from './components/FilterBar'
 import Dashboard from './components/Dashboard'
 import TrashView from './components/TrashView'
@@ -16,6 +18,12 @@ import YearModal from './components/YearModal'
 import ToastStack, { Toast } from './components/ToastStack'
 import { STATUS_LABELS, IMPORTANCE_LABELS, AUTO_PROGRESS, STATUS_ACCENT, toEU } from './constants'
 import DetailPanel from './components/DetailPanel'
+import SubprojectDetailPanel from './components/SubprojectDetailPanel'
+import DuplicateSubModal from './components/DuplicateSubModal'
+import CommandPalette from './components/CommandPalette'
+import CalendarView from './components/CalendarView'
+import BulkActionBar from './components/BulkActionBar'
+import CollapseTransition from './components/CollapseTransition'
 import { DndContext, DragEndEvent, PointerSensor, useSensor, useSensors, closestCenter } from '@dnd-kit/core'
 import { SortableContext, arrayMove, verticalListSortingStrategy } from '@dnd-kit/sortable'
 
@@ -33,12 +41,22 @@ type DeleteTarget =
 
 type NoteModalTarget = { projectId: string; subprojectId?: string; note?: Note }
 type SubprojectModalTarget = { parentId: string; sub?: Subproject }
+type DuplicateSubTarget = { sub: Subproject; parentId: string }
 
 export default function App({ initialProjects, userId, userEmail }: AppProps) {
   const router = useRouter()
   const supabase = createClient()
 
-  const [projects, setProjects] = useState<Project[]>(initialProjects)
+  const [projects, setProjects] = useState<Project[]>(() =>
+    initialProjects.map(p => ({
+      ...p,
+      subprojects: (p.subprojects || []).map(s => ({
+        ...s,
+        notes: (p.notes || []).filter(n => n.subproject_id === s.id),
+      })),
+      notes: (p.notes || []).filter(n => !n.subproject_id),
+    }))
+  )
   const [selectedCat, setSelectedCat] = useState<Category>('pro')
   const [selectedYear, setSelectedYear] = useState<number>(
     initialProjects.find(p => p.cat === 'pro')?.year || new Date().getFullYear()
@@ -47,18 +65,32 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
   const [subModalTarget, setSubModalTarget] = useState<SubprojectModalTarget | null>(null)
   const [noteModalTarget, setNoteModalTarget] = useState<NoteModalTarget | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null)
+  const [duplicateSubTarget, setDuplicateSubTarget] = useState<DuplicateSubTarget | null>(null)
+
+  // Detail panel — projets
   const [selectedDetailId, setSelectedDetailId] = useState<string | null>(null)
+  // Detail panel — sous-projets
+  const [selectedDetailSubId, setSelectedDetailSubId] = useState<string | null>(null)
+  const [selectedDetailParentId, setSelectedDetailParentId] = useState<string | null>(null)
+
+  const closingDetailIdRef = useRef<string | null>(null)
+  const detailPanelRef = useRef<HTMLDivElement>(null)
   const [panelPos, setPanelPos] = useState<{ top: number; left: number; connectorW: number; connectorTop: number; color: string } | null>(null)
+  const [panelReady, setPanelReady] = useState(false)
   const [toasts, setToasts] = useState<Toast[]>([])
   const [sidebarW, setSidebarW] = useState(264)
   const [isMobile, setIsMobile] = useState(false)
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false)
+  const [expandedParents, setExpandedParents] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     const mq = window.matchMedia('(max-width: 640px)')
     setIsMobile(mq.matches)
-    const onChange = (e: MediaQueryListEvent) => setIsMobile(e.matches)
+    const onChange = (e: MediaQueryListEvent) => {
+      setIsMobile(e.matches)
+      if (e.matches) setSidebarW(264)
+    }
     mq.addEventListener('change', onChange)
     return () => mq.removeEventListener('change', onChange)
   }, [])
@@ -98,6 +130,39 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
     setTimeout(() => setToasts(ts => ts.filter(t => t.id !== id)), 2800)
   }
 
+  async function handleUpdateProjectField(p: Project, patch: Partial<Project>) {
+    const oldPatch: Partial<Project> = {}
+    for (const k of Object.keys(patch) as (keyof Project)[]) {
+      (oldPatch as Record<string, unknown>)[k] = p[k]
+    }
+    updateProject(p.id, patch)
+    const { error } = await supabase.from('projects').update(patch).eq('id', p.id)
+    if (error) { updateProject(p.id, oldPatch); showToast('Erreur lors de la sauvegarde', 'error'); return }
+    const id = Date.now() + Math.random()
+    const timer = setTimeout(() => setToasts(ts => ts.filter(t => t.id !== id)), 3500)
+    setToasts(ts => [...ts, {
+      id, message: 'Modifié', type: 'success' as const,
+      action: {
+        label: 'Annuler',
+        onClick: async () => {
+          clearTimeout(timer)
+          setToasts(ts => ts.filter(t => t.id !== id))
+          updateProject(p.id, oldPatch)
+          await supabase.from('projects').update(oldPatch).eq('id', p.id)
+        },
+      },
+    }])
+  }
+
+  async function handleUpdateSubField(parentId: string, sub: Subproject, patch: Partial<Subproject>) {
+    const { error } = await supabase.from('subprojects').update(patch).eq('id', sub.id)
+    if (!error) {
+      setProjects(ps => ps.map(p => p.id !== parentId ? p : {
+        ...p, subprojects: (p.subprojects || []).map(s => s.id !== sub.id ? s : { ...s, ...patch }),
+      }))
+    }
+  }
+
   const searchInputRef = useRef<HTMLInputElement>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [filterStatus, setFilterStatus] = useState<Status | ''>('')
@@ -122,6 +187,9 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
   const [showArchived, setShowArchived] = useState(false)
   const [showTrash, setShowTrash] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
+  const [showCalendar, setShowCalendar] = useState(false)
+  const [showCommandPalette, setShowCommandPalette] = useState(false)
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const { prefs, setPrefs } = useSettingsPrefs()
 
   const [extraYears, setExtraYears] = useState<Record<Category, number[]>>({ pro: [], perso: [] })
@@ -185,27 +253,43 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
   const trashedProjects = useMemo(() => projects.filter(p => p.trashed), [projects])
 
   const selectedDetailProject = useMemo(
-    () => projects.find(p => p.id === selectedDetailId) || null,
+    () => selectedDetailId ? projects.find(p => p.id === selectedDetailId) || null : null,
     [projects, selectedDetailId]
   )
 
+  const selectedDetailSub = useMemo(
+    () => selectedDetailSubId && selectedDetailParentId
+      ? projects.find(p => p.id === selectedDetailParentId)?.subprojects?.find(s => s.id === selectedDetailSubId) || null
+      : null,
+    [projects, selectedDetailSubId, selectedDetailParentId]
+  )
+
+  const selectedDetailSubParent = useMemo(
+    () => selectedDetailParentId ? projects.find(p => p.id === selectedDetailParentId) || null : null,
+    [projects, selectedDetailParentId]
+  )
+
+  // Panel position — handles both project and subproject detail panels
   useEffect(() => {
-    if (!selectedDetailId || !selectedDetailProject) { setPanelPos(null); return }
+    const activeId = selectedDetailSubId || selectedDetailId
+    const activeStatus = selectedDetailSub?.status || selectedDetailProject?.status
+    if (!activeId || !activeStatus) { setPanelPos(null); setPanelReady(false); return }
     const PANEL_W = 400
     const GAP = 12
     function compute() {
-      const card = document.querySelector<HTMLElement>(`[data-card-id="${selectedDetailId}"]`)
+      const card = document.querySelector<HTMLElement>(`[data-card-id="${activeId}"]`)
       if (!card) return
       const rect = card.getBoundingClientRect()
       const vw = window.innerWidth
       const vh = window.innerHeight
       const spaceRight = vw - rect.right - GAP
-      if (spaceRight < PANEL_W + GAP) { setPanelPos(null); return }
-      const panelH = Math.min(vh - 96, 600)
+      if (spaceRight < PANEL_W + GAP) { setPanelPos(null); setPanelReady(true); return }
+      const panelH = vh - 96
       const top = Math.max(80, Math.min(rect.top, vh - panelH - 8))
       const connectorTop = rect.top + Math.min(24, rect.height / 2)
-      const color = STATUS_ACCENT[selectedDetailProject.status] || 'var(--border)'
+      const color = STATUS_ACCENT[activeStatus] || 'var(--border)'
       setPanelPos({ top, left: rect.right + GAP, connectorW: GAP, connectorTop, color })
+      setPanelReady(true)
     }
     compute()
     window.addEventListener('resize', compute)
@@ -214,21 +298,25 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
       window.removeEventListener('resize', compute)
       document.getElementById('main')?.removeEventListener('scroll', compute)
     }
-  }, [selectedDetailId, selectedDetailProject])
+  }, [selectedDetailId, selectedDetailSubId, selectedDetailProject, selectedDetailSub])
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
-      if ((e.metaKey || e.ctrlKey) && e.key === '/') {
+      if ((e.metaKey || e.ctrlKey) && (e.key === '/' || e.key === 'k')) {
         e.preventDefault()
-        searchInputRef.current?.focus()
-        searchInputRef.current?.select()
+        setShowCommandPalette(true)
         return
       }
       const target = e.target as HTMLElement
       if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT') return
-      if (e.key === 'Escape' && selectedDetailId) {
-        setSelectedDetailId(null)
-        return
+      if (e.key === 'Escape') {
+        if (selectedDetailId || selectedDetailSubId) {
+          setSelectedDetailId(null); setSelectedDetailSubId(null); setSelectedDetailParentId(null); return
+        }
+        if (showCalendar || showDashboard || showArchived || showTrash) {
+          setShowCalendar(false); setShowDashboard(false); setShowArchived(false); setShowTrash(false)
+          return
+        }
       }
       if (e.key === 'n' || e.key === 'N') {
         e.preventDefault()
@@ -244,28 +332,67 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
     }
     document.addEventListener('keydown', onKeyDown)
     return () => document.removeEventListener('keydown', onKeyDown)
-  }, [exportCSV, selectedDetailId])
+  }, [exportCSV, selectedDetailId, selectedDetailSubId, showCalendar, showDashboard, showArchived, showTrash])
+
+  // Outside-click closes either project or subproject detail panel
+  useEffect(() => {
+    if (!selectedDetailId && !selectedDetailSubId) return
+    function onMouseDown(e: MouseEvent) {
+      if (noteModalTarget || deleteTarget || subModalTarget) return
+      const t = e.target as Element
+      if (!document.contains(t)) return
+      if (t.closest('[data-detail-panel]')) return
+      const activeId = selectedDetailSubId || selectedDetailId
+      if (t.closest(`[data-card-id="${activeId}"]`)) return
+      // Ne pas fermer si on clique sur un sous-projet du projet/parent actuellement ouvert
+      const parentId = selectedDetailParentId || selectedDetailId
+      if (parentId && t.closest(`[data-parent-id="${parentId}"]`)) return
+      closingDetailIdRef.current = activeId
+      setTimeout(() => { closingDetailIdRef.current = null }, 0)
+      setSelectedDetailId(null)
+      setSelectedDetailSubId(null)
+      setSelectedDetailParentId(null)
+    }
+    document.addEventListener('mousedown', onMouseDown)
+    return () => document.removeEventListener('mousedown', onMouseDown)
+  }, [selectedDetailId, selectedDetailSubId, selectedDetailParentId, noteModalTarget, deleteTarget, subModalTarget])
+
+  // Filter helpers
+  function projectMatchesFilters(p: Project): boolean {
+    if (filterStatus && p.status !== filterStatus) return false
+    if (filterImportance && p.importance !== filterImportance) return false
+    if (filterEditor && !(p.editor && p.editor.toLowerCase().includes(filterEditor.toLowerCase()))) return false
+    const q = searchQuery.trim().toLowerCase()
+    if (q) {
+      if (!p.name.toLowerCase().includes(q) &&
+          !p.number.toLowerCase().includes(q) &&
+          !(p.editor && p.editor.toLowerCase().includes(q)) &&
+          !(p.client && p.client.toLowerCase().includes(q)) &&
+          !(p.notes || []).some(n => n.text.toLowerCase().includes(q))) return false
+    }
+    return true
+  }
+
+  function subMatchesFilters(s: Subproject): boolean {
+    if (filterStatus && s.status !== filterStatus) return false
+    if (filterImportance || filterEditor) return false  // subs don't have these fields
+    const q = searchQuery.trim().toLowerCase()
+    if (q) {
+      if (!s.name.toLowerCase().includes(q) &&
+          !s.number.toLowerCase().includes(q) &&
+          !(s.notes || []).some(n => n.text.toLowerCase().includes(q))) return false
+    }
+    return true
+  }
 
   const visibleProjects = useMemo(() => {
     let list = projects.filter(
       p => p.cat === selectedCat && p.year === selectedYear && !p.trashed && (showArchived ? p.archived : !p.archived)
     )
 
-    const q = searchQuery.trim().toLowerCase()
-    if (q) {
-      list = list.filter(
-        p =>
-          p.name.toLowerCase().includes(q) ||
-          p.number.toLowerCase().includes(q) ||
-          (p.editor && p.editor.toLowerCase().includes(q)) ||
-          (p.client && p.client.toLowerCase().includes(q)) ||
-          (p.notes || []).some(n => n.text.toLowerCase().includes(q)) ||
-          (p.subprojects || []).some(s => (s.notes || []).some(n => n.text.toLowerCase().includes(q)))
-      )
+    if (hasActiveFilters) {
+      list = list.filter(p => projectMatchesFilters(p) || (p.subprojects || []).some(subMatchesFilters))
     }
-    if (filterStatus) list = list.filter(p => p.status === filterStatus)
-    if (filterImportance) list = list.filter(p => p.importance === filterImportance)
-    if (filterEditor) list = list.filter(p => p.editor && p.editor.toLowerCase().includes(filterEditor.toLowerCase()))
 
     list = [...list]
     if (sortMode === 'number') list.sort((a, b) => a.number.localeCompare(b.number))
@@ -284,7 +411,7 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
     else list.sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
 
     return list
-  }, [projects, selectedCat, selectedYear, showArchived, searchQuery, filterStatus, filterImportance, filterEditor, sortMode])
+  }, [projects, selectedCat, selectedYear, showArchived, searchQuery, filterStatus, filterImportance, filterEditor, sortMode, hasActiveFilters])
 
   function exportCSV() {
     const headers = ['Type', 'Numéro', 'Nom', 'Catégorie', 'Statut', '%', 'Importance', 'Éditeur', 'Client(s)', 'Début', 'Deadline', 'Terminé', 'Mis à jour']
@@ -296,7 +423,7 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
         toEU(p.date), toEU(p.deadline), toEU(p.ended), toEU(p.updated_at),
       ])
       ;(p.subprojects || []).forEach(s => {
-        rows.push(['↳ Sous-projet', s.number, s.name, p.cat, STATUS_LABELS[s.status] || s.status, `${s.progress ?? 0}%`, '', '', '', '', '', toEU(s.ended), ''])
+        rows.push(['↳ Sous-projet', s.number, s.name, p.cat, STATUS_LABELS[s.status] || s.status, `${s.progress ?? 0}%`, '', '', '', '', toEU(s.deadline), toEU(s.ended), ''])
       })
     })
     const csv = [headers, ...rows]
@@ -320,6 +447,7 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
   }
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }))
+  const subSensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }))
 
   async function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event
@@ -342,6 +470,18 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
     })
   }
 
+  function handleSubDragEnd(parentId: string, event: DragEndEvent) {
+    const { active, over } = event
+    if (!over || active.id === over.id) return
+    const parent = projects.find(p => p.id === parentId)
+    if (!parent) return
+    const subs = parent.subprojects || []
+    const oldIndex = subs.findIndex(s => s.id === active.id)
+    const newIndex = subs.findIndex(s => s.id === over.id)
+    if (oldIndex === -1 || newIndex === -1) return
+    setProjects(ps => ps.map(p => p.id === parentId ? { ...p, subprojects: arrayMove(subs, oldIndex, newIndex) } : p))
+  }
+
   async function handleLogout() {
     await supabase.auth.signOut()
     router.push('/login')
@@ -362,10 +502,24 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
 
   // ── Projects ──
   async function handleSaveProject(values: ProjectFormValues) {
+    const { initialNote, ...dbValues } = values
+    const cleanProject = {
+      number: dbValues.number,
+      name: dbValues.name,
+      cat: dbValues.cat,
+      year: dbValues.year,
+      status: dbValues.status,
+      progress: dbValues.progress,
+      importance: dbValues.importance,
+      editor: dbValues.editor || null,
+      client: dbValues.client || null,
+      date: dbValues.date || null,
+      deadline: dbValues.deadline || null,
+    }
     if (modalProject) {
       const { data, error } = await supabase
         .from('projects')
-        .update({ ...values, updated_at: new Date().toISOString() })
+        .update({ ...cleanProject, updated_at: new Date().toISOString() })
         .eq('id', modalProject.id)
         .select()
         .single()
@@ -375,13 +529,28 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
       } else if (error) showToast('Erreur lors de la mise à jour', 'error')
     } else {
       const maxSort = projects.reduce((m, p) => Math.max(m, p.sort_order || 0), 0)
+      const payload = {
+        ...cleanProject,
+        user_id: userId,
+        archived: false,
+        sort_order: maxSort + 1,
+      }
       const { data, error } = await supabase
         .from('projects')
-        .insert({ ...values, trashed: false, archived: false, sort_order: maxSort + 1 })
+        .insert(payload)
         .select()
         .single()
       if (!error && data) {
-        setProjects(ps => [...ps, { ...data, subprojects: [], notes: [] }])
+        let notes: import('./types').Note[] = []
+        if (initialNote.trim()) {
+          const { data: noteData } = await supabase
+            .from('notes')
+            .insert({ text: initialNote.trim(), project_id: data.id })
+            .select()
+            .single()
+          if (noteData) notes = [noteData]
+        }
+        setProjects(ps => [...ps, { ...data, subprojects: [], notes }])
         setSelectedCat(values.cat)
         setSelectedYear(values.year)
         showToast('Projet créé ✓')
@@ -391,11 +560,14 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
   }
 
   async function handleDeleteProject(id: string) {
-    const { error } = await supabase.from('projects').update({ trashed: true }).eq('id', id)
+    await supabase.from('subprojects').delete().eq('parent_id', id)
+    await supabase.from('notes').delete().eq('project_id', id)
+    const { error } = await supabase.from('projects').delete().eq('id', id)
     if (!error) {
-      updateProject(id, { trashed: true })
-      showToast('Projet déplacé dans la corbeille')
-      setSelectedDetailId(prev => (prev === id ? null : prev))
+      setProjects(ps => ps.filter(p => p.id !== id))
+      showToast('Projet supprimé')
+      if (selectedDetailId === id) { setSelectedDetailId(null) }
+      if (selectedDetailParentId === id) { setSelectedDetailSubId(null); setSelectedDetailParentId(null) }
     }
     setDeleteTarget(null)
   }
@@ -405,22 +577,7 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
     const { error } = await supabase.from('projects').update({ archived }).eq('id', p.id)
     if (!error) {
       updateProject(p.id, { archived })
-      showToast(archived ? 'Projet archivé' : 'Projet désarchivé')
-    }
-  }
-
-  async function handleArchiveSubproject(parentId: string, sub: Subproject) {
-    const archived = !sub.archived
-    const { error } = await supabase.from('subprojects').update({ archived }).eq('id', sub.id)
-    if (!error) {
-      setProjects(ps =>
-        ps.map(p =>
-          p.id === parentId
-            ? { ...p, subprojects: (p.subprojects || []).map(s => (s.id === sub.id ? { ...s, archived } : s)) }
-            : p
-        )
-      )
-      showToast(archived ? 'Sous-projet archivé' : 'Sous-projet restauré')
+      showToast(archived ? 'Projet archivé' : 'Projet désarchivé', archived ? 'archive' : 'success')
     }
   }
 
@@ -430,6 +587,11 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
     const { error } = await supabase.from('projects').update(patch).eq('id', p.id)
     if (!error) {
       updateProject(p.id, patch)
+      const noteText = `→ ${STATUS_LABELS[status]}`
+      const { data: noteData } = await supabase.from('notes').insert({ text: noteText, project_id: p.id }).select().single()
+      if (noteData) {
+        setProjects(ps => ps.map(proj => proj.id === p.id ? { ...proj, notes: [...(proj.notes || []), noteData] } : proj))
+      }
       showToast('Statut mis à jour ✓')
     }
   }
@@ -440,6 +602,11 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
       updateProject(p.id, { importance })
       showToast('Priorité mise à jour ✓')
     }
+  }
+
+  async function handleChangeProgress(p: Project, progress: number) {
+    const { error } = await supabase.from('projects').update({ progress }).eq('id', p.id)
+    if (!error) updateProject(p.id, { progress })
   }
 
   function handleCopyNumber(number: string) {
@@ -459,12 +626,16 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
             : p
         )
       )
+      // Auto-note sur le sous-projet (visible dans le log du sous-projet et du parent)
+      const noteText = `→ ${STATUS_LABELS[status]}`
+      const { data: noteData } = await supabase.from('notes').insert({ text: noteText, project_id: parentId, subproject_id: sub.id }).select().single()
+      if (noteData) {
+        setProjects(ps => ps.map(p => p.id !== parentId ? p : {
+          ...p, subprojects: (p.subprojects || []).map(s => s.id !== sub.id ? s : { ...s, notes: [...(s.notes || []), noteData] }),
+        }))
+      }
       showToast('Statut mis à jour ✓')
     }
-  }
-
-  function handleReorderSubprojects(parentId: string, reordered: Subproject[]) {
-    setProjects(ps => ps.map(p => (p.id === parentId ? { ...p, subprojects: reordered } : p)))
   }
 
   async function handleDuplicateProject(p: Project) {
@@ -484,8 +655,8 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
         date: p.date,
         deadline: p.deadline,
         ended: null,
+        user_id: userId,
         archived: false,
-        trashed: false,
         sort_order: maxSort + 1,
       })
       .select()
@@ -496,15 +667,7 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
     for (const s of p.subprojects || []) {
       const { data: newSub } = await supabase
         .from('subprojects')
-        .insert({
-          parent_id: newProject.id,
-          number: s.number,
-          name: s.name,
-          status: s.status,
-          progress: s.progress,
-          archived: false,
-          trashed: false,
-        })
+        .insert({ parent_id: newProject.id, number: s.number, name: s.name, status: s.status, progress: s.progress })
         .select()
         .single()
       if (newSub) newSubprojects.push({ ...newSub, notes: [] })
@@ -514,45 +677,71 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
     for (const n of p.notes || []) {
       const { data: newNote } = await supabase
         .from('notes')
-        .insert({ text: n.text, date: n.date, project_id: newProject.id })
+        .insert({ text: n.text, project_id: newProject.id })
         .select()
         .single()
       if (newNote) newNotes.push(newNote)
     }
 
     setProjects(ps => [...ps, { ...newProject, subprojects: newSubprojects, notes: newNotes }])
-    showToast(`Projet dupliqué ✓ (${newSubprojects.length} sous-projet${newSubprojects.length > 1 ? 's' : ''})`)
+    showToast(`Projet dupliqué ✓`)
   }
 
-  async function handleDuplicateSubproject(parentId: string, sub: Subproject) {
+  async function handleDuplicateSubAsSub(parentId: string, sub: Subproject) {
     const { data: newSub, error } = await supabase
       .from('subprojects')
-      .insert({
-        parent_id: parentId,
-        number: `${sub.number}b`,
-        name: `${sub.name} (copie)`,
-        status: sub.status,
-        progress: sub.progress,
-        archived: false,
-        trashed: false,
-      })
+      .insert({ parent_id: parentId, number: `${sub.number}b`, name: `${sub.name} (copie)`, status: sub.status, progress: sub.progress })
       .select()
       .single()
     if (error || !newSub) return
     setProjects(ps =>
-      ps.map(p =>
-        p.id === parentId ? { ...p, subprojects: [...(p.subprojects || []), { ...newSub, notes: [] }] } : p
-      )
+      ps.map(p => p.id === parentId ? { ...p, subprojects: [...(p.subprojects || []), { ...newSub, notes: [] }] } : p)
     )
     showToast('Sous-projet dupliqué ✓')
+    setDuplicateSubTarget(null)
+  }
+
+  async function handleDuplicateSubAsProject(parentId: string, sub: Subproject) {
+    const parent = projects.find(p => p.id === parentId)
+    if (!parent) return
+    const maxSort = projects.reduce((m, p) => Math.max(m, p.sort_order || 0), 0)
+    const { data: newProject, error } = await supabase
+      .from('projects')
+      .insert({
+        number: sub.number,
+        name: `${sub.name} (copie)`,
+        cat: parent.cat,
+        year: parent.year,
+        status: sub.status,
+        progress: sub.progress,
+        importance: 'medium',
+        deadline: sub.deadline || null,
+        ended: sub.ended || null,
+        user_id: userId,
+        archived: false,
+        sort_order: maxSort + 1,
+      })
+      .select()
+      .single()
+    if (error || !newProject) return
+
+    const newNotes: Note[] = []
+    for (const n of sub.notes || []) {
+      const { data: newNote } = await supabase
+        .from('notes')
+        .insert({ text: n.text, project_id: newProject.id, subproject_id: null })
+        .select()
+        .single()
+      if (newNote) newNotes.push(newNote)
+    }
+
+    setProjects(ps => [...ps, { ...newProject, subprojects: [], notes: newNotes }])
+    showToast(`${sub.name} dupliqué en projet ✓`)
+    setDuplicateSubTarget(null)
   }
 
   async function handleRestoreProject(id: string) {
-    const { error } = await supabase.from('projects').update({ trashed: false }).eq('id', id)
-    if (!error) {
-      updateProject(id, { trashed: false })
-      showToast('Projet restauré')
-    }
+    showToast('Corbeille non disponible (colonne absente en DB)')
   }
 
   async function handleDeleteProjectForever(id: string) {
@@ -562,7 +751,7 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
     if (!error) {
       setProjects(ps => ps.filter(p => p.id !== id))
       showToast('Projet supprimé définitivement')
-      setSelectedDetailId(prev => (prev === id ? null : prev))
+      if (selectedDetailId === id) setSelectedDetailId(null)
     }
     setDeleteTarget(null)
   }
@@ -574,11 +763,11 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
     if (sub) {
       const { data, error } = await supabase
         .from('subprojects')
-        .update({ ...values, updated_at: new Date().toISOString() })
+        .update({ ...values, deadline: values.deadline || null })
         .eq('id', sub.id)
         .select()
         .single()
-      if (!error && data) {
+      if (error) { showToast(error.message, 'error') } else if (data) {
         setProjects(ps =>
           ps.map(p =>
             p.id === parentId
@@ -591,10 +780,10 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
     } else {
       const { data, error } = await supabase
         .from('subprojects')
-        .insert({ ...values, parent_id: parentId, trashed: false, archived: false })
+        .insert({ ...values, deadline: values.deadline || null, parent_id: parentId })
         .select()
         .single()
-      if (!error && data) {
+      if (error) { showToast(error.message, 'error') } else if (data) {
         setProjects(ps =>
           ps.map(p => (p.id === parentId ? { ...p, subprojects: [...(p.subprojects || []), { ...data, notes: [] }] } : p))
         )
@@ -612,6 +801,7 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
           p.id === target.parentId ? { ...p, subprojects: (p.subprojects || []).filter(s => s.id !== target.id) } : p
         )
       )
+      if (selectedDetailSubId === target.id) { setSelectedDetailSubId(null); setSelectedDetailParentId(null) }
       showToast('Sous-projet supprimé')
     }
     setDeleteTarget(null)
@@ -624,11 +814,13 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
     if (note) {
       const { data, error } = await supabase
         .from('notes')
-        .update({ text: values.text, date: values.date || null })
+        .update({ text: values.text })
         .eq('id', note.id)
         .select()
         .single()
-      if (!error && data) {
+      if (error) {
+        showToast(`Erreur : ${error.message}`, 'error')
+      } else if (data) {
         setProjects(ps =>
           ps.map(p => {
             if (p.id !== projectId) return p
@@ -652,13 +844,14 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
         .from('notes')
         .insert({
           text: values.text,
-          date: values.date || null,
           project_id: subprojectId ? null : projectId,
           subproject_id: subprojectId || null,
         })
         .select()
         .single()
-      if (!error && data) {
+      if (error) {
+        showToast(`Erreur : ${error.message}`, 'error')
+      } else if (data) {
         setProjects(ps =>
           ps.map(p => {
             if (p.id !== projectId) return p
@@ -679,9 +872,33 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
     setNoteModalTarget(null)
   }
 
+  async function handleQuickAddNote(projectId: string, text: string) {
+    const { data, error } = await supabase.from('notes').insert({ text, project_id: projectId, subproject_id: null }).select().single()
+    if (error) { showToast(`Erreur : ${error.message}`, 'error'); return }
+    if (data) setProjects(ps => ps.map(p => p.id !== projectId ? p : { ...p, notes: [...(p.notes || []), data] }))
+  }
+
+  async function handleQuickAddSubNote(parentId: string, subprojectId: string, text: string) {
+    const { data, error } = await supabase.from('notes').insert({ text, project_id: parentId, subproject_id: subprojectId }).select().single()
+    if (error) { showToast(`Erreur : ${error.message}`, 'error'); return }
+    if (data) {
+      setProjects(ps => ps.map(p => p.id !== parentId ? p : {
+        ...p,
+        subprojects: (p.subprojects || []).map(s => s.id !== subprojectId ? s : { ...s, notes: [...(s.notes || []), data] }),
+      }))
+    }
+  }
+
   async function handleDeleteNote(target: { id: string; projectId: string; subprojectId?: string }) {
+    const proj = projects.find(p => p.id === target.projectId)
+    const deleted = target.subprojectId
+      ? proj?.subprojects?.find(s => s.id === target.subprojectId)?.notes?.find(n => n.id === target.id)
+      : proj?.notes?.find(n => n.id === target.id)
+
     const { error } = await supabase.from('notes').delete().eq('id', target.id)
-    if (!error) {
+    if (error) {
+      showToast(`Erreur : ${error.message}`, 'error')
+    } else {
       setProjects(ps =>
         ps.map(p => {
           if (p.id !== target.projectId) return p
@@ -696,9 +913,71 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
           return { ...p, notes: (p.notes || []).filter(n => n.id !== target.id) }
         })
       )
-      showToast('Note supprimée')
+      const id = Date.now() + Math.random()
+      const timer = setTimeout(() => setToasts(ts => ts.filter(t => t.id !== id)), 3500)
+      setToasts(ts => [...ts, {
+        id, message: 'Note supprimée', type: 'success' as const,
+        action: deleted ? {
+          label: 'Annuler',
+          onClick: async () => {
+            clearTimeout(timer)
+            setToasts(ts => ts.filter(t => t.id !== id))
+            const { data: restored } = await supabase.from('notes').insert({
+              text: deleted.text,
+              project_id: deleted.project_id,
+              subproject_id: deleted.subproject_id,
+            }).select().single()
+            if (restored) {
+              setProjects(ps => ps.map(p => {
+                if (p.id !== target.projectId) return p
+                if (target.subprojectId) {
+                  return { ...p, subprojects: (p.subprojects || []).map(s =>
+                    s.id === target.subprojectId ? { ...s, notes: [...(s.notes || []), restored] } : s
+                  )}
+                }
+                return { ...p, notes: [...(p.notes || []), restored] }
+              }))
+            }
+          },
+        } : undefined,
+      }])
     }
     setDeleteTarget(null)
+  }
+
+  function toggleSelect(id: string) {
+    setSelectedIds(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  async function handleBulkStatus(status: Status) {
+    const ids = [...selectedIds]
+    const progress = AUTO_PROGRESS[status]
+    const patch: Partial<Project> = progress == null ? { status } : { status, progress }
+    setProjects(ps => ps.map(p => ids.includes(p.id) ? { ...p, ...patch } : p))
+    await Promise.all(ids.map(id => supabase.from('projects').update(patch).eq('id', id)))
+    showToast(`Statut mis à jour (${ids.length})`)
+    setSelectedIds(new Set())
+  }
+
+  async function handleBulkArchive() {
+    const ids = [...selectedIds]
+    setProjects(ps => ps.map(p => ids.includes(p.id) ? { ...p, archived: true } : p))
+    await Promise.all(ids.map(id => supabase.from('projects').update({ archived: true }).eq('id', id)))
+    showToast(`${ids.length} projet${ids.length > 1 ? 's' : ''} archivé${ids.length > 1 ? 's' : ''}`, 'archive')
+    setSelectedIds(new Set())
+  }
+
+  async function handleBulkDelete() {
+    const ids = [...selectedIds]
+    setProjects(ps => ps.filter(p => !ids.includes(p.id)))
+    await Promise.all(ids.map(id => supabase.from('projects').delete().eq('id', id)))
+    showToast(`${ids.length} projet${ids.length > 1 ? 's' : ''} supprimé${ids.length > 1 ? 's' : ''}`)
+    setSelectedIds(new Set())
   }
 
   function handleConfirmDelete() {
@@ -709,9 +988,17 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
     else handleDeleteNote(deleteTarget)
   }
 
+  function toggleParentCollapse(id: string) {
+    setExpandedParents(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
   return (
     <div id="body" className="flex h-screen overflow-hidden">
-      {/* Overlay mobile pour la sidebar */}
       {isMobile && mobileSidebarOpen && (
         <div
           className="fixed inset-0 z-30 bg-black/50"
@@ -719,7 +1006,7 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
         />
       )}
 
-      {/* Sidebar — toujours sombre, parité visuelle avec idee/La-fabrique */}
+      {/* Sidebar */}
       <aside
         id="sidebar"
         className={`sidebar-bg flex flex-col shrink-0 relative transition-transform duration-200 ${
@@ -781,7 +1068,7 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
             <input
               ref={searchInputRef}
               type="text"
-              placeholder="Rechercher…  ⌘/"
+              placeholder="Rechercher…  ⌘K"
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
               className="flex-1 outline-none bg-transparent min-w-0"
@@ -845,7 +1132,22 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
         <div className="px-2 py-2 space-y-1" style={{ borderTop: '1px solid var(--sidebar-border)' }}>
           <button
             onClick={() => {
+              setShowCalendar(v => !v)
+              setShowDashboard(false)
+              setShowArchived(false)
+              setShowTrash(false)
+              if (isMobile) setMobileSidebarOpen(false)
+            }}
+            className={`sidebar-item-hover w-full flex items-center gap-2 text-left text-sm ${showCalendar ? 'sidebar-selected' : ''}`}
+            style={{ padding: '8px 12px', borderRadius: 6, color: showCalendar ? 'var(--sidebar-selected-fg)' : 'var(--sidebar-muted)' }}
+          >
+            <i className="ti ti-calendar" style={{ fontSize: '15px', flexShrink: 0 }} />
+            <span className="flex-1">Calendrier</span>
+          </button>
+          <button
+            onClick={() => {
               setShowDashboard(v => !v)
+              setShowCalendar(false)
               setShowArchived(false)
               setShowTrash(false)
               if (isMobile) setMobileSidebarOpen(false)
@@ -908,13 +1210,22 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
               <i className="ti ti-menu-2" />
             </button>
           )}
-          <h1 className="text-lg font-semibold">
-            {showTrash
-              ? 'Corbeille'
-              : `${selectedCat === 'pro' ? 'Pro' : 'Perso'} · ${selectedYear}${
-                  showDashboard ? ' · Dashboard' : showArchived ? ' · Archivés' : ''
-                }`}
-          </h1>
+          {(() => {
+            const isSpecial = showTrash || showCalendar || showDashboard || showArchived
+            const specialLabel = showTrash ? 'Corbeille' : showCalendar ? 'Calendrier' : showDashboard ? 'Dashboard' : 'Archivés'
+            const baseLabel = `${selectedCat === 'pro' ? 'Pro' : 'Perso'} · ${selectedYear}`
+            const goBack = () => { setShowTrash(false); setShowCalendar(false); setShowDashboard(false); setShowArchived(false) }
+            if (isSpecial) return (
+              <h1 className="text-lg font-semibold flex items-center gap-1.5">
+                <button onClick={goBack} className="flex items-center gap-1 hover:opacity-70 transition-opacity" style={{ color: 'var(--text-muted)', fontWeight: 400, fontSize: '1rem' }}>
+                  {baseLabel}
+                </button>
+                <span style={{ color: 'var(--text-muted)', fontWeight: 300 }}>›</span>
+                <span>{specialLabel}</span>
+              </h1>
+            )
+            return <h1 className="text-lg font-semibold">{baseLabel}</h1>
+          })()}
         </div>
 
         {showTrash ? (
@@ -923,6 +1234,8 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
             onRestore={handleRestoreProject}
             onDeleteForever={id => setDeleteTarget({ type: 'project-permanent', id })}
           />
+        ) : showCalendar ? (
+          <CalendarView projects={projects} onOpenProject={id => { setSelectedDetailId(id); setShowCalendar(false) }} />
         ) : showDashboard ? (
           <Dashboard projects={projects} selectedCat={selectedCat} selectedYear={selectedYear} />
         ) : (
@@ -964,33 +1277,93 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
 
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
               <SortableContext items={visibleProjects.map(p => p.id)} strategy={verticalListSortingStrategy}>
-                <div className="flex flex-col gap-2" style={{ maxWidth: '680px' }}>
-                  {visibleProjects.map(p => (
-                    <SortableProjectCard
-                      key={p.id}
-                      project={p}
-                      onOpenDetail={() => setSelectedDetailId(p.id)}
-                      onChangeStatus={status => handleChangeStatus(p, status)}
-                      onChangeSubStatus={(sub, status) => handleChangeSubStatus(p.id, sub, status)}
-                      onReorderSubprojects={reordered => handleReorderSubprojects(p.id, reordered)}
-                      onChangeImportance={importance => handleChangeImportance(p, importance)}
-                      onCopyNumber={() => handleCopyNumber(p.number)}
-                      onEdit={() => setModalProject(p)}
-                      onDelete={() => setDeleteTarget({ type: 'project', id: p.id })}
-                      onArchive={() => handleArchiveProject(p)}
-                      onDuplicate={() => handleDuplicateProject(p)}
-                      onAddSubproject={() => setSubModalTarget({ parentId: p.id })}
-                      onEditSubproject={sub => setSubModalTarget({ parentId: p.id, sub })}
-                      onDeleteSubproject={sub => setDeleteTarget({ type: 'subproject', id: sub.id, parentId: p.id })}
-                      onArchiveSubproject={sub => handleArchiveSubproject(p.id, sub)}
-                      onDuplicateSubproject={sub => handleDuplicateSubproject(p.id, sub)}
-                      onAddNote={subprojectId => setNoteModalTarget({ projectId: p.id, subprojectId })}
-                      onEditNote={(note, subprojectId) => setNoteModalTarget({ projectId: p.id, subprojectId, note })}
-                      onDeleteNote={(note, subprojectId) =>
-                        setDeleteTarget({ type: 'note', id: note.id, projectId: p.id, subprojectId })
-                      }
-                    />
-                  ))}
+                <div className="flex flex-col gap-2 mx-auto w-full" style={{ maxWidth: '800px' }}>
+                  {visibleProjects.map(p => {
+                    const isExpanded = selectedDetailId === p.id || selectedDetailParentId === p.id || expandedParents.has(p.id)
+                    const pMatches = !hasActiveFilters || projectMatchesFilters(p)
+                    const visibleSubs = (p.subprojects || []).filter(s =>
+                      !hasActiveFilters || pMatches || subMatchesFilters(s)
+                    )
+                    const anyPanelOpen = !!(selectedDetailId || selectedDetailSubId)
+
+                    return (
+                      <React.Fragment key={p.id}>
+                        <SortableProjectCard
+                          project={p}
+                          dimmed={
+                            !!(selectedDetailId && selectedDetailId !== p.id) ||
+                            !!(selectedDetailSubId && selectedDetailParentId !== p.id)
+                          }
+                          isSelected={selectedIds.has(p.id)}
+                          isExpanded={isExpanded}
+                          onToggleExpand={() => toggleParentCollapse(p.id)}
+                          onToggleSelect={() => toggleSelect(p.id)}
+                          onOpenDetail={() => {
+                            if (closingDetailIdRef.current === p.id) { closingDetailIdRef.current = null; return }
+                            closingDetailIdRef.current = null
+                            setSelectedDetailSubId(null)
+                            setSelectedDetailParentId(null)
+                            setSelectedDetailId(prev => prev === p.id ? null : p.id)
+                          }}
+                          onChangeStatus={status => handleChangeStatus(p, status)}
+                          onChangeImportance={importance => handleChangeImportance(p, importance)}
+                          onCopyNumber={() => handleCopyNumber(p.number)}
+                          onEdit={() => setModalProject(p)}
+                          onDelete={() => setDeleteTarget({ type: 'project', id: p.id })}
+                          onArchive={() => handleArchiveProject(p)}
+                          onDuplicate={() => handleDuplicateProject(p)}
+                          onAddSubproject={() => setSubModalTarget({ parentId: p.id })}
+                        />
+
+                        {/* Sous-projets inline */}
+                        <CollapseTransition show={isExpanded}>
+                          {visibleSubs.length > 0 && (
+                            <DndContext sensors={subSensors} collisionDetection={closestCenter} onDragEnd={e => handleSubDragEnd(p.id, e)}>
+                              <SortableContext items={visibleSubs.map(s => s.id)} strategy={verticalListSortingStrategy}>
+                                {visibleSubs.map(s => (
+                                  <SortableSubprojectCard
+                                    key={s.id}
+                                    sub={s}
+                                    parentId={p.id}
+                                    dimmed={
+                                      !!(selectedDetailId && selectedDetailId !== p.id) ||
+                                      !!(selectedDetailSubId && selectedDetailSubId !== s.id)
+                                    }
+                                    onOpenDetail={() => {
+                                      if (closingDetailIdRef.current === s.id) { closingDetailIdRef.current = null; return }
+                                      closingDetailIdRef.current = null
+                                      setSelectedDetailId(null)
+                                      if (selectedDetailSubId === s.id) {
+                                        setSelectedDetailSubId(null)
+                                        setSelectedDetailParentId(null)
+                                      } else {
+                                        setSelectedDetailSubId(s.id)
+                                        setSelectedDetailParentId(p.id)
+                                      }
+                                    }}
+                                    onChangeStatus={status => handleChangeSubStatus(p.id, s, status)}
+                                    onEdit={() => setSubModalTarget({ parentId: p.id, sub: s })}
+                                    onDelete={() => setDeleteTarget({ type: 'subproject', id: s.id, parentId: p.id })}
+                                    onDuplicate={() => setDuplicateSubTarget({ sub: s, parentId: p.id })}
+                                  />
+                                ))}
+                              </SortableContext>
+                            </DndContext>
+                          )}
+                          <div style={{ marginLeft: 32 }}>
+                            <button
+                              onClick={() => setSubModalTarget({ parentId: p.id })}
+                              className="text-xs t-text-muted hover:opacity-80 flex items-center gap-1"
+                              style={{ padding: '2px 4px' }}
+                            >
+                              <i className="ti ti-plus" style={{ fontSize: '0.7rem' }} />
+                              Ajouter un sous-projet
+                            </button>
+                          </div>
+                        </CollapseTransition>
+                      </React.Fragment>
+                    )
+                  })}
                 </div>
               </SortableContext>
             </DndContext>
@@ -1031,7 +1404,7 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
 
       {noteModalTarget && (
         <NoteModal
-          initial={noteModalTarget.note ? { text: noteModalTarget.note.text, date: noteModalTarget.note.date || '' } : undefined}
+          initial={noteModalTarget.note ? { text: noteModalTarget.note.text } : undefined}
           onSave={handleSaveNote}
           onClose={() => setNoteModalTarget(null)}
         />
@@ -1048,15 +1421,27 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
               ? 'Supprimer le sous-projet'
               : 'Supprimer la note'
           }
-          message={
-            deleteTarget.type === 'project'
-              ? 'Le projet sera déplacé dans la corbeille.'
-              : deleteTarget.type === 'project-permanent'
-              ? 'Action irréversible. Sous-projets et notes inclus.'
-              : 'Cette action est définitive.'
-          }
+          message={(() => {
+            if (deleteTarget.type === 'project') {
+              const subCount = projects.find(p => p.id === deleteTarget.id)?.subprojects?.length || 0
+              return subCount > 0
+                ? `Le projet et ses ${subCount} sous-projet${subCount > 1 ? 's' : ''} seront supprimés.`
+                : 'Cette action est définitive.'
+            }
+            if (deleteTarget.type === 'project-permanent') return 'Action irréversible. Sous-projets et notes inclus.'
+            return 'Cette action est définitive.'
+          })()}
           onConfirm={handleConfirmDelete}
           onClose={() => setDeleteTarget(null)}
+        />
+      )}
+
+      {duplicateSubTarget && (
+        <DuplicateSubModal
+          sub={duplicateSubTarget.sub}
+          onDuplicateAsSub={() => handleDuplicateSubAsSub(duplicateSubTarget.parentId, duplicateSubTarget.sub)}
+          onDuplicateAsProject={() => handleDuplicateSubAsProject(duplicateSubTarget.parentId, duplicateSubTarget.sub)}
+          onClose={() => setDuplicateSubTarget(null)}
         />
       )}
 
@@ -1076,33 +1461,62 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
         <YearModal onConfirm={year => addYear(yearModalCat, year)} onClose={() => setYearModalCat(null)} />
       )}
 
-      {selectedDetailProject && panelPos && (
+      {/* Connecteur panneau projet */}
+      {selectedDetailProject && panelReady && panelPos && !isMobile && (
         <div
-          className="fixed z-39 pointer-events-none"
+          className="fixed z-39 pointer-events-none detail-connector"
           style={{ top: panelPos.connectorTop, left: panelPos.left - panelPos.connectorW, width: panelPos.connectorW, height: 2, background: panelPos.color, opacity: 0.5 }}
         />
       )}
-      {selectedDetailProject && (
+      {selectedDetailProject && panelReady && (
         <DetailPanel
           project={selectedDetailProject}
+          panelRef={detailPanelRef}
           panelPos={panelPos ?? undefined}
+          mobile={isMobile}
           onClose={() => setSelectedDetailId(null)}
           onEdit={() => setModalProject(selectedDetailProject)}
+          onUpdateField={patch => handleUpdateProjectField(selectedDetailProject, patch)}
           onDuplicate={() => handleDuplicateProject(selectedDetailProject)}
           onArchive={() => handleArchiveProject(selectedDetailProject)}
           onDelete={() => setDeleteTarget({ type: 'project', id: selectedDetailProject.id })}
+          onChangeStatus={status => handleChangeStatus(selectedDetailProject, status)}
+          onChangeImportance={importance => handleChangeImportance(selectedDetailProject, importance)}
+          onChangeProgress={progress => handleChangeProgress(selectedDetailProject, progress)}
           onAddSubproject={() => setSubModalTarget({ parentId: selectedDetailProject.id })}
-          onEditSubproject={sub => setSubModalTarget({ parentId: selectedDetailProject.id, sub })}
-          onDeleteSubproject={sub =>
-            setDeleteTarget({ type: 'subproject', id: sub.id, parentId: selectedDetailProject.id })
-          }
-          onAddNote={subprojectId => setNoteModalTarget({ projectId: selectedDetailProject.id, subprojectId })}
+          onQuickAddNote={text => handleQuickAddNote(selectedDetailProject.id, text)}
           onEditNote={(note, subprojectId) =>
             setNoteModalTarget({ projectId: selectedDetailProject.id, subprojectId, note })
           }
           onDeleteNote={(note, subprojectId) =>
             setDeleteTarget({ type: 'note', id: note.id, projectId: selectedDetailProject.id, subprojectId })
           }
+        />
+      )}
+
+      {/* Connecteur panneau sous-projet */}
+      {selectedDetailSub && panelReady && panelPos && !isMobile && (
+        <div
+          className="fixed z-39 pointer-events-none detail-connector"
+          style={{ top: panelPos.connectorTop, left: panelPos.left - panelPos.connectorW, width: panelPos.connectorW, height: 2, background: panelPos.color, opacity: 0.5 }}
+        />
+      )}
+      {selectedDetailSub && selectedDetailParentId && panelReady && (
+        <SubprojectDetailPanel
+          sub={selectedDetailSub}
+          parentName={selectedDetailSubParent?.name || ''}
+          panelRef={detailPanelRef}
+          panelPos={panelPos ?? undefined}
+          mobile={isMobile}
+          onClose={() => { setSelectedDetailSubId(null); setSelectedDetailParentId(null) }}
+          onEdit={() => setSubModalTarget({ parentId: selectedDetailParentId, sub: selectedDetailSub })}
+          onDuplicate={() => setDuplicateSubTarget({ sub: selectedDetailSub, parentId: selectedDetailParentId })}
+          onDelete={() => setDeleteTarget({ type: 'subproject', id: selectedDetailSub.id, parentId: selectedDetailParentId })}
+          onChangeStatus={status => handleChangeSubStatus(selectedDetailParentId, selectedDetailSub, status)}
+          onUpdateField={patch => handleUpdateSubField(selectedDetailParentId, selectedDetailSub, patch)}
+          onQuickAddNote={text => handleQuickAddSubNote(selectedDetailParentId, selectedDetailSub.id, text)}
+          onEditNote={note => setNoteModalTarget({ projectId: selectedDetailParentId, subprojectId: selectedDetailSub.id, note })}
+          onDeleteNote={note => setDeleteTarget({ type: 'note', id: note.id, projectId: selectedDetailParentId, subprojectId: selectedDetailSub.id })}
         />
       )}
 
@@ -1134,6 +1548,29 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
       )}
 
       <ToastStack toasts={toasts} />
+
+      {showCommandPalette && (
+        <CommandPalette
+          projects={projects.filter(p => !p.trashed)}
+          onClose={() => setShowCommandPalette(false)}
+          onOpenProject={id => { setShowCommandPalette(false); setSelectedDetailId(id) }}
+          onNewProject={() => setModalProject(null)}
+          onShowDashboard={() => { setShowDashboard(true); setShowCalendar(false); setShowTrash(false); setShowArchived(false) }}
+          onShowCalendar={() => { setShowCalendar(true); setShowDashboard(false); setShowTrash(false); setShowArchived(false) }}
+          onExportCSV={exportCSV}
+          onShowSettings={() => setShowSettings(true)}
+        />
+      )}
+
+      {selectedIds.size > 0 && (
+        <BulkActionBar
+          count={selectedIds.size}
+          onSetStatus={handleBulkStatus}
+          onArchive={handleBulkArchive}
+          onDelete={handleBulkDelete}
+          onDeselect={() => setSelectedIds(new Set())}
+        />
+      )}
     </div>
   )
 }

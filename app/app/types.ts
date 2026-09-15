@@ -1,4 +1,4 @@
-export type Status = 'ready' | 'ongoing' | 'review' | 'sent' | 'done' | 'hold'
+export type Status = 'ready' | 'ongoing' | 'review' | 'sent' | 'done' | 'hold' | 'cancelled'
 export type Importance = 'low' | 'medium' | 'high'
 export type Category = 'pro' | 'perso'
 
@@ -7,7 +7,6 @@ export interface Note {
   project_id?: string | null
   subproject_id?: string | null
   text: string
-  date?: string | null
   created_at: string
 }
 

@@ -61,6 +61,7 @@
   --s-sent-bg:#FBEAF0;    --s-sent-fg:#993356;
   --s-done-bg:#EAF3DE;    --s-done-fg:#3B6D11;
   --s-hold-bg:#F1EFE8;    --s-hold-fg:#5F5E5A;
+  --s-cancelled-bg:#EDE9F4; --s-cancelled-fg:#5B4A72;
 }
 
 /* ─── Variables — Dark ───────────────────────────────────────────────────────*/
@@ -108,6 +109,7 @@ html.dark {
   --s-sent-bg:#2D1520;    --s-sent-fg:#F472B6;
   --s-done-bg:#162510;    --s-done-fg:#86EFAC;
   --s-hold-bg:#2A2825;    --s-hold-fg:#A09890;
+  --s-cancelled-bg:#221A2E; --s-cancelled-fg:#C4A8E8;
 }
 
 /* ─── Base ───────────────────────────────────────────────────────────────────*/
@@ -151,7 +153,8 @@ input::placeholder, textarea::placeholder {
 .s-review  { background: var(--s-review-bg);  color: var(--s-review-fg); }
 .s-sent    { background: var(--s-sent-bg);    color: var(--s-sent-fg); }
 .s-done    { background: var(--s-done-bg);    color: var(--s-done-fg); }
-.s-hold    { background: var(--s-hold-bg);    color: var(--s-hold-fg); }
+.s-hold      { background: var(--s-hold-bg);      color: var(--s-hold-fg); }
+.s-cancelled { background: var(--s-cancelled-bg); color: var(--s-cancelled-fg); }
 
 /* ─── Progress bar ───────────────────────────────────────────────────────────*/
 .prog-wrap { width: 100%; display: flex; align-items: center; gap: 8px; }
@@ -183,6 +186,94 @@ input::placeholder, textarea::placeholder {
 .btn-icon { display: inline-flex; align-items: center; justify-content: center; padding: 3px; border: none; background: none; color: var(--text-muted); border-radius: 5px; cursor: pointer; transition: background .15s, color .15s; }
 .btn-icon:hover { background: var(--hover-bg); color: var(--text-primary); }
 
+/* ─── Archive card animation ─────────────────────────────────────────────────*/
+@keyframes card-archive-out {
+  0%   { transform: translateX(0) scale(1); opacity: 1; }
+  16%  { transform: translateX(-10px) scale(1.015); opacity: 1; }
+  100% { transform: translateX(115%) scale(0.88); opacity: 0; }
+}
+.card-archiving { animation: card-archive-out 0.55s cubic-bezier(0.4, 0, 0.2, 1) forwards; pointer-events: none; }
+
+
+/* ─── Toast animations ───────────────────────────────────────────────────────*/
+@keyframes toast-in {
+  from { transform: translateX(110%); opacity: 0; }
+  to   { transform: translateX(0); opacity: 1; }
+}
+.toast-animate-in { animation: toast-in 0.28s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+.toast-archive { box-shadow: 0 0 0 1px #7f1d1d, 0 4px 16px rgba(185,28,28,0.35) !important; }
+
 /* ─── Overlay / modal ────────────────────────────────────────────────────────*/
 .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; z-index: 50; }
 .modal-box { background: var(--card-bg); border-radius: 12px; box-shadow: var(--card-shadow); width: 100%; max-width: 480px; max-height: 90vh; overflow-y: auto; padding: 20px; }
+
+/* ─── Detail panel — animation d'entrée ─────────────────────────────────────*/
+@keyframes detail-panel-in {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+.detail-panel-enter {
+  animation: detail-panel-in 220ms cubic-bezier(0.34, 1.4, 0.64, 1) backwards;
+  transform-origin: top right;
+}
+.detail-connector {
+  animation: detail-panel-in 220ms cubic-bezier(0.34, 1.4, 0.64, 1) both;
+}
+
+/* ─── Inline editing dans le panneau de détails ──────────────────────────────*/
+.inline-edit-display {
+  display: block; cursor: text; border-radius: 4px; padding: 2px 4px; margin: -2px -4px;
+  transition: background 0.12s;
+  border-bottom: 1px dashed transparent;
+}
+.inline-edit-display:hover {
+  background: var(--hover-bg);
+  border-bottom-color: var(--border);
+}
+.inline-edit-input {
+  background: transparent;
+  border: none;
+  border-bottom: 1.5px solid var(--accent);
+  outline: none;
+  padding: 2px 4px;
+  margin: -2px -4px;
+  border-radius: 4px 4px 0 0;
+  color: var(--text-primary);
+  font-family: inherit;
+  display: block;
+}
+@keyframes note-slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+    max-height: 0;
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    max-height: 200px;
+  }
+}
+.note-enter {
+  animation: note-slide-in 280ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  overflow: hidden;
+}
+@keyframes subs-in {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes subs-out {
+  from { opacity: 1; transform: translateY(0); }
+  to   { opacity: 0; transform: translateY(-6px); }
+}
+.subs-enter { animation: subs-in  180ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+.subs-exit  { animation: subs-out 140ms ease-in both; }
+
+/* ─── Mobile / PWA UX — depuis supershivas/design-system/mobile.css ─────────*/
+@import './mobile.css';
