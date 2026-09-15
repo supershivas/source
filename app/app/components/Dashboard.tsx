@@ -33,7 +33,6 @@ export default function Dashboard({ projects, selectedCat, selectedYear }: Dashb
   const overdue = scope.filter(p => p.deadline && dlStatus(p.deadline) === 'over' && p.status !== 'done')
   const dueSoon = scope.filter(p => p.deadline && dlStatus(p.deadline) === 'warn' && p.status !== 'done')
   const active = scope.filter(p => p.status !== 'done' && p.status !== 'hold')
-  const avgProg = active.length ? Math.round(active.reduce((a, p) => a + (p.progress || 0), 0) / active.length) : 0
 
   const topClients = useMemo(() => {
     const map: Record<string, number> = {}
@@ -134,11 +133,8 @@ export default function Dashboard({ projects, selectedCat, selectedYear }: Dashb
             ))}
           </div>
           <div className="flex items-center gap-2 mt-3">
-            <span className="t-text-muted text-xs">Completion</span>
-            <div className="prog-wrap flex-1 relative h-2 rounded overflow-hidden" style={{ background: 'var(--prog-bg, rgba(0,0,0,0.08))' }}>
-              <div className="prog-fill-bg" style={{ width: `${cr}%`, background: 'var(--s-done-fg)' }} />
-            </div>
-            <strong className="text-xs" style={{ color: 'var(--s-done-fg)' }}>{cr}%</strong>
+            <span className="t-text-muted text-xs">Terminés</span>
+            <strong className="text-xs" style={{ color: 'var(--s-done-fg)' }}>{done} / {total}</strong>
           </div>
         </div>
 
@@ -169,11 +165,9 @@ export default function Dashboard({ projects, selectedCat, selectedYear }: Dashb
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className={cardClass} style={cardStyle}>
-          <div className={titleClass}>Avancement</div>
-          <div className="text-3xl font-bold t-text">{avgProg}%</div>
-          <p className="t-text-muted text-xs mt-1">
-            {active.length} projet{active.length > 1 ? 's' : ''} actif{active.length > 1 ? 's' : ''}
-          </p>
+          <div className={titleClass}>Projets actifs</div>
+          <div className="text-3xl font-bold t-text">{active.length}</div>
+          <p className="t-text-muted text-xs mt-1">hors terminés et en pause</p>
         </div>
 
         <div className={cardClass} style={cardStyle}>

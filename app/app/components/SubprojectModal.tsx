@@ -91,17 +91,6 @@ export default function SubprojectModal({ initial, parentNumber, onSave, onClose
 
           <div className="flex gap-3">
             <div className="flex-1">
-              <label className="text-xs t-text-muted">Progression (%)</label>
-              <input
-                type="number"
-                min={0}
-                max={100}
-                className="w-full rounded-lg border px-3 py-2 text-sm t-border"
-                value={values.progress}
-                onChange={e => setValues(v => ({ ...v, progress: parseInt(e.target.value) || 0 }))}
-              />
-            </div>
-            <div className="flex-1">
               <label className="text-xs t-text-muted">Échéance</label>
               <DateInput
                 value={values.deadline}

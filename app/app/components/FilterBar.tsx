@@ -2,7 +2,7 @@
 import { Importance, Status } from '../types'
 import { STATUS_LABELS, STATUS_ORDER, IMPORTANCE_LABELS, IMPORTANCE_ORDER } from '../constants'
 
-export type SortMode = 'manual' | 'updated' | 'number' | 'name' | 'importance' | 'deadline' | 'progress'
+export type SortMode = 'manual' | 'updated' | 'number' | 'name' | 'importance' | 'deadline'
 
 interface FilterBarProps {
   status: Status | ''
@@ -77,7 +77,6 @@ export default function FilterBar({
         <option value="name">Nom</option>
         <option value="importance">Importance</option>
         <option value="deadline">Échéance</option>
-        <option value="progress">Progression</option>
       </select>
 
       {hasActiveFilters && (

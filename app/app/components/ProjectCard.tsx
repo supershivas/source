@@ -183,7 +183,7 @@ export default function ProjectCard({
             <span className="text-sm font-semibold truncate">{project.name}</span>
           </div>
 
-          {/* Ligne 2 : statut + barre de progression + métadonnées */}
+          {/* Ligne 2 : statut + métadonnées */}
           <div className="flex items-center gap-2 min-w-0">
             <InlineDropdown<Status>
               value={project.status}
@@ -196,12 +196,6 @@ export default function ProjectCard({
                 <span className={`status-badge s-${opt}`} style={{ pointerEvents: 'none' }}>{STATUS_LABELS[opt]}</span>
               )}
             />
-            <div className="prog-wrap" style={{ width: 100, flexShrink: 0 }}>
-              <div className="prog-bar-bg">
-                <div className="prog-fill-bg" style={{ width: `${project.progress ?? 0}%`, background: (project.progress ?? 0) >= 100 ? 'var(--s-done-fg)' : 'var(--accent)' }} />
-              </div>
-              <span className="prog-pct">{project.progress ?? 0}%</span>
-            </div>
             <div className="flex items-center gap-1.5 min-w-0 overflow-hidden">
               {project.editor && (
                 <span className="tag-chip"><i className="ti ti-building" style={{ fontSize: '0.6rem' }} />{project.editor}</span>
