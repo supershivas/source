@@ -78,8 +78,6 @@ export default function ProjectModal({ project, defaultCat, defaultYear, editors
     setSaving(false)
   }
 
-  const autoProgress = AUTO_PROGRESS[values.status]
-  const progressIsAuto = autoProgress != null
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -204,25 +202,6 @@ export default function ProjectModal({ project, defaultCat, defaultYear, editors
                 ))}
               </select>
             </div>
-          </div>
-
-          {/* Progression slider */}
-          <div>
-            <label className="text-xs font-semibold t-text-muted uppercase tracking-wide">Progression</label>
-            <div className="flex items-center gap-3 mt-2">
-              <input
-                type="range"
-                min={0}
-                max={100}
-                className="flex-1"
-                value={values.progress}
-                onChange={e => setValues(v => ({ ...v, progress: parseInt(e.target.value) }))}
-              />
-              <span className="text-sm font-semibold t-text-muted w-8 text-right">{values.progress}%</span>
-            </div>
-            {progressIsAuto && (
-              <p className="text-xs t-text-muted mt-1">Auto : {autoProgress}% pour "{STATUS_LABELS[values.status]}" — ajustable</p>
-            )}
           </div>
 
           {/* Note initiale (création seulement) */}

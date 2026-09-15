@@ -90,12 +90,6 @@ export default function SubprojectCard({
                 <span className={`status-badge s-${opt}`} style={{ pointerEvents: 'none' }}>{STATUS_LABELS[opt]}</span>
               )}
             />
-            <div className="prog-wrap" style={{ width: 80, flexShrink: 0 }}>
-              <div className="prog-bar-bg">
-                <div className="prog-fill-bg" style={{ width: `${sub.progress ?? 0}%`, background: (sub.progress ?? 0) >= 100 ? 'var(--s-done-fg)' : 'var(--accent)' }} />
-              </div>
-              <span className="prog-pct">{sub.progress ?? 0}%</span>
-            </div>
             {sub.deadline && (
               <span className={`tag-chip ${dlClass}`}>☠ {toEU(sub.deadline)}</span>
             )}

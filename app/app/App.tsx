@@ -397,7 +397,6 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
     list = [...list]
     if (sortMode === 'number') list.sort((a, b) => a.number.localeCompare(b.number))
     else if (sortMode === 'name') list.sort((a, b) => a.name.localeCompare(b.name))
-    else if (sortMode === 'progress') list.sort((a, b) => (b.progress ?? 0) - (a.progress ?? 0))
     else if (sortMode === 'deadline')
       list.sort((a, b) => {
         if (!a.deadline) return 1

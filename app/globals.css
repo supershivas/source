@@ -173,7 +173,9 @@ input::placeholder, textarea::placeholder {
 .btn-copy-num:hover { background: var(--border-light); color: var(--accent); }
 
 /* ─── Tag d'importance (pill) ────────────────────────────────────────────────*/
-.imp-tag { display: inline-flex; align-items: center; padding: 1px 7px; border-radius: 20px; font-size: 0.6rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em; cursor: pointer; border: 1px solid transparent; line-height: 1.4; }
+/* Même géométrie que .status-badge (taille, padding, rayon, graisse), sans capitales */
+.imp-tag { display: inline-flex; align-items: center; padding: 3px 9px; border-radius: 10px; font-size: 0.72rem; font-weight: 600; white-space: nowrap; cursor: pointer; border: 1px solid transparent; line-height: 1.2; transition: opacity .12s; }
+.imp-tag:hover { opacity: .75; }
 .imp-tag-low    { color: #8A8A8A; background: color-mix(in srgb, #8A8A8A 15%, transparent); border-color: color-mix(in srgb, #8A8A8A 35%, transparent); }
 .imp-tag-medium { color: #D4A017; background: color-mix(in srgb, #D4A017 15%, transparent); border-color: color-mix(in srgb, #D4A017 35%, transparent); }
 .imp-tag-high   { color: #C0392B; background: color-mix(in srgb, #C0392B 15%, transparent); border-color: color-mix(in srgb, #C0392B 35%, transparent); }
