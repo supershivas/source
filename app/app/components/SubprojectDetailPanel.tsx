@@ -322,15 +322,6 @@ export default function SubprojectDetailPanel({
         </div>
 
         {filteredNotes.length === 0 && <p className="text-xs t-text-muted">Aucune entrée.</p>}
-        {hiddenCount > 0 && (
-          <button
-            onClick={() => setVisibleCount(c => c + 10)}
-            className="w-full text-xs t-text-muted py-1.5 rounded-lg mb-2"
-            style={{ border: '1px solid var(--border)' }}
-          >
-            Voir les {hiddenCount} précédente{hiddenCount > 1 ? 's' : ''}
-          </button>
-        )}
         <div className="flex flex-col gap-1.5">
           {visibleNotes.map(n => {
             if (isStatusNote(n.text)) {
@@ -365,6 +356,15 @@ export default function SubprojectDetailPanel({
             )
           })}
         </div>
+        {hiddenCount > 0 && (
+          <button
+            onClick={() => setVisibleCount(c => c + 10)}
+            className="w-full text-xs t-text-muted py-1.5 rounded-lg mt-2"
+            style={{ border: '1px solid var(--border)' }}
+          >
+            Voir les {hiddenCount} précédente{hiddenCount > 1 ? 's' : ''}
+          </button>
+        )}
       </div>
     </div>
   )
