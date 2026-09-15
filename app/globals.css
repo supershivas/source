@@ -156,12 +156,6 @@ input::placeholder, textarea::placeholder {
 .s-hold      { background: var(--s-hold-bg);      color: var(--s-hold-fg); }
 .s-cancelled { background: var(--s-cancelled-bg); color: var(--s-cancelled-fg); }
 
-/* ─── Progress bar ───────────────────────────────────────────────────────────*/
-.prog-wrap { width: 100%; display: flex; align-items: center; gap: 8px; }
-.prog-bar-bg { position: relative; flex: 1; height: 3px; background: color-mix(in srgb, var(--border) 50%, transparent); overflow: hidden; }
-.prog-fill-bg { position: absolute; inset: 0; height: 100%; transition: width .4s ease; }
-.prog-pct { font-size: 0.68rem; color: var(--text-muted); min-width: 26px; text-align: right; flex-shrink: 0; }
-
 /* ─── Tags / chips de carte projet ───────────────────────────────────────────*/
 .tag-chip { font-size: 0.62rem; color: var(--text-muted); display: inline-flex; align-items: center; gap: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 120px; }
 .tag-chip.dl-warn { color: var(--dl-warn, #854F0B); font-weight: 500; }
