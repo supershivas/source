@@ -416,15 +416,6 @@ export default function DetailPanel({
         </div>
 
         {filteredNotes.length === 0 && <p className="text-xs t-text-muted">Aucune entrée.</p>}
-        {hiddenCount > 0 && (
-          <button
-            onClick={() => setVisibleCount(c => c + 10)}
-            className="w-full text-xs t-text-muted py-1.5 rounded-lg mb-2"
-            style={{ border: '1px solid var(--border)' }}
-          >
-            Voir les {hiddenCount} précédente{hiddenCount > 1 ? 's' : ''}
-          </button>
-        )}
         <div className="flex flex-col gap-1.5">
           {visibleNotes.map(n => {
             const subprojectId = n.subproject_id || undefined
@@ -462,6 +453,15 @@ export default function DetailPanel({
             )
           })}
         </div>
+        {hiddenCount > 0 && (
+          <button
+            onClick={() => setVisibleCount(c => c + 10)}
+            className="w-full text-xs t-text-muted py-1.5 rounded-lg mt-2"
+            style={{ border: '1px solid var(--border)' }}
+          >
+            Voir les {hiddenCount} précédente{hiddenCount > 1 ? 's' : ''}
+          </button>
+        )}
       </div>
     </div>
   )

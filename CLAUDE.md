@@ -74,3 +74,9 @@ correspondant au schéma Supabase existant.
 - Commits descriptifs en français.
 - Une fois la branche poussée : créer une PR vers `main`, puis squash-merge
   (`merge_method: "squash"`). C'est le pattern utilisé pour tout ce repo.
+- **Toujours livrer sur `main`, sauf contre-ordre explicite.** Il ne faut pas
+  attendre qu'on te demande la PR : dès que le travail est prêt et vérifié,
+  pousse la branche, ouvre la PR vers `main` et squash-merge, pour que le
+  changement finisse toujours sur `main` dans la même session. La seule
+  exception est une consigne explicite du type « ne merge pas », « laisse en
+  PR » ou « reste sur la branche ».
