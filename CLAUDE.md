@@ -72,5 +72,4 @@ correspondant au schéma Supabase existant.
 
 ## Exceptions aux conventions
 
-- Thème clair/sombre choisi dans les réglages (classe `html.dark`, réglage en
-  localStorage) plutôt que `prefers-color-scheme` seul (section 8).
+Aucune.
