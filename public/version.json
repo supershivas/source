@@ -1,0 +1,9 @@
+{
+  "version": "1.0.0",
+  "date": "2026-09-24",
+  "changes": [
+    "Numéro de version et nouveautés dans les Réglages",
+    "Export de toutes les données en JSON",
+    "L'app se met à jour toute seule quand une nouvelle version est en ligne"
+  ]
+}

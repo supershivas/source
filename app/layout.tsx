@@ -1,4 +1,6 @@
 import './globals.css'
+import PwaUpdater from './PwaUpdater'
+import { getBuildId } from '@/lib/buildId'
 import { Playfair_Display, Inter } from 'next/font/google'
 
 const playfair = Playfair_Display({
@@ -19,7 +21,10 @@ export const metadata = {
   title: 'Source',
   description: 'Gestion de projets',
   icons: {
-    icon: '/favicon-32x32.png',
+    icon: [
+      { url: '/favicon.svg', type: 'image/svg+xml' },
+      { url: '/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
+    ],
   },
 }
 
@@ -53,6 +58,7 @@ export default function RootLayout({
       </head>
 
       <body className={`${playfair.variable} ${inter.variable}`}>
+        <PwaUpdater currentBuildId={getBuildId()} />
         {children}
       </body>
     </html>

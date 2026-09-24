@@ -24,6 +24,7 @@ import CommandPalette from './components/CommandPalette'
 import CalendarView from './components/CalendarView'
 import BulkActionBar from './components/BulkActionBar'
 import CollapseTransition from './components/CollapseTransition'
+import VersionToast from './components/VersionToast'
 import { DndContext, DragEndEvent, PointerSensor, useSensor, useSensors, closestCenter } from '@dnd-kit/core'
 import { SortableContext, arrayMove, verticalListSortingStrategy } from '@dnd-kit/sortable'
 
@@ -411,6 +412,19 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
 
     return list
   }, [projects, selectedCat, selectedYear, showArchived, searchQuery, filterStatus, filterImportance, filterEditor, sortMode, hasActiveFilters])
+
+  // Clic sur le nom de l'app : retour à l'accueil (liste de l'année
+  // courante) depuis n'importe quelle vue, modales et panneaux refermés.
+  function goHome(e?: ReactMouseEvent) {
+    if (e && (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0)) return
+    e?.preventDefault()
+    setShowDashboard(false); setShowCalendar(false); setShowTrash(false); setShowArchived(false)
+    setShowSettings(false); setShowCommandPalette(false)
+    setModalProject(undefined); setSubModalTarget(null); setNoteModalTarget(null)
+    setDeleteTarget(null); setDuplicateSubTarget(null); setYearModalCat(null)
+    setSelectedDetailId(null); setSelectedDetailSubId(null)
+    setSelectedIds(new Set()); setMobileSidebarOpen(false)
+  }
 
   function exportCSV() {
     const headers = ['Type', 'Numéro', 'Nom', 'Catégorie', 'Statut', '%', 'Importance', 'Éditeur', 'Client(s)', 'Début', 'Deadline', 'Terminé', 'Mis à jour']
@@ -1023,7 +1037,7 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
           />
         )}
         <div className="flex items-center justify-between px-3 gap-2 sidebar-border border-b" style={{ minHeight: '52px' }}>
-          <div className="flex items-center gap-2 min-w-0">
+          <a href="/app" onClick={goHome} className="flex items-center gap-2 min-w-0" title="Revenir à l'accueil">
             <div
               className="flex items-center justify-center rounded-lg flex-shrink-0"
               style={{ width: 24, height: 24, fontSize: '0.85rem', background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-fg)' }}
@@ -1031,11 +1045,13 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
               ✦
             </div>
             <span className="sidebar-text font-semibold" style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: '17px', fontWeight: 700, letterSpacing: '-0.01em', lineHeight: 1 }}>Source</span>
-          </div>
+          </a>
           <button
             onClick={() => setShowSettings(true)}
             className="flex items-center justify-center rounded-lg transition-colors sidebar-icon-btn"
             style={{ width: 32, height: 32 }}
+            title="Réglages"
+            aria-label="Réglages"
           >
             <i className="ti ti-settings" style={{ fontSize: '15px' }} />
           </button>
@@ -1201,13 +1217,26 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
       <main id="main" className="flex-1 overflow-y-auto p-6">
         <div className="flex items-center gap-2 mb-4">
           {isMobile && (
-            <button
-              onClick={() => setMobileSidebarOpen(v => !v)}
-              className="sidebar-icon-btn rounded p-1"
-              style={{ color: 'var(--text-muted)' }}
-            >
-              <i className="ti ti-menu-2" />
-            </button>
+            <>
+              <button
+                onClick={() => setMobileSidebarOpen(v => !v)}
+                className="sidebar-icon-btn rounded flex items-center justify-center"
+                style={{ color: 'var(--text-muted)', width: 44, height: 44, marginLeft: -12 }}
+                aria-label="Menu"
+              >
+                <i className="ti ti-menu-2" />
+              </button>
+              <a
+                href="/app"
+                onClick={goHome}
+                className="font-semibold"
+                style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: '17px', fontWeight: 700, letterSpacing: '-0.01em', color: 'var(--text-primary)' }}
+                title="Revenir à l'accueil"
+              >
+                Source
+              </a>
+              <span style={{ color: 'var(--text-muted)', fontWeight: 300 }}>·</span>
+            </>
           )}
           {(() => {
             const isSpecial = showTrash || showCalendar || showDashboard || showArchived
@@ -1225,6 +1254,17 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
             )
             return <h1 className="text-lg font-semibold">{baseLabel}</h1>
           })()}
+          {isMobile && (
+            <button
+              onClick={() => setShowSettings(true)}
+              className="ml-auto rounded-lg flex items-center justify-center"
+              style={{ color: 'var(--text-muted)', width: 44, height: 44, marginRight: -12 }}
+              title="Réglages"
+              aria-label="Réglages"
+            >
+              <i className="ti ti-settings" style={{ fontSize: '19px' }} />
+            </button>
+          )}
         </div>
 
         {showTrash ? (
@@ -1547,6 +1587,7 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
       )}
 
       <ToastStack toasts={toasts} />
+      <VersionToast onAnnounce={showToast} />
 
       {showCommandPalette && (
         <CommandPalette

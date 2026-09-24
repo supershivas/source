@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { Project } from '../types'
+import Changelog from './Changelog'
 
 export type ThemeMode = 'light' | 'dark' | 'system'
 export type FontSize = 'compact' | 'normal' | 'large'
@@ -56,6 +57,28 @@ interface SettingsModalProps {
   userId: string
   userEmail?: string
   projects: Project[]
+}
+
+function formatUpdatedAt(iso: string) {
+  return new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
+}
+
+// Export complet (projets, sous-projets, notes, corbeille et archives
+// compris) dans un fichier JSON téléchargeable.
+function exportJSON(projects: Project[]) {
+  const data = {
+    app: 'source',
+    version: process.env.NEXT_PUBLIC_APP_VERSION,
+    exported_at: new Date().toISOString(),
+    projects,
+  }
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `source_${new Date().toISOString().split('T')[0]}.json`
+  a.click()
+  URL.revokeObjectURL(url)
 }
 
 export default function SettingsModal({ prefs, onChange, onClose, onLogout, userId, userEmail, projects }: SettingsModalProps) {
@@ -178,6 +201,21 @@ export default function SettingsModal({ prefs, onChange, onClose, onLogout, user
             </div>
           </div>
 
+          <div>
+            <p className="t-text-muted text-xs uppercase tracking-wide mb-2">Sauvegarde</p>
+            <button
+              onClick={() => exportJSON(projects)}
+              className="w-full rounded-xl px-4 py-3 flex items-center gap-3 text-left transition-colors"
+              style={{ background: 'var(--hover-bg)' }}
+            >
+              <i className="ti ti-download t-text-muted" style={{ fontSize: '16px' }} />
+              <span className="flex-1">
+                <span className="t-text text-sm font-medium block">Exporter mes données</span>
+                <span className="t-text-muted text-xs">Tous les projets, sous-projets et notes, en JSON</span>
+              </span>
+            </button>
+          </div>
+
           <button
             onClick={onLogout}
             className="w-full py-3 rounded-xl border text-sm font-medium transition-colors"
@@ -185,6 +223,16 @@ export default function SettingsModal({ prefs, onChange, onClose, onLogout, user
           >
             Se déconnecter
           </button>
+
+          <div>
+            <p className="text-center text-[11px]" style={{ color: 'var(--text-faint)' }}>
+              Version {process.env.NEXT_PUBLIC_APP_VERSION}
+              {process.env.NEXT_PUBLIC_APP_UPDATED_AT && (
+                <> · Mis à jour le {formatUpdatedAt(process.env.NEXT_PUBLIC_APP_UPDATED_AT)}</>
+              )}
+            </p>
+            <Changelog />
+          </div>
         </div>
       </div>
     </div>

@@ -6,8 +6,8 @@
 (https://source-sigma-kohl.vercel.app/app), avec exactement la même
 architecture que `supershivas/idee` : Next.js / React / TypeScript /
 Tailwind, structure `app/app/App.tsx` + composants dans
-`app/app/components/`, styles globaux dans `app/globals.css`. Cible : mobile
-et bureau.
+`app/app/components/`, styles globaux dans `app/globals.css`. Catégorie :
+**primaire**. Cible : mobile et bureau.
 
 ## Base de données partagée (IMPORTANT)
 
@@ -69,6 +69,15 @@ idee.
 
 `app/app/types.ts` définit les types `Project`, `Subproject`, `Note`
 correspondant au schéma Supabase existant.
+
+## Versioning et mises à jour
+
+Même mécanique que idee : `public/version.json` (seule source de vérité) et
+`public/CHANGELOG.md`, lus au build par `next.config.js`
+(`NEXT_PUBLIC_APP_VERSION`, `NEXT_PUBLIC_APP_CHANGELOG`). `PwaUpdater`
+compare l'identifiant de build servi par `/api/build-id` et recharge dès
+qu'aucune saisie n'est en cours ; `VersionToast` annonce « Mis à jour en
+vX.Y.Z ». Réglages : export JSON, version et 5 dernières versions.
 
 ## Exceptions aux conventions
 
