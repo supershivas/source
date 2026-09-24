@@ -1,6 +1,6 @@
 /* ─── Mobile / PWA UX — partagé entre toutes les apps ───────────────────────
    Source de vérité : supershivas/design-system/mobile.css
-   À synchroniser via ./scripts/sync-tokens.sh dans chaque repo consommateur.
+   Mis à jour par scripts/sync-design-system.sh dans chaque app qui l'utilise.
    ─────────────────────────────────────────────────────────────────────────── */
 
 /* Désactive le pull-to-refresh natif (évite rechargement accidentel en PWA) */
@@ -13,13 +13,22 @@ body {
   overscroll-behavior: contain;
 }
 
-/* iOS : empêche le zoom auto quand focus sur un <input> (déclenché si font-size < 16px) */
-@media (max-width: 640px) {
+/* iOS : empêche le zoom auto quand focus sur un <input> (déclenché si font-size < 16px).
+   input:not([type]) est indispensable : un <input> sans attribut type (le cas le
+   plus courant en React/JSX) est bien du texte à l'affichage, mais ne matche PAS
+   le sélecteur [type="text"] — sans cette règle, la quasi-totalité des champs de
+   l'app (recherche, tags, renommer, déplacer vers…) échappait à la protection. */
+@media (max-width: 768px) {
+  input:not([type]),
   input[type="text"],
   input[type="email"],
   input[type="password"],
   input[type="search"],
-  textarea {
+  input[type="tel"],
+  input[type="url"],
+  input[type="number"],
+  textarea,
+  select {
     font-size: 16px;
   }
 }
