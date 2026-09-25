@@ -1,5 +1,8 @@
 # Historique des versions
 
+## 1.0.1 — 2026-09-25
+- Toutes les icônes passent au trait (deadlines, thèmes, recherche, notes de statut…)
+
 ## 1.0.0 — 2026-09-24
 - Numéro de version et nouveautés dans les Réglages
 - Export de toutes les données en JSON

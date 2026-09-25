@@ -204,7 +204,7 @@ export default function ProjectCard({
                 <span className="tag-chip"><i className="ti ti-user" style={{ fontSize: '0.6rem' }} />{project.client}</span>
               )}
               {project.deadline && (
-                <span className={`tag-chip ${dlClass}`}>☠ {toEU(project.deadline)}</span>
+                <span className={`tag-chip ${dlClass}`}><i className="ti ti-skull" style={{ fontSize: '0.6rem' }} />{toEU(project.deadline)}</span>
               )}
               {project.archived && (
                 <span className="tag-chip"><i className="ti ti-archive" style={{ fontSize: '0.6rem' }} />Archivé</span>

@@ -449,7 +449,7 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
     a.download = `source_${selectedCat}_${selectedYear}_${new Date().toISOString().split('T')[0]}.csv`
     a.click()
     URL.revokeObjectURL(url)
-    showToast('Export CSV ✓')
+    showToast('Export CSV')
   }
 
   function clearFilters() {
@@ -538,7 +538,7 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
         .single()
       if (!error && data) {
         updateProject(data.id, data)
-        showToast('Projet mis à jour ✓')
+        showToast('Projet mis à jour')
       } else if (error) showToast('Erreur lors de la mise à jour', 'error')
     } else {
       const maxSort = projects.reduce((m, p) => Math.max(m, p.sort_order || 0), 0)
@@ -566,7 +566,7 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
         setProjects(ps => [...ps, { ...data, subprojects: [], notes }])
         setSelectedCat(values.cat)
         setSelectedYear(values.year)
-        showToast('Projet créé ✓')
+        showToast('Projet créé')
       } else if (error) showToast('Erreur lors de la création', 'error')
     }
     setModalProject(undefined)
@@ -605,7 +605,7 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
       if (noteData) {
         setProjects(ps => ps.map(proj => proj.id === p.id ? { ...proj, notes: [...(proj.notes || []), noteData] } : proj))
       }
-      showToast('Statut mis à jour ✓')
+      showToast('Statut mis à jour')
     }
   }
 
@@ -613,7 +613,7 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
     const { error } = await supabase.from('projects').update({ importance }).eq('id', p.id)
     if (!error) {
       updateProject(p.id, { importance })
-      showToast('Priorité mise à jour ✓')
+      showToast('Priorité mise à jour')
     }
   }
 
@@ -624,7 +624,7 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
 
   function handleCopyNumber(number: string) {
     navigator.clipboard.writeText(number)
-    showToast('Numéro copié ✓')
+    showToast('Numéro copié')
   }
 
   async function handleChangeSubStatus(parentId: string, sub: Subproject, status: Status) {
@@ -647,7 +647,7 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
           ...p, subprojects: (p.subprojects || []).map(s => s.id !== sub.id ? s : { ...s, notes: [...(s.notes || []), noteData] }),
         }))
       }
-      showToast('Statut mis à jour ✓')
+      showToast('Statut mis à jour')
     }
   }
 
@@ -697,7 +697,7 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
     }
 
     setProjects(ps => [...ps, { ...newProject, subprojects: newSubprojects, notes: newNotes }])
-    showToast(`Projet dupliqué ✓`)
+    showToast(`Projet dupliqué`)
   }
 
   async function handleDuplicateSubAsSub(parentId: string, sub: Subproject) {
@@ -710,7 +710,7 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
     setProjects(ps =>
       ps.map(p => p.id === parentId ? { ...p, subprojects: [...(p.subprojects || []), { ...newSub, notes: [] }] } : p)
     )
-    showToast('Sous-projet dupliqué ✓')
+    showToast('Sous-projet dupliqué')
     setDuplicateSubTarget(null)
   }
 
@@ -749,7 +749,7 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
     }
 
     setProjects(ps => [...ps, { ...newProject, subprojects: [], notes: newNotes }])
-    showToast(`${sub.name} dupliqué en projet ✓`)
+    showToast(`${sub.name} dupliqué en projet`)
     setDuplicateSubTarget(null)
   }
 
@@ -788,7 +788,7 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
               : p
           )
         )
-        showToast('Sous-projet mis à jour ✓')
+        showToast('Sous-projet mis à jour')
       }
     } else {
       const { data, error } = await supabase
@@ -800,7 +800,7 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
         setProjects(ps =>
           ps.map(p => (p.id === parentId ? { ...p, subprojects: [...(p.subprojects || []), { ...data, notes: [] }] } : p))
         )
-        showToast('Sous-projet créé ✓')
+        showToast('Sous-projet créé')
       }
     }
     setSubModalTarget(null)
@@ -850,7 +850,7 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
             return { ...p, notes: (p.notes || []).map(n => (n.id === data.id ? data : n)) }
           })
         )
-        showToast('Note mise à jour ✓')
+        showToast('Note mise à jour')
       }
     } else {
       const { data, error } = await supabase
@@ -879,7 +879,7 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
             return { ...p, notes: [...(p.notes || []), data] }
           })
         )
-        showToast('Note ajoutée ✓')
+        showToast('Note ajoutée')
       }
     }
     setNoteModalTarget(null)
@@ -1095,7 +1095,7 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
                 className="w-6 h-6 flex items-center justify-center text-sm flex-shrink-0"
                 style={{ color: 'var(--sidebar-muted)' }}
               >
-                ✕
+                <i className="ti ti-x" />
               </button>
             )}
           </div>
@@ -1285,7 +1285,7 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
                   onClick={() => setMobileFilterOpen(true)}
                   className="rounded-lg border px-3 py-2 text-sm t-border"
                 >
-                  <i className="ti ti-filter" /> Filtres{hasActiveFilters ? ' •' : ''}
+                  <i className="ti ti-filter" /> Filtres{hasActiveFilters && <span className="inline-block rounded-full align-middle ml-1" style={{ width: 5, height: 5, background: 'currentColor' }} />}
                 </button>
               </div>
             ) : (

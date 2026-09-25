@@ -167,7 +167,7 @@ export default function ProjectModal({ project, defaultCat, defaultYear, editors
               />
             </div>
             <div className="flex-1">
-              <label className="text-xs font-semibold t-text-muted uppercase tracking-wide">✈ Deadline</label>
+              <label className="text-xs font-semibold t-text-muted uppercase tracking-wide flex items-center gap-1"><i className="ti ti-plane" />Deadline</label>
               <DateInput
                 value={values.deadline}
                 onChange={v => setValues(vs => ({ ...vs, deadline: v }))}

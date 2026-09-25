@@ -184,7 +184,7 @@ export default function SubprojectDetailPanel({
           <button onClick={onClose} className="sidebar-icon-btn rounded p-1" style={{ color: 'var(--text-muted)' }}>
             <i className="ti ti-x" />
           </button>
-          <span className="text-xs t-text-muted">↳ {parentName}</span>
+          <span className="text-xs t-text-muted"><i className="ti ti-corner-down-right" style={{ fontSize: '0.85em', verticalAlign: '-0.1em' }} /> {parentName}</span>
         </div>
         <div ref={menuRef} className="relative">
           <button onClick={() => setMenuOpen(o => !o)} className="sidebar-icon-btn rounded p-1" title="Plus d'actions" style={{ color: 'var(--text-muted)' }}>
@@ -325,7 +325,7 @@ export default function SubprojectDetailPanel({
                 <div key={n.id} className="flex items-center gap-2 rounded px-2 py-1.5" style={{ border: '1px solid var(--border)', background: 'var(--hover-bg, rgba(0,0,0,0.015))' }}>
                   <span style={{ width: 7, height: 7, borderRadius: '50%', background: color, flexShrink: 0, display: 'inline-block' }} />
                   <span className="flex-1 text-xs" style={{ color: 'var(--text-secondary)' }}>
-                    Statut → <strong>{n.text.slice(2)}</strong>
+                    Statut <i className="ti ti-arrow-right" style={{ fontSize: '0.85em', verticalAlign: '-0.1em' }} /> <strong>{n.text.slice(2)}</strong>
                   </span>
                   <span className="text-xs t-text-muted shrink-0">{fmtDate(n.created_at)}</span>
                   <button onClick={() => onDeleteNote(n)} className="sidebar-icon-btn rounded p-1" style={{ color: 'var(--text-muted)' }}>
