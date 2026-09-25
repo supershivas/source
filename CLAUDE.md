@@ -79,6 +79,13 @@ compare l'identifiant de build servi par `/api/build-id` et recharge dès
 qu'aucune saisie n'est en cours ; `VersionToast` annonce « Mis à jour en
 vX.Y.Z ». Réglages : export JSON, version et 5 dernières versions.
 
+## Icônes
+
+Règle du design system : icônes Tabler au trait uniquement. Restent tels
+quels, parce que ce ne sont pas des icônes d'interface : le logo ✦ de
+l'en-tête (marque de l'app, à garder), le « ↳ » de l'export CSV (donnée) et
+le préfixe `→ ` des notes de statut (lu par `isStatusNote`).
+
 ## Exceptions aux conventions
 
 Aucune.
