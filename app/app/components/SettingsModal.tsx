@@ -105,9 +105,9 @@ export default function SettingsModal({ prefs, onChange, onClose, onLogout, user
             <p className="t-text-muted text-xs uppercase tracking-wide mb-2">Apparence</p>
             <div className="flex gap-2 mb-2">
               {([
-                { value: 'light', label: 'Clair', icon: '☀️' },
-                { value: 'dark', label: 'Sombre', icon: '🌙' },
-                { value: 'system', label: 'Système', icon: '💻' },
+                { value: 'light', label: 'Clair', icon: 'ti-sun' },
+                { value: 'dark', label: 'Sombre', icon: 'ti-moon' },
+                { value: 'system', label: 'Système', icon: 'ti-device-desktop' },
               ] as { value: ThemeMode; label: string; icon: string }[]).map(t => (
                 <button
                   key={t.value}
@@ -118,7 +118,7 @@ export default function SettingsModal({ prefs, onChange, onClose, onLogout, user
                     background: prefs.theme === t.value ? 'var(--accent-muted)' : 'transparent',
                   }}
                 >
-                  <span>{t.icon}</span>
+                  <i className={`ti ${t.icon}`} />
                   <span className="text-xs">{t.label}</span>
                 </button>
               ))}

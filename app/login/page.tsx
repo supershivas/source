@@ -140,7 +140,7 @@ export default function LoginPage() {
               style={{ fontSize: '13px', color: 'rgba(255,255,255,0.45)', background: 'none', border: 'none', cursor: 'pointer' }}
               onMouseEnter={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.75)')}
               onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.45)')}>
-              ← Retour à la connexion
+              <span className="inline-flex items-center gap-1"><i className="ti ti-arrow-left" />Retour à la connexion</span>
             </button>
           )}
           {mode === 'login' && (

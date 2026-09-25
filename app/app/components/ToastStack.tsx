@@ -34,7 +34,6 @@ export default function ToastStack({ toasts }: ToastStackProps) {
           >
             <i className={`ti ${c.icon}`} />
             <span>{t.message}</span>
-            {isArchive && <span style={{ marginLeft: 2, fontSize: '0.9em' }}>✦</span>}
             {t.action && (
               <button
                 onClick={t.action.onClick}

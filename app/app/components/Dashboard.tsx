@@ -141,21 +141,21 @@ export default function Dashboard({ projects, selectedCat, selectedYear }: Dashb
         <div className={cardClass} style={cardStyle}>
           <div className={titleClass}>Alertes</div>
           {overdue.length === 0 && dueSoon.length === 0 ? (
-            <p className="t-text-muted text-sm">✓ Aucune deadline critique</p>
+            <p className="t-text-muted text-sm flex items-center gap-1.5"><i className="ti ti-circle-check" />Aucune deadline critique</p>
           ) : (
             <div className="flex flex-col gap-1.5">
               {overdue.map(p => (
                 <div key={p.id} className="flex items-center gap-2 text-sm">
                   <span className="t-text-muted text-xs">{p.number}</span>
                   <span className="t-text flex-1 truncate">{p.name}</span>
-                  <span className="text-xs" style={{ color: '#C0392B' }}>☠ {toEU(p.deadline)}</span>
+                  <span className="text-xs inline-flex items-center gap-1" style={{ color: '#C0392B' }}><i className="ti ti-skull" />{toEU(p.deadline)}</span>
                 </div>
               ))}
               {dueSoon.map(p => (
                 <div key={p.id} className="flex items-center gap-2 text-sm">
                   <span className="t-text-muted text-xs">{p.number}</span>
                   <span className="t-text flex-1 truncate">{p.name}</span>
-                  <span className="text-xs" style={{ color: '#D4A017' }}>⚠ {toEU(p.deadline)}</span>
+                  <span className="text-xs inline-flex items-center gap-1" style={{ color: '#D4A017' }}><i className="ti ti-alert-triangle" />{toEU(p.deadline)}</span>
                 </div>
               ))}
             </div>

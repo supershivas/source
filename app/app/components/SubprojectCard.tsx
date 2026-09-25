@@ -91,7 +91,7 @@ export default function SubprojectCard({
               )}
             />
             {sub.deadline && (
-              <span className={`tag-chip ${dlClass}`}>☠ {toEU(sub.deadline)}</span>
+              <span className={`tag-chip ${dlClass}`}><i className="ti ti-skull" style={{ fontSize: '0.6rem' }} />{toEU(sub.deadline)}</span>
             )}
           </div>
         </div>
