@@ -1,7 +1,9 @@
 {
-  "version": "1.0.1",
-  "date": "2026-09-25",
+  "version": "1.1.0",
+  "date": "2026-09-26",
   "changes": [
-    "Toutes les icônes passent au trait (deadlines, thèmes, recherche, notes de statut…)"
+    "Restauration d'une sauvegarde JSON depuis les Réglages",
+    "Les projets déjà consultés restent lisibles hors ligne",
+    "L'icône de l'onglet s'affiche de nouveau partout"
   ]
 }

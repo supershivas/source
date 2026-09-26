@@ -25,6 +25,7 @@ import CalendarView from './components/CalendarView'
 import BulkActionBar from './components/BulkActionBar'
 import CollapseTransition from './components/CollapseTransition'
 import VersionToast from './components/VersionToast'
+import { restoreBackup, Backup } from './importBackup'
 import { DndContext, DragEndEvent, PointerSensor, useSensor, useSensors, closestCenter } from '@dnd-kit/core'
 import { SortableContext, arrayMove, verticalListSortingStrategy } from '@dnd-kit/sortable'
 
@@ -44,20 +45,24 @@ type NoteModalTarget = { projectId: string; subprojectId?: string; note?: Note }
 type SubprojectModalTarget = { parentId: string; sub?: Subproject }
 type DuplicateSubTarget = { sub: Subproject; parentId: string }
 
+// Supabase renvoie toutes les notes au niveau du projet : on range celles
+// d'un sous-projet sous ce sous-projet.
+function withNotesBySubproject(list: Project[]): Project[] {
+  return list.map(p => ({
+    ...p,
+    subprojects: (p.subprojects || []).map(s => ({
+      ...s,
+      notes: (p.notes || []).filter(n => n.subproject_id === s.id),
+    })),
+    notes: (p.notes || []).filter(n => !n.subproject_id),
+  }))
+}
+
 export default function App({ initialProjects, userId, userEmail }: AppProps) {
   const router = useRouter()
   const supabase = createClient()
 
-  const [projects, setProjects] = useState<Project[]>(() =>
-    initialProjects.map(p => ({
-      ...p,
-      subprojects: (p.subprojects || []).map(s => ({
-        ...s,
-        notes: (p.notes || []).filter(n => n.subproject_id === s.id),
-      })),
-      notes: (p.notes || []).filter(n => !n.subproject_id),
-    }))
-  )
+  const [projects, setProjects] = useState<Project[]>(() => withNotesBySubproject(initialProjects))
   const [selectedCat, setSelectedCat] = useState<Category>('pro')
   const [selectedYear, setSelectedYear] = useState<number>(
     initialProjects.find(p => p.cat === 'pro')?.year || new Date().getFullYear()
@@ -424,6 +429,19 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
     setDeleteTarget(null); setDuplicateSubTarget(null); setYearModalCat(null)
     setSelectedDetailId(null); setSelectedDetailSubId(null)
     setSelectedIds(new Set()); setMobileSidebarOpen(false)
+  }
+
+  // Restauration d'une sauvegarde JSON (Réglages), puis rechargement des
+  // données depuis Supabase pour afficher l'état réel.
+  async function handleImport(backup: Backup) {
+    await restoreBackup(supabase, userId, backup)
+    const { data, error } = await supabase
+      .from('projects')
+      .select('*, subprojects(*), notes(*)')
+      .order('sort_order', { ascending: true })
+    if (error) throw error
+    setProjects(withNotesBySubproject(data || []))
+    showToast('Sauvegarde restaurée')
   }
 
   function exportCSV() {
@@ -1493,6 +1511,7 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
           userId={userId}
           userEmail={userEmail}
           projects={projects}
+          onImport={handleImport}
         />
       )}
 

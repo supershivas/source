@@ -1,5 +1,6 @@
 import './globals.css'
 import PwaUpdater from './PwaUpdater'
+import ServiceWorkerRegister from './ServiceWorkerRegister'
 import { getBuildId } from '@/lib/buildId'
 import { Playfair_Display, Inter } from 'next/font/google'
 
@@ -22,8 +23,8 @@ export const metadata = {
   description: 'Gestion de projets',
   icons: {
     icon: [
+      { url: '/favicon.ico', sizes: 'any' },
       { url: '/favicon.svg', type: 'image/svg+xml' },
-      { url: '/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
     ],
   },
 }
@@ -36,7 +37,6 @@ export default function RootLayout({
   return (
     <html lang="fr">
       <head>
-        <link rel="icon" href="/favicon-32x32.png" />
 
         {/* PWA manifest */}
         <link rel="manifest" href="/manifest.json" />
@@ -59,6 +59,7 @@ export default function RootLayout({
 
       <body className={`${playfair.variable} ${inter.variable}`}>
         <PwaUpdater currentBuildId={getBuildId()} />
+        <ServiceWorkerRegister />
         {children}
       </body>
     </html>

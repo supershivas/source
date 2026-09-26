@@ -39,5 +39,15 @@ const nextConfig = {
     NEXT_PUBLIC_APP_UPDATED_AT: buildDate(),
     NEXT_PUBLIC_APP_CHANGELOG: JSON.stringify(recentChangelog()),
   },
+  async headers() {
+    return [
+      {
+        // Revalidé à chaque visite, pour que les mises à jour du service
+        // worker se propagent aussi vite que celles de l'app.
+        source: '/sw.js',
+        headers: [{ key: 'Cache-Control', value: 'no-cache, no-store, must-revalidate' }],
+      },
+    ]
+  },
 }
 module.exports = nextConfig

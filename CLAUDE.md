@@ -77,7 +77,14 @@ Même mécanique que idee : `public/version.json` (seule source de vérité) et
 (`NEXT_PUBLIC_APP_VERSION`, `NEXT_PUBLIC_APP_CHANGELOG`). `PwaUpdater`
 compare l'identifiant de build servi par `/api/build-id` et recharge dès
 qu'aucune saisie n'est en cours ; `VersionToast` annonce « Mis à jour en
-vX.Y.Z ». Réglages : export JSON, version et 5 dernières versions.
+vX.Y.Z ». Réglages : export JSON, restauration d'une sauvegarde
+(`importBackup.ts` : réécrit chaque ligne par son id, ne supprime rien),
+version et 5 dernières versions.
+
+Hors ligne : `public/sw.js` (même service worker que idee, caches
+`source-*`) rejoue en lecture seule ce qui a déjà été vu en ligne ; enregistré
+par `app/ServiceWorkerRegister.tsx`. Changer le suffixe `-v1` des caches pour
+les invalider.
 
 ## Icônes
 

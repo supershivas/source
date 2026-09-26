@@ -1,7 +1,9 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Project } from '../types'
 import Changelog from './Changelog'
+import ConfirmModal from './ConfirmModal'
+import { parseBackup, Backup } from '../importBackup'
 
 export type ThemeMode = 'light' | 'dark' | 'system'
 export type FontSize = 'compact' | 'normal' | 'large'
@@ -57,6 +59,7 @@ interface SettingsModalProps {
   userId: string
   userEmail?: string
   projects: Project[]
+  onImport: (backup: Backup) => Promise<void>
 }
 
 function formatUpdatedAt(iso: string) {
@@ -81,7 +84,38 @@ function exportJSON(projects: Project[]) {
   URL.revokeObjectURL(url)
 }
 
-export default function SettingsModal({ prefs, onChange, onClose, onLogout, userId, userEmail, projects }: SettingsModalProps) {
+export default function SettingsModal({ prefs, onChange, onClose, onLogout, userId, userEmail, projects, onImport }: SettingsModalProps) {
+  const fileRef = useRef<HTMLInputElement>(null)
+  const [pending, setPending] = useState<Backup | null>(null)
+  const [importError, setImportError] = useState<string | null>(null)
+  const [importing, setImporting] = useState(false)
+
+  async function onFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+    setImportError(null)
+    try {
+      setPending(parseBackup(await file.text()))
+    } catch (err) {
+      setImportError(err instanceof Error ? err.message : 'Import impossible.')
+    }
+  }
+
+  async function confirmImport() {
+    if (!pending || importing) return
+    setImporting(true)
+    try {
+      await onImport(pending)
+      setPending(null)
+    } catch (err) {
+      setImportError(err instanceof Error ? err.message : 'Import impossible.')
+      setPending(null)
+    } finally {
+      setImporting(false)
+    }
+  }
+
   const activeProjects = projects.filter(p => !p.trashed && !p.archived).length
   const activeSubprojects = projects.reduce(
     (n, p) => n + (p.subprojects?.filter(s => !s.trashed && !s.archived).length || 0),
@@ -214,6 +248,20 @@ export default function SettingsModal({ prefs, onChange, onClose, onLogout, user
                 <span className="t-text-muted text-xs">Tous les projets, sous-projets et notes, en JSON</span>
               </span>
             </button>
+            <button
+              onClick={() => fileRef.current?.click()}
+              disabled={importing}
+              className="mt-2 w-full rounded-xl px-4 py-3 flex items-center gap-3 text-left transition-colors"
+              style={{ background: 'var(--hover-bg)' }}
+            >
+              <i className="ti ti-upload t-text-muted" style={{ fontSize: '16px' }} />
+              <span className="flex-1">
+                <span className="t-text text-sm font-medium block">{importing ? 'Restauration…' : 'Restaurer une sauvegarde'}</span>
+                <span className="t-text-muted text-xs">Depuis un fichier exporté ci-dessus</span>
+              </span>
+            </button>
+            <input ref={fileRef} type="file" accept="application/json,.json" hidden onChange={onFile} />
+            {importError && <p className="mt-2 text-xs" style={{ color: 'var(--s-sent-fg)' }}>{importError}</p>}
           </div>
 
           <button
@@ -234,6 +282,16 @@ export default function SettingsModal({ prefs, onChange, onClose, onLogout, user
             <Changelog />
           </div>
         </div>
+
+        {pending && (
+          <ConfirmModal
+            title="Restaurer cette sauvegarde ?"
+            message={`${pending.projects.length} projets, ${pending.subprojects.length} sous-projets et ${pending.notes.length} notes seront réécrits tels qu'enregistrés dans le fichier. Ce qui n'y figure pas est conservé ; rien n'est supprimé.`}
+            confirmLabel="Restaurer"
+            onConfirm={confirmImport}
+            onClose={() => setPending(null)}
+          />
+        )}
       </div>
     </div>
   )
