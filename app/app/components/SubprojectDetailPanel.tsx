@@ -4,6 +4,7 @@ import { Note, Status, Subproject } from '../types'
 import { STATUS_LABELS, STATUS_ACCENT, STATUS_ORDER, toEU } from '../constants'
 import InlineDropdown from './InlineDropdown'
 import DateInput from './DateInput'
+import NoteText from './NoteText'
 
 interface SubprojectDetailPanelProps {
   sub: Subproject
@@ -337,7 +338,7 @@ export default function SubprojectDetailPanel({
             return (
               <div key={n.id} className={`flex items-start gap-2 rounded border t-border px-2 py-1.5${n.id === newNoteId ? ' note-enter' : ''}`}>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm">{n.text}</p>
+                  <NoteText text={n.text} />
                   <span className="text-xs t-text-muted">{fmtDate(n.created_at)}</span>
                 </div>
                 <button onClick={() => onEditNote(n)} className="sidebar-icon-btn rounded p-1" style={{ color: 'var(--text-muted)' }}>

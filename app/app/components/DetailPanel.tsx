@@ -4,6 +4,7 @@ import { Note, Project, Status, Importance } from '../types'
 import { STATUS_LABELS, STATUS_ACCENT, IMPORTANCE_LABELS, STATUS_ORDER, IMPORTANCE_ORDER, toEU } from '../constants'
 import InlineDropdown from './InlineDropdown'
 import DateInput from './DateInput'
+import NoteText from './NoteText'
 
 interface DetailPanelProps {
   project: Project
@@ -440,7 +441,7 @@ export default function DetailPanel({
               <div key={n.id} className={`flex items-start gap-2 rounded border t-border px-2 py-1.5${n.id === newNoteId ? ' note-enter' : ''}`}>
                 <div className="flex-1 min-w-0">
                   {n._subName && <p className="text-xs t-text-muted mb-0.5"><i className="ti ti-corner-down-right" style={{ fontSize: '0.85em', verticalAlign: '-0.1em' }} /> {n._subName}</p>}
-                  <p className="text-sm">{n.text}</p>
+                  <NoteText text={n.text} />
                   <span className="text-xs t-text-muted">{fmtDate(n.created_at)}</span>
                 </div>
                 <button onClick={() => onEditNote(n, subprojectId)} className="sidebar-icon-btn rounded p-1" style={{ color: 'var(--text-muted)' }}>

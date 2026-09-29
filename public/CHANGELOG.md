@@ -1,5 +1,9 @@
 # Historique des versions
 
+## 1.2.0 — 2026-09-29
+- Les notes longues sont repliées à 4 lignes, avec « Afficher plus » pour les lire en entier
+- Les retours à la ligne des notes sont respectés
+
 ## 1.1.0 — 2026-09-26
 - Restauration d'une sauvegarde JSON depuis les Réglages
 - Les projets déjà consultés restent lisibles hors ligne
