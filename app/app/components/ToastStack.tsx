@@ -22,7 +22,7 @@ export default function ToastStack({ toasts }: ToastStackProps) {
   }
 
   return (
-    <div className="fixed bottom-5 right-5 z-50 flex flex-col gap-1.5 pointer-events-none">
+    <div className="toast-stack fixed bottom-5 right-5 z-50 flex flex-col gap-1.5 pointer-events-none">
       {toasts.map(t => {
         const c = colors[t.type]
         const isArchive = t.type === 'archive'

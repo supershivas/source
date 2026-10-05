@@ -1,5 +1,9 @@
 # Historique des versions
 
+## 1.6.0 — 2026-10-05
+- Mobile : un bouton « + » en bas à droite crée un nouveau projet
+- Mobile : le calendrier est recentré et l'en-tête tient sur une ligne
+
 ## 1.5.3 — 2026-10-05
 - Mobile : le tiroir des détails monte jusqu'en haut de l'écran
 - Mobile : on le ferme en le glissant vers le bas depuis n'importe où, dès qu'on est en haut du contenu

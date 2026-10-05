@@ -1,8 +1,8 @@
 {
-  "version": "1.5.3",
+  "version": "1.6.0",
   "date": "2026-10-05",
   "changes": [
-    "Mobile : le tiroir des détails monte jusqu'en haut de l'écran",
-    "Mobile : on le ferme en le glissant vers le bas depuis n'importe où, dès qu'on est en haut du contenu"
+    "Mobile : un bouton « + » en bas à droite crée un nouveau projet",
+    "Mobile : le calendrier est recentré et l'en-tête tient sur une ligne"
   ]
 }

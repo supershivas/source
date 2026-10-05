@@ -55,16 +55,16 @@ export default function CalendarView({ projects, onOpenProject }: CalendarViewPr
     day === today.getDate() && month === today.getMonth() && year === today.getFullYear()
 
   return (
-    <div style={{ padding: '24px', flex: 1, overflow: 'auto' }}>
+    <div className="cal-wrap" style={{ flex: 1, overflow: 'auto' }}>
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24 }}>
+      <div className="cal-head" style={{ display: 'flex', alignItems: 'center', marginBottom: 24 }}>
         <button
           onClick={prev}
           style={{ width: 30, height: 30, borderRadius: 8, border: '1px solid var(--border)', background: 'transparent', cursor: 'pointer', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
         >
           <i className="ti ti-chevron-left" style={{ fontSize: '0.85rem' }} />
         </button>
-        <h2 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)', minWidth: 180, textAlign: 'center' }}>
+        <h2 className="cal-title" style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)', textAlign: 'center' }}>
           {MONTH_NAMES[month]} {year}
         </h2>
         <button

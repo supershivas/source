@@ -1315,7 +1315,7 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
             const baseLabel = `${selectedCat === 'pro' ? 'Pro' : 'Perso'} · ${selectedYear}`
             const goBack = () => { setShowTrash(false); setShowCalendar(false); setShowDashboard(false); setShowArchived(false) }
             if (isSpecial) return (
-              <h1 className="text-lg font-semibold flex items-center gap-1.5">
+              <h1 className="text-lg font-semibold flex items-center gap-1.5 whitespace-nowrap min-w-0">
                 <button onClick={goBack} className="flex items-center gap-1 hover:opacity-70 transition-opacity" style={{ color: 'var(--text-muted)', fontWeight: 400, fontSize: '1rem' }}>
                   {baseLabel}
                 </button>
@@ -1323,7 +1323,7 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
                 <span>{specialLabel}</span>
               </h1>
             )
-            return <h1 className="text-lg font-semibold">{baseLabel}</h1>
+            return <h1 className="text-lg font-semibold whitespace-nowrap">{baseLabel}</h1>
           })()}
           {isMobile && (
             <button
@@ -1661,6 +1661,22 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
             />
           </div>
         </>
+      )}
+
+      {isMobile && !showTrash && !showCalendar && !showDashboard && !selectedDetailId && !selectedDetailSubId && !mobileSidebarOpen && (
+        <button
+          onClick={() => setModalProject(null)}
+          aria-label="Nouveau projet"
+          title="Nouveau projet"
+          className="fixed z-30 flex items-center justify-center rounded-full"
+          style={{
+            width: 56, height: 56, right: 20, bottom: 'max(20px, env(safe-area-inset-bottom))',
+            background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-fg)',
+            boxShadow: '0 4px 16px rgba(0,0,0,0.25)',
+          }}
+        >
+          <i className="ti ti-plus" style={{ fontSize: '24px' }} />
+        </button>
       )}
 
       <ToastStack toasts={toasts} />
