@@ -102,7 +102,7 @@ Mobile : les `:hover` sont sous `@media (hover: hover)` (et Tailwind en
 `hoverOnlyWhenSupported`), sinon iOS exige un double toucher ; les champs sont
 forcés à 16 px en `!important` (des champs ont un `fontSize` en ligne, que
 `mobile.css` ne battait pas) ; le détail est une feuille par le bas
-(`SheetHandle.tsx`, glisser pour fermer).
+plein écran, fermé en glissant vers le bas depuis le haut du contenu (`useSheetDrag.ts`).
 
 ## Icônes
 

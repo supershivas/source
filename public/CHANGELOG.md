@@ -1,5 +1,9 @@
 # Historique des versions
 
+## 1.5.3 — 2026-10-05
+- Mobile : le tiroir des détails monte jusqu'en haut de l'écran
+- Mobile : on le ferme en le glissant vers le bas depuis n'importe où, dès qu'on est en haut du contenu
+
 ## 1.5.2 — 2026-10-05
 - Mobile : les détails s'ouvrent d'un seul toucher, dans un tiroir qui monte par le bas (à fermer en le glissant vers le bas)
 - Mobile : le zoom ne se déclenche plus à l'ouverture du clavier

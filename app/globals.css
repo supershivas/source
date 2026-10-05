@@ -218,7 +218,6 @@ input::placeholder, textarea::placeholder {
 @keyframes detail-sheet-in { from { transform: translateY(100%); } to { transform: translateY(0); } }
 .detail-sheet-enter { animation: detail-sheet-in 260ms cubic-bezier(0.32, 0.72, 0, 1) backwards; }
 .detail-sheet-handle { width: 40px; height: 4px; border-radius: 2px; background: var(--border); margin: 0 auto 12px; flex-shrink: 0; }
-.detail-sheet-grab { touch-action: none; padding: 6px 0 2px; margin: -10px -16px 4px; }
 
 /* ─── Zones tactiles ≥ 44 px (écrans tactiles) ─────────────────────────────
    Zone cliquable élargie par un pseudo-élément : la mise en page ne bouge pas. */
