@@ -222,6 +222,29 @@ input::placeholder, textarea::placeholder {
   animation: detail-panel-in 220ms cubic-bezier(0.34, 1.4, 0.64, 1) both;
 }
 
+/* ─── Notes mises en forme (Markdown) ────────────────────────────────────────*/
+.note-md ul, .note-md ol { margin: 2px 0; padding-left: 1.25rem; }
+.note-md ul { list-style: disc; }
+.note-md ol { list-style: decimal; }
+.note-md code { font-family: ui-monospace, monospace; font-size: 0.85em; background: var(--hover-bg); border: 1px solid var(--border); border-radius: 4px; padding: 0 4px; }
+.note-md a { color: var(--accent); text-decoration: underline; }
+.note-md hr { border: 0; border-top: 1px solid var(--border); margin: 6px 0; }
+.note-md .note-h { font-weight: 600; margin-top: 4px; }
+.note-md .note-h1 { font-size: 1.1rem; }
+.note-md .note-h2 { font-size: 1rem; }
+.note-md .note-h3 { font-size: 0.9rem; color: var(--text-secondary); }
+.note-md .note-gap { height: 0.5rem; }
+
+/* ─── Panneau de détails agrandi (centré) ────────────────────────────────────*/
+.detail-panel-backdrop { position: fixed; inset: 0; z-index: 40; background: rgba(0,0,0,0.4); }
+.detail-panel-expanded {
+  top: 50% !important; left: 50% !important; right: auto !important;
+  width: min(760px, 92vw) !important; max-height: 90vh !important;
+  transform: translate(-50%, -50%);
+  animation: none !important;
+  z-index: 41 !important;
+}
+
 /* ─── Inline editing dans le panneau de détails ──────────────────────────────*/
 .inline-edit-display {
   display: block; cursor: text; border-radius: 4px; padding: 2px 4px; margin: -2px -4px;

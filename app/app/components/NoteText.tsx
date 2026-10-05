@@ -1,12 +1,13 @@
 'use client'
 import { useLayoutEffect, useRef, useState } from 'react'
+import NoteMarkdown from './NoteMarkdown'
 
 const CLAMP_LINES = 4
 
 // Texte de note replié à CLAMP_LINES lignes ; le bouton n'apparaît que si le
 // texte dépasse réellement (mesuré, donc juste quelle que soit la largeur).
 export default function NoteText({ text }: { text: string }) {
-  const ref = useRef<HTMLParagraphElement>(null)
+  const ref = useRef<HTMLDivElement>(null)
   const [expanded, setExpanded] = useState(false)
   const [overflows, setOverflows] = useState(false)
 
@@ -22,9 +23,9 @@ export default function NoteText({ text }: { text: string }) {
 
   return (
     <>
-      <p
+      <div
         ref={ref}
-        className="text-sm whitespace-pre-wrap break-words"
+        className="text-sm break-words note-md"
         style={expanded ? undefined : {
           display: '-webkit-box',
           WebkitLineClamp: CLAMP_LINES,
@@ -32,8 +33,8 @@ export default function NoteText({ text }: { text: string }) {
           overflow: 'hidden',
         }}
       >
-        {text}
-      </p>
+        <NoteMarkdown text={text} />
+      </div>
       {(overflows || expanded) && (
         <button
           onClick={() => setExpanded(e => !e)}

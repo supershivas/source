@@ -1,5 +1,9 @@
 # Historique des versions
 
+## 1.3.0 — 2026-10-05
+- Nouveau bouton en haut du panneau pour l'agrandir au centre de l'écran
+- Les notes peuvent être mises en forme : gras, italique, titres, listes, liens
+
 ## 1.2.0 — 2026-09-29
 - Les notes longues sont repliées à 4 lignes, avec « Afficher plus » pour les lire en entier
 - Les retours à la ligne des notes sont respectés

@@ -47,6 +47,7 @@ export default function SubprojectDetailPanel({
   const [draft, setDraft] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
   const [menuOpen, setMenuOpen] = useState(false)
+  const [expanded, setExpanded] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
   const [quickNote, setQuickNote] = useState('')
   const quickNoteSubmittingRef = useRef(false)
@@ -80,6 +81,18 @@ export default function SubprojectDetailPanel({
     document.addEventListener('mousedown', onDown)
     return () => document.removeEventListener('mousedown', onDown)
   }, [menuOpen])
+
+  useEffect(() => {
+    if (!expanded || mobile) return
+    function onKey(e: KeyboardEvent) {
+      const tag = (e.target as HTMLElement).tagName
+      if (e.key !== 'Escape' || tag === 'INPUT' || tag === 'TEXTAREA') return
+      e.stopPropagation()
+      setExpanded(false)
+    }
+    window.addEventListener('keydown', onKey, true)
+    return () => window.removeEventListener('keydown', onKey, true)
+  }, [expanded, mobile])
 
   function startEdit(field: EditableField) {
     setDraft((sub[field] as string | null | undefined) || '')
@@ -160,13 +173,17 @@ export default function SubprojectDetailPanel({
     return entry ? (entry[0] as Status) : null
   }
 
+  const isExpanded = expanded && !mobile
+
   return (
+    <>
+    {isExpanded && <div data-detail-panel className="detail-panel-backdrop" onClick={() => setExpanded(false)} />}
     <div
       ref={panelRef}
       data-detail-panel
       className={mobile
         ? 'fixed inset-0 z-50 flex flex-col overflow-y-auto t-bg-card p-4 detail-panel-enter'
-        : 'fixed z-40 flex w-[420px] max-w-[90vw] max-h-[calc(100vh-6rem)] flex-col overflow-y-auto rounded-lg t-bg-card p-4 detail-panel-enter'
+        : `fixed z-40 flex w-[420px] max-w-[90vw] max-h-[calc(100vh-6rem)] flex-col overflow-y-auto rounded-lg t-bg-card p-4 detail-panel-enter${isExpanded ? ' detail-panel-expanded' : ''}`
       }
       style={mobile ? {
         boxShadow: 'var(--card-shadow)',
@@ -187,6 +204,12 @@ export default function SubprojectDetailPanel({
           </button>
           <span className="text-xs t-text-muted"><i className="ti ti-corner-down-right" style={{ fontSize: '0.85em', verticalAlign: '-0.1em' }} /> {parentName}</span>
         </div>
+        <div className="flex items-center gap-1">
+        {!mobile && (
+          <button onClick={() => setExpanded(e => !e)} title={expanded ? 'Réduire' : 'Agrandir au centre'} aria-label={expanded ? 'Réduire le panneau' : 'Agrandir le panneau'} className="sidebar-icon-btn rounded p-1" style={{ color: 'var(--text-muted)' }}>
+            <i className={`ti ti-arrows-${expanded ? 'minimize' : 'maximize'}`} />
+          </button>
+        )}
         <div ref={menuRef} className="relative">
           <button onClick={() => setMenuOpen(o => !o)} className="sidebar-icon-btn rounded p-1" title="Plus d'actions" style={{ color: 'var(--text-muted)' }}>
             <i className="ti ti-dots" />
@@ -205,6 +228,7 @@ export default function SubprojectDetailPanel({
               </button>
             </div>
           )}
+        </div>
         </div>
       </div>
 
@@ -362,5 +386,6 @@ export default function SubprojectDetailPanel({
         )}
       </div>
     </div>
+    </>
   )
 }

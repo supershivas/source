@@ -66,6 +66,9 @@ idee.
 - Settings (`app/app/components/SettingsModal.tsx` : thème clair/sombre,
   taille du texte, couleur d'accent, persistés en localStorage)
 - Modals (projet/sous-projet, note, confirmation), Enter-to-submit
+- Panneaux de détail : bouton agrandir/réduire (centré, bureau seulement)
+- Notes en Markdown léger (`NoteMarkdown.tsx`, sans dépendance, rendu en
+  éléments React) ; `NoteModal` a une barre gras/italique/titre/liste
 
 `app/app/types.ts` définit les types `Project`, `Subproject`, `Note`
 correspondant au schéma Supabase existant.
