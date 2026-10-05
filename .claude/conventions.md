@@ -177,6 +177,22 @@ Le motif est simple, lisible à 16 px, dans les couleurs des tokens.
   « Cette app est prévue pour un écran d'ordinateur ». Ne l'optimise pas pour
   le mobile sans ma demande.
 
+## 8 bis. Jeux
+
+Pour toute app qui est un jeu :
+
+- **Pas de sous-titre.** Jamais de sous-titre ni de baseline sous le nom du jeu,
+  ni dans l'en-tête ni sur l'écran d'accueil.
+- **Palette limitée.** La palette du jeu est restreinte, déclarée dans le
+  `CLAUDE.md` de l'app, et identique entre le canvas, le HUD et les commandes.
+  C'est une exception assumée aux tokens, uniquement pour le jeu. L'en-tête, les
+  réglages et les modales gardent les tokens.
+- **Commandes.** Elles se jouent au pouce (zones de 44 px minimum) et aussi au
+  clavier.
+- **Pause et sauvegarde.** Le jeu se met en pause quand une modale est ouverte.
+  La progression est sauvegardée automatiquement (régulièrement et à la
+  fermeture), pour ne rien perdre lors d'une mise à jour automatique.
+
 ## 9. Code
 
 - N'ajoute aucune dépendance sans me demander.
