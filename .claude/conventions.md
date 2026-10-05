@@ -30,7 +30,7 @@ développer une fonctionnalité listée ci-dessous.
 - Réglages : version, 5 dernières versions, export des données en JSON (section 3).
 - Mise à jour automatique avec toast (section 4).
 - Tokens et `mobile.css` du design system (section 5).
-- `favicon.svg` et `apple-touch-icon.png` (section 6).
+- `favicon.svg`, `favicon.ico` et `apple-touch-icon.png` (section 6).
 - Aucun secret commité (section 7).
 
 **Avancé — obligatoire pour une app primaire, facultatif pour une secondaire**
@@ -136,6 +136,8 @@ développer une fonctionnalité listée ci-dessous.
 Chaque app a, dès sa création :
 
 - `favicon.svg` (qui fonctionne en clair et en sombre) ;
+- `favicon.ico` (16, 32 et 48 px, tiré du SVG) : c'est l'adresse que les navigateurs
+  demandent par défaut, et celle des liens « Autres apps » des autres apps ;
 - `apple-touch-icon.png` en 180 × 180 ;
 - si c'est une PWA (obligatoire pour une app primaire), les icônes 192 et 512 du
   `manifest.json`.
@@ -196,10 +198,12 @@ Le motif est simple, lisible à 16 px, dans les couleurs des tokens.
 À la création d'une nouvelle app :
 
 0. Demande-moi si l'app est primaire ou secondaire, et note-le dans son `CLAUDE.md`.
+   Pose toujours les décisions à trancher (catégorie, cible, stack, hébergement,
+   données…) avec `AskUserQuestion`, en questions à choix multiples.
 1. Copie depuis `design-system/templates/` : `sync-design-system.sh` dans `scripts/`,
    `claude-settings.json` en `.claude/settings.json`, `CLAUDE.app.md` en `CLAUDE.md`.
 2. Lance le sync.
-3. Crée `version.json` (`1.0.0`), le favicon, l'en-tête (nom cliquable à gauche,
+3. Crée `version.json` (`1.0.0`), les icônes (section 6), l'en-tête (nom cliquable à gauche,
    roue crantée à droite) avec version et changelog dans les réglages,
    et la vérification de mise à jour.
 4. Propose-moi d'ajouter l'app au tableau du README de `design-system`.
