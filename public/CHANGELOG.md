@@ -1,5 +1,9 @@
 # Historique des versions
 
+## 1.5.1 — 2026-10-05
+- Corrige l'affichage mobile : la liste n'est plus décalée vers la droite
+- Sur mobile, les cartes affichent le nom en entier ; modifier et archiver passent dans le menu « … »
+
 ## 1.5.0 — 2026-10-05
 - Un bouton « Annuler » permet de remettre une tâche cochée dans sa liste
 - Le message « Mis à jour en vX » s'affiche de façon fiable après une mise à jour automatique

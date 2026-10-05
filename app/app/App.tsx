@@ -1093,10 +1093,10 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
       {/* Sidebar */}
       <aside
         id="sidebar"
-        className={`sidebar-bg flex flex-col shrink-0 relative transition-transform duration-200 ${
+        className={`sidebar-bg flex flex-col shrink-0 transition-transform duration-200 ${
           isMobile
             ? `fixed inset-y-0 left-0 z-40 ${mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`
-            : ''
+            : 'relative'
         }`}
         style={{ width: isMobile ? 240 : sidebarW, minWidth: isMobile ? undefined : 200, maxWidth: isMobile ? undefined : 420 }}
       >

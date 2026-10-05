@@ -125,7 +125,7 @@ export default function ProjectCard({
         {onToggleSelect && (
           <button
             onClick={e => { e.stopPropagation(); onToggleSelect() }}
-            className="card-select-btn shrink-0"
+            className="card-select-btn pc-hide-mobile shrink-0"
             style={{
               width: 18, height: 18, borderRadius: 4, border: `2px solid ${isSelected ? 'var(--accent)' : 'var(--border)'}`,
               background: isSelected ? 'var(--accent)' : 'transparent',
@@ -180,11 +180,11 @@ export default function ProjectCard({
                 <i className="ti ti-folders" style={{ fontSize: '0.6rem' }} /> {subprojects.length}
               </span>
             )}
-            <span className="text-sm font-semibold truncate">{project.name}</span>
+            <span className="text-sm font-semibold truncate pc-name">{project.name}</span>
           </div>
 
           {/* Ligne 2 : statut + métadonnées */}
-          <div className="flex items-center gap-2 min-w-0">
+          <div className="flex items-center gap-2 min-w-0 pc-meta">
             <InlineDropdown<Status>
               value={project.status}
               options={STATUS_ORDER}
@@ -196,7 +196,7 @@ export default function ProjectCard({
                 <span className={`status-badge s-${opt}`} style={{ pointerEvents: 'none' }}>{STATUS_LABELS[opt]}</span>
               )}
             />
-            <div className="flex items-center gap-1.5 min-w-0 overflow-hidden">
+            <div className="flex items-center gap-1.5 min-w-0 overflow-hidden pc-chips">
               {project.editor && (
                 <span className="tag-chip"><i className="ti ti-building" style={{ fontSize: '0.6rem' }} />{project.editor}</span>
               )}
@@ -224,13 +224,13 @@ export default function ProjectCard({
             <span className={`imp-tag imp-tag-${opt}`} style={{ pointerEvents: 'none' }}>{IMPORTANCE_LABELS[opt]}</span>
           )}
         />
-        <button onClick={e => { e.stopPropagation(); onEdit() }} className="sidebar-icon-btn rounded p-1" title="Modifier" style={{ color: 'var(--text-primary)' }}>
+        <button onClick={e => { e.stopPropagation(); onEdit() }} className="sidebar-icon-btn pc-hide-mobile rounded p-1" title="Modifier" style={{ color: 'var(--text-primary)' }}>
           <i className="ti ti-edit" />
         </button>
         <button
           onClick={handleArchiveClick}
           title={project.archived ? 'Désarchiver' : 'Archiver'}
-          className="sidebar-icon-btn rounded p-1"
+          className="sidebar-icon-btn pc-hide-mobile rounded p-1"
           style={{ color: 'var(--text-muted)' }}
         >
           <i className={`ti ti-archive${project.archived ? '-off' : ''}`} />
@@ -249,6 +249,20 @@ export default function ProjectCard({
               className="absolute right-0 top-full mt-1 rounded-lg shadow-lg z-30 flex flex-col py-1"
               style={{ background: 'var(--card-bg)', border: '1px solid var(--border)', minWidth: 140 }}
             >
+              <button
+                onClick={() => { setMenuOpen(false); onEdit() }}
+                className="pc-show-mobile items-center gap-2 px-3 py-1.5 text-sm hover:bg-[var(--hover-bg)] text-left"
+                style={{ color: 'var(--text-secondary)' }}
+              >
+                <i className="ti ti-edit" style={{ fontSize: '0.85rem' }} /> Modifier
+              </button>
+              <button
+                onClick={() => { setMenuOpen(false); onArchive() }}
+                className="pc-show-mobile items-center gap-2 px-3 py-1.5 text-sm hover:bg-[var(--hover-bg)] text-left"
+                style={{ color: 'var(--text-secondary)' }}
+              >
+                <i className={`ti ti-archive${project.archived ? '-off' : ''}`} style={{ fontSize: '0.85rem' }} /> {project.archived ? 'Désarchiver' : 'Archiver'}
+              </button>
               <button
                 onClick={() => { setMenuOpen(false); onDuplicate() }}
                 className="flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-[var(--hover-bg)] text-left"

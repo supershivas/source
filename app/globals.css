@@ -217,6 +217,19 @@ input::placeholder, textarea::placeholder {
   }
 }
 
+/* ─── Cartes sur mobile (≤ 640 px) ───────────────────────────────────────────
+   Édition et archivage passent dans le menu « … » ; le nom passe sur 2 lignes
+   au lieu d'être tronqué, les métadonnées s'enroulent. */
+.pc-show-mobile { display: none; }
+@media (max-width: 640px) {
+  .pc-hide-mobile { display: none !important; }
+  .pc-show-mobile { display: flex; min-height: 44px; }
+  .proj-num-row { flex-wrap: wrap; row-gap: 0; }
+  .pc-name { flex-basis: 100%; white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .pc-meta { flex-wrap: wrap; row-gap: 2px; }
+  .pc-chips { flex-wrap: wrap; overflow: visible; }
+}
+
 /* ─── Overlay / modal ────────────────────────────────────────────────────────*/
 .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; z-index: 50; }
 .modal-box { background: var(--card-bg); border-radius: var(--radius-lg); box-shadow: var(--card-shadow); width: 100%; max-width: 480px; max-height: 90vh; overflow-y: auto; padding: 20px; }

@@ -76,9 +76,9 @@ export default function SubprojectCard({
                 <i className="ti ti-note" style={{ fontSize: '0.6rem' }} /> {noteCount}
               </span>
             )}
-            <span className="text-sm font-medium truncate">{sub.name}</span>
+            <span className="text-sm font-medium truncate pc-name">{sub.name}</span>
           </div>
-          <div className="flex items-center gap-2 min-w-0">
+          <div className="flex items-center gap-2 min-w-0 pc-meta">
             <InlineDropdown<Status>
               value={sub.status}
               options={STATUS_ORDER}
@@ -98,7 +98,7 @@ export default function SubprojectCard({
 
         <button
           onClick={e => { e.stopPropagation(); onEdit() }}
-          className="sidebar-icon-btn rounded p-1"
+          className="sidebar-icon-btn pc-hide-mobile rounded p-1"
           title="Modifier"
           style={{ color: 'var(--text-primary)' }}
         >
@@ -118,6 +118,13 @@ export default function SubprojectCard({
               className="absolute right-0 top-full mt-1 rounded-lg shadow-lg z-30 flex flex-col py-1"
               style={{ background: 'var(--card-bg)', border: '1px solid var(--border)', minWidth: 140 }}
             >
+              <button
+                onClick={() => { setMenuOpen(false); onEdit() }}
+                className="pc-show-mobile items-center gap-2 px-3 py-1.5 text-sm hover:bg-[var(--hover-bg)] text-left"
+                style={{ color: 'var(--text-secondary)' }}
+              >
+                <i className="ti ti-edit" style={{ fontSize: '0.85rem' }} /> Modifier
+              </button>
               <button
                 onClick={() => { setMenuOpen(false); onDuplicate() }}
                 className="flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-[var(--hover-bg)] text-left"
