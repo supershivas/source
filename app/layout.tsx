@@ -2,12 +2,19 @@ import './globals.css'
 import PwaUpdater from './PwaUpdater'
 import ServiceWorkerRegister from './ServiceWorkerRegister'
 import { getBuildId } from '@/lib/buildId'
-import { Playfair_Display, Inter } from 'next/font/google'
+import { Playfair_Display, Inter, DM_Mono } from 'next/font/google'
 
 const playfair = Playfair_Display({
   subsets: ['latin'],
   weight: ['600', '700'],
   variable: '--font-playfair',
+  display: 'swap',
+})
+
+const dmMono = DM_Mono({
+  subsets: ['latin'],
+  weight: ['400', '500'],
+  variable: '--font-dm-mono',
   display: 'swap',
 })
 
@@ -57,7 +64,7 @@ export default function RootLayout({
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css"/>
       </head>
 
-      <body className={`${playfair.variable} ${inter.variable}`}>
+      <body className={`${playfair.variable} ${inter.variable} ${dmMono.variable}`}>
         <PwaUpdater currentBuildId={getBuildId()} />
         <ServiceWorkerRegister />
         {children}

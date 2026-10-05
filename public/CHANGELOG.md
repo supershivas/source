@@ -1,5 +1,10 @@
 # Historique des versions
 
+## 1.5.0 — 2026-10-05
+- Un bouton « Annuler » permet de remettre une tâche cochée dans sa liste
+- Le message « Mis à jour en vX » s'affiche de façon fiable après une mise à jour automatique
+- Alignement sur le design system : sidebar identique en mode sombre, police des numéros, zones tactiles
+
 ## 1.4.0 — 2026-10-05
 - Nouveau type de note : la liste de tâches, créée avec le bouton à côté de « Notes & historique »
 - Cocher une tâche la range dans les notes ; les tâches restantes restent en haut de la liste

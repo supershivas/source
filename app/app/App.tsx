@@ -131,10 +131,11 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
     document.addEventListener('mouseup', onUp)
   }
 
-  function showToast(message: string, type: Toast['type'] = 'success') {
+  function showToast(message: string, type: Toast['type'] = 'success', action?: Toast['action'], duration = action ? 6000 : 2800) {
     const id = Date.now() + Math.random()
-    setToasts(ts => [...ts, { id, message, type }])
-    setTimeout(() => setToasts(ts => ts.filter(t => t.id !== id)), 2800)
+    const dismiss = () => setToasts(ts => ts.filter(t => t.id !== id))
+    setToasts(ts => [...ts, { id, message, type, action: action && { label: action.label, onClick: () => { dismiss(); action.onClick() } } }])
+    setTimeout(dismiss, duration)
   }
 
   async function handleUpdateProjectField(p: Project, patch: Partial<Project>) {
@@ -921,6 +922,14 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
     }
   }
 
+  function applyNotes(projectId: string, subprojectId: string | undefined, fn: (ns: Note[]) => Note[]) {
+    setProjects(ps => ps.map(p => {
+      if (p.id !== projectId) return p
+      if (subprojectId) return { ...p, subprojects: (p.subprojects || []).map(s => s.id === subprojectId ? { ...s, notes: fn(s.notes || []) } : s) }
+      return { ...p, notes: fn(p.notes || []) }
+    }))
+  }
+
   // Coche une tâche : elle quitte la liste et devient une note ; la liste est supprimée une fois vide.
   async function handleCompleteTodo(projectId: string, subprojectId: string | undefined, note: Note, index: number) {
     const items = todoItems(note.text)
@@ -933,22 +942,35 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
       subproject_id: note.subproject_id ?? null,
     }).select().single()
     if (error || !created) { showToast(`Erreur : ${error?.message}`, 'error'); return }
-    let updated: Note | null = null
     const res = remaining.length
       ? await supabase.from('notes').update({ text: serializeTodo(remaining) }).eq('id', note.id).select().single()
       : await supabase.from('notes').delete().eq('id', note.id)
-    if (res.error) showToast(`Erreur : ${res.error.message}`, 'error')
-    else if (remaining.length) updated = (res as { data: Note }).data
-    const apply = (ns: Note[] = []) => {
+    if (res.error) { showToast(`Erreur : ${res.error.message}`, 'error'); applyNotes(projectId, subprojectId, ns => [...ns, created]); return }
+    const updated = remaining.length ? (res as { data: Note }).data : null
+    applyNotes(projectId, subprojectId, ns => {
       const next = [...ns, created]
-      if (res.error) return next
-      return remaining.length ? next.map(n => (n.id === note.id && updated ? updated : n)) : next.filter(n => n.id !== note.id)
-    }
-    setProjects(ps => ps.map(p => {
-      if (p.id !== projectId) return p
-      if (subprojectId) return { ...p, subprojects: (p.subprojects || []).map(s => s.id === subprojectId ? { ...s, notes: apply(s.notes) } : s) }
-      return { ...p, notes: apply(p.notes) }
-    }))
+      return updated ? next.map(n => (n.id === note.id ? updated : n)) : next.filter(n => n.id !== note.id)
+    })
+    showToast('Tâche terminée', 'success', {
+      label: 'Annuler',
+      onClick: async () => {
+        // Relit la liste en base : elle a pu changer (ou disparaître) depuis le cochage.
+        const { data: current } = await supabase.from('notes').select().eq('id', note.id).maybeSingle()
+        const base = current ? todoItems(current.text) : []
+        base.splice(Math.min(index, base.length), 0, done)
+        const text = serializeTodo(base)
+        const restored = current
+          ? await supabase.from('notes').update({ text }).eq('id', note.id).select().single()
+          : await supabase.from('notes').insert({ text, project_id: note.project_id ?? projectId, subproject_id: note.subproject_id ?? null }).select().single()
+        if (restored.error || !restored.data) { showToast('Erreur lors de l\'annulation', 'error'); return }
+        await supabase.from('notes').delete().eq('id', created.id)
+        const todo = restored.data as Note
+        applyNotes(projectId, subprojectId, ns => {
+          const rest = ns.filter(n => n.id !== created.id)
+          return rest.some(n => n.id === todo.id) ? rest.map(n => (n.id === todo.id ? todo : n)) : [...rest, todo]
+        })
+      },
+    })
   }
 
   async function handleDeleteNote(target: { id: string; projectId: string; subprojectId?: string }) {
@@ -1093,7 +1115,7 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
             >
               ✦
             </div>
-            <span className="sidebar-text font-semibold" style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: '17px', fontWeight: 700, letterSpacing: '-0.01em', lineHeight: 1 }}>Source</span>
+            <span className="sidebar-text font-semibold" style={{ fontFamily: 'var(--font-title)', fontSize: '17px', fontWeight: 700, letterSpacing: '-0.01em', lineHeight: 1 }}>Source</span>
           </a>
           <button
             onClick={() => setShowSettings(true)}
@@ -1279,7 +1301,7 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
                 href="/app"
                 onClick={goHome}
                 className="font-semibold"
-                style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: '17px', fontWeight: 700, letterSpacing: '-0.01em', color: 'var(--text-primary)' }}
+                style={{ fontFamily: 'var(--font-title)', fontSize: '17px', fontWeight: 700, letterSpacing: '-0.01em', color: 'var(--text-primary)' }}
                 title="Revenir à l'accueil"
               >
                 Source
@@ -1642,7 +1664,7 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
       )}
 
       <ToastStack toasts={toasts} />
-      <VersionToast onAnnounce={showToast} />
+      <VersionToast onAnnounce={(message, duration) => showToast(message, 'success', undefined, duration)} />
 
       {showCommandPalette && (
         <CommandPalette

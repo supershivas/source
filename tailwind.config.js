@@ -8,7 +8,9 @@ module.exports = {
     './src/**/*.{ts,tsx}',
   ],
   theme: {
-    extend: {},
+    extend: {
+      fontFamily: { mono: ['var(--font-dm-mono)', 'DM Mono', 'monospace'] },
+    },
   },
   plugins: [],
 }

@@ -92,6 +92,12 @@ Hors ligne : `public/sw.js` (même service worker que idee, caches
 par `app/ServiceWorkerRegister.tsx`. Changer le suffixe `-v1` des caches pour
 les invalider.
 
+Piège : `PwaUpdater` pose `source_updated_from` (sessionStorage) avant de
+recharger ; `VersionToast` l'utilise pour annoncer la mise à jour. Les radii
+(`--radius-*`) et `--font-mono` (DM Mono) viennent des tokens ; les zones
+tactiles 44 px passent par un pseudo-élément (`@media (pointer: coarse)`).
+Écart assumé : la liste principale fait 800 px de large (token `content.maxWidth` : 680 px).
+
 ## Icônes
 
 Règle du design system : icônes Tabler au trait uniquement. Restent tels

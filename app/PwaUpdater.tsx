@@ -1,6 +1,8 @@
 'use client'
 import { useEffect, useRef } from 'react'
 
+// Même clé que VersionToast : lui dit d'afficher « Mis à jour en vX » après rechargement.
+const UPDATED_FROM_KEY = 'source_updated_from'
 const CHECK_MIN_INTERVAL_MS = 30_000
 const CHECK_EVERY_MS = 5 * 60_000
 const BUSY_RETRY_MS = 5_000
@@ -87,6 +89,7 @@ export default function PwaUpdater({ currentBuildId }: { currentBuildId: string 
       const key = 'pwa_reload_attempted'
       if (sessionStorage.getItem(key) === buildId) return
       sessionStorage.setItem(key, buildId)
+      sessionStorage.setItem(UPDATED_FROM_KEY, process.env.NEXT_PUBLIC_APP_VERSION || '?')
       reloadingRef.current = true
       await clearRuntimeCache()
       window.location.reload()
