@@ -104,6 +104,11 @@ forcés à 16 px en `!important` (des champs ont un `fontSize` en ligne, que
 `mobile.css` ne battait pas) ; le détail est une feuille par le bas
 plein écran, fermé en glissant vers le bas depuis le haut du contenu (`useSheetDrag.ts`).
 
+Seuil mobile : 768 px (`isMobile` dans `App.tsx` et les `@media` de
+`globals.css`, comme `mobile.css`). Glisser-déposer au toucher : appui long de
+250 ms sur la poignée (`TouchSensor`) ; `useKeyboardFit` cale le tiroir sur
+`visualViewport` pour que le clavier iOS ne cache pas le champ de note.
+
 ## Icônes
 
 Règle du design system : icônes Tabler au trait uniquement. Restent tels

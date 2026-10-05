@@ -1,4 +1,4 @@
-import React, { useRef } from 'react'
+import React, { useEffect, useRef } from 'react'
 
 // Feuille mobile : un glissement vers le bas, depuis n'importe où dans le
 // panneau tant qu'il est défilé tout en haut, le suit au doigt puis le ferme
@@ -40,4 +40,30 @@ export function useSheetDrag(panelRef: React.RefObject<HTMLDivElement | null>, o
       el.style.transform = ''
     },
   }
+}
+
+// Clavier iOS : il réduit la fenêtre visible sans toucher la mise en page.
+// La feuille suit la fenêtre visible, pour que le champ en cours de saisie
+// reste au-dessus du clavier et que le contenu défile dans l'espace restant.
+export function useKeyboardFit(panelRef: React.RefObject<HTMLDivElement | null>, enabled: boolean) {
+  useEffect(() => {
+    const vv = window.visualViewport
+    const el = panelRef.current
+    if (!enabled || !vv || !el) return
+    function fit() {
+      if (!vv || !el) return
+      const keyboard = window.innerHeight - vv.height - vv.offsetTop > 80
+      el.style.height = keyboard ? `${vv.height}px` : ''
+      el.style.top = keyboard ? `${vv.offsetTop}px` : ''
+      el.style.bottom = keyboard ? 'auto' : ''
+      if (keyboard) (document.activeElement as HTMLElement | null)?.scrollIntoView?.({ block: 'center' })
+    }
+    vv.addEventListener('resize', fit)
+    vv.addEventListener('scroll', fit)
+    return () => {
+      vv.removeEventListener('resize', fit)
+      vv.removeEventListener('scroll', fit)
+      el.style.height = ''; el.style.top = ''; el.style.bottom = ''
+    }
+  }, [panelRef, enabled])
 }

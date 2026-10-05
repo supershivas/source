@@ -1,8 +1,9 @@
 {
-  "version": "1.6.0",
+  "version": "1.6.1",
   "date": "2026-10-05",
   "changes": [
-    "Mobile : un bouton « + » en bas à droite crée un nouveau projet",
-    "Mobile : le calendrier est recentré et l'en-tête tient sur une ligne"
+    "Mobile : pour réordonner, on garde le doigt appuyé sur la poignée puis on glisse ; le défilement ne déplace plus rien par erreur",
+    "Mobile : le champ de note reste visible au-dessus du clavier",
+    "Les tablettes utilisent maintenant l'affichage mobile (jusqu'à 768 px)"
   ]
 }

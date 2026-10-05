@@ -5,7 +5,7 @@ import { STATUS_LABELS, STATUS_ACCENT, STATUS_ORDER, toEU } from '../constants'
 import InlineDropdown from './InlineDropdown'
 import DateInput from './DateInput'
 import NoteText from './NoteText'
-import { useSheetDrag } from './useSheetDrag'
+import { useSheetDrag, useKeyboardFit } from './useSheetDrag'
 import TodoNote from './TodoNote'
 import { isTodoNote } from '../todo'
 
@@ -182,6 +182,7 @@ export default function SubprojectDetailPanel({
 
   const isExpanded = expanded && !mobile
   const sheetDrag = useSheetDrag(panelRef, onClose, !!mobile)
+  useKeyboardFit(panelRef, !!mobile)
 
   return (
     <>

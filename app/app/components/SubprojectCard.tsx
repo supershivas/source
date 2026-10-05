@@ -59,7 +59,7 @@ export default function SubprojectCard({
         {/* Grip handle */}
         <span
           {...dragHandleProps}
-          className="shrink-0 t-text-muted"
+          className="shrink-0 t-text-muted pc-grip"
           style={{ cursor: 'grab', touchAction: 'none', display: 'flex', alignItems: 'center' }}
           title="Glisser pour réordonner"
           onClick={e => e.stopPropagation()}

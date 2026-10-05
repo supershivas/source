@@ -139,7 +139,7 @@ export default function ProjectCard({
         {/* Grip handle — drag uniquement via cette zone */}
         <span
           {...dragHandleProps}
-          className="shrink-0 t-text-muted"
+          className="shrink-0 t-text-muted pc-grip"
           style={{ cursor: 'grab', touchAction: 'none', display: 'flex', alignItems: 'center' }}
           title="Glisser pour réordonner"
           onClick={e => e.stopPropagation()}

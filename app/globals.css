@@ -234,8 +234,10 @@ input::placeholder, textarea::placeholder {
    Édition et archivage passent dans le menu « … » ; le nom passe sur 2 lignes
    au lieu d'être tronqué, les métadonnées s'enroulent. */
 .pc-show-mobile { display: none; }
-@media (max-width: 640px) {
+.pc-grip { touch-action: none; }
+@media (max-width: 768px) {
   .pc-hide-mobile { display: none !important; }
+  .pc-grip { padding: 12px 8px; margin: -12px -8px; }
   .pc-show-mobile { display: flex; min-height: 44px; }
   .proj-num-row { flex-wrap: wrap; row-gap: 0; }
   .pc-name { flex-basis: 100%; white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
@@ -247,7 +249,7 @@ input::placeholder, textarea::placeholder {
 .cal-wrap { padding: 24px; }
 .cal-head { gap: 16px; }
 .cal-title { min-width: 180px; }
-@media (max-width: 640px) {
+@media (max-width: 768px) {
   .cal-wrap { padding: 0; }
   .cal-head { gap: 8px; }
   .cal-title { min-width: 0; flex: 1; }

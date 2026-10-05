@@ -27,7 +27,7 @@ import BulkActionBar from './components/BulkActionBar'
 import CollapseTransition from './components/CollapseTransition'
 import VersionToast from './components/VersionToast'
 import { restoreBackup, Backup } from './importBackup'
-import { DndContext, DragEndEvent, PointerSensor, useSensor, useSensors, closestCenter } from '@dnd-kit/core'
+import { DndContext, DragEndEvent, MouseSensor, TouchSensor, useSensor, useSensors, closestCenter } from '@dnd-kit/core'
 import { SortableContext, arrayMove, verticalListSortingStrategy } from '@dnd-kit/sortable'
 
 interface AppProps {
@@ -92,7 +92,7 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
   const [expandedParents, setExpandedParents] = useState<Set<string>>(new Set())
 
   useEffect(() => {
-    const mq = window.matchMedia('(max-width: 640px)')
+    const mq = window.matchMedia('(max-width: 768px)')
     setIsMobile(mq.matches)
     const onChange = (e: MediaQueryListEvent) => {
       setIsMobile(e.matches)
@@ -479,8 +479,8 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
     setFilterEditor('')
   }
 
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }))
-  const subSensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }))
+  const sensors = useSensors(useSensor(MouseSensor, { activationConstraint: { distance: 4 } }), useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 8 } }))
+  const subSensors = useSensors(useSensor(MouseSensor, { activationConstraint: { distance: 4 } }), useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 8 } }))
 
   async function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event

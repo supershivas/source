@@ -1,5 +1,10 @@
 # Historique des versions
 
+## 1.6.1 — 2026-10-05
+- Mobile : pour réordonner, on garde le doigt appuyé sur la poignée puis on glisse ; le défilement ne déplace plus rien par erreur
+- Mobile : le champ de note reste visible au-dessus du clavier
+- Les tablettes utilisent maintenant l'affichage mobile (jusqu'à 768 px)
+
 ## 1.6.0 — 2026-10-05
 - Mobile : un bouton « + » en bas à droite crée un nouveau projet
 - Mobile : le calendrier est recentré et l'en-tête tient sur une ligne
