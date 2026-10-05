@@ -165,6 +165,12 @@ Le motif est simple, lisible à 16 px, dans les couleurs des tokens.
 - Mobile d'abord : tout doit fonctionner en largeur téléphone (375 px) avant le
   bureau, sauf pour une app uniquement bureau.
 - Zones tactiles d'au moins 44 × 44 px.
+- Pas de zoom à l'ouverture du clavier sur iOS : tout champ de saisie (`input`,
+  `textarea`, `select`) fait au moins 16 px sur mobile, y compris ceux qui ont
+  un `font-size` en ligne. `mobile.css` impose cette taille avec `!important`.
+- Pas de double toucher : les styles `:hover` vont dans `@media (hover: hover)`
+  (avec Tailwind : `future.hoverOnlyWhenSupported`). Sinon iOS prend le premier
+  toucher pour un survol et n'exécute le clic qu'au second.
 - Mode sombre selon `prefers-color-scheme`, via les tokens (app primaire ; facultatif
   pour une app secondaire).
 - L'app doit s'ouvrir sur ordinateur comme sur téléphone. Si elle est conçue
