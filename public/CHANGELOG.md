@@ -1,5 +1,9 @@
 # Historique des versions
 
+## 1.5.2 — 2026-10-05
+- Mobile : les détails s'ouvrent d'un seul toucher, dans un tiroir qui monte par le bas (à fermer en le glissant vers le bas)
+- Mobile : le zoom ne se déclenche plus à l'ouverture du clavier
+
 ## 1.5.1 — 2026-10-05
 - Corrige l'affichage mobile : la liste n'est plus décalée vers la droite
 - Sur mobile, les cartes affichent le nom en entier ; modifier et archiver passent dans le menu « … »

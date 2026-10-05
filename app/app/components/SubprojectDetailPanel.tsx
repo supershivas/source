@@ -5,6 +5,7 @@ import { STATUS_LABELS, STATUS_ACCENT, STATUS_ORDER, toEU } from '../constants'
 import InlineDropdown from './InlineDropdown'
 import DateInput from './DateInput'
 import NoteText from './NoteText'
+import SheetHandle from './SheetHandle'
 import TodoNote from './TodoNote'
 import { isTodoNote } from '../todo'
 
@@ -183,17 +184,20 @@ export default function SubprojectDetailPanel({
 
   return (
     <>
-    {isExpanded && <div data-detail-panel className="detail-panel-backdrop" onClick={() => setExpanded(false)} />}
+    {(isExpanded || mobile) && <div data-detail-panel className="detail-panel-backdrop" style={mobile ? { zIndex: 44 } : undefined} onClick={mobile ? onClose : () => setExpanded(false)} />}
     <div
       ref={panelRef}
       data-detail-panel
       className={mobile
-        ? 'fixed inset-0 z-50 flex flex-col overflow-y-auto t-bg-card p-4 detail-panel-enter'
+        ? 'fixed inset-x-0 bottom-0 flex flex-col overflow-y-auto rounded-t-2xl t-bg-card p-4 detail-sheet-enter'
         : `fixed z-40 flex w-[420px] max-w-[90vw] max-h-[calc(100vh-6rem)] flex-col overflow-y-auto rounded-lg t-bg-card p-4 detail-panel-enter${isExpanded ? ' detail-panel-expanded' : ''}`
       }
       style={mobile ? {
         boxShadow: 'var(--card-shadow)',
         borderTop: `3px solid ${panelPos?.color || STATUS_ACCENT[sub.status] || 'var(--accent)'}`,
+        zIndex: 45,
+        maxHeight: '88dvh',
+        paddingBottom: 'max(1rem, env(safe-area-inset-bottom))',
       } : {
         boxShadow: 'var(--card-shadow)',
         borderLeft: `3px solid ${panelPos?.color || STATUS_ACCENT[sub.status] || 'var(--accent)'}`,
@@ -202,6 +206,7 @@ export default function SubprojectDetailPanel({
         right: panelPos ? undefined : '1.25rem',
       }}
     >
+      {mobile && <SheetHandle panelRef={panelRef} onClose={onClose} />}
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">

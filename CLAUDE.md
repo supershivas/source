@@ -98,6 +98,12 @@ recharger ; `VersionToast` l'utilise pour annoncer la mise à jour. Les radii
 tactiles 44 px passent par un pseudo-élément (`@media (pointer: coarse)`).
 Écart assumé : la liste principale fait 800 px de large (token `content.maxWidth` : 680 px).
 
+Mobile : les `:hover` sont sous `@media (hover: hover)` (et Tailwind en
+`hoverOnlyWhenSupported`), sinon iOS exige un double toucher ; les champs sont
+forcés à 16 px en `!important` (des champs ont un `fontSize` en ligne, que
+`mobile.css` ne battait pas) ; le détail est une feuille par le bas
+(`SheetHandle.tsx`, glisser pour fermer).
+
 ## Icônes
 
 Règle du design system : icônes Tabler au trait uniquement. Restent tels

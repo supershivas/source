@@ -1,8 +1,8 @@
 {
-  "version": "1.5.1",
+  "version": "1.5.2",
   "date": "2026-10-05",
   "changes": [
-    "Corrige l'affichage mobile : la liste n'est plus décalée vers la droite",
-    "Sur mobile, les cartes affichent le nom en entier ; modifier et archiver passent dans le menu « … »"
+    "Mobile : les détails s'ouvrent d'un seul toucher, dans un tiroir qui monte par le bas (à fermer en le glissant vers le bas)",
+    "Mobile : le zoom ne se déclenche plus à l'ouverture du clavier"
   ]
 }
