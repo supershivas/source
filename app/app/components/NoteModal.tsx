@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
+import { isTodoNote, todoItems, todoTextFromInput } from '../todo'
 
 export interface NoteFormValues {
   text: string
@@ -7,12 +8,14 @@ export interface NoteFormValues {
 
 interface NoteModalProps {
   initial?: NoteFormValues
+  todo?: boolean
   onSave: (values: NoteFormValues) => Promise<void>
   onClose: () => void
 }
 
-export default function NoteModal({ initial, onSave, onClose }: NoteModalProps) {
-  const [text, setText] = useState(initial?.text || '')
+export default function NoteModal({ initial, todo, onSave, onClose }: NoteModalProps) {
+  const isTodo = !!todo || (!!initial && isTodoNote(initial.text))
+  const [text, setText] = useState(initial ? (isTodo ? todoItems(initial.text).join('\n') : initial.text) : '')
   const [saving, setSaving] = useState(false)
   const areaRef = useRef<HTMLTextAreaElement>(null)
 
@@ -29,9 +32,9 @@ export default function NoteModal({ initial, onSave, onClose }: NoteModalProps) 
   })
 
   async function handleSubmit() {
-    if (!text.trim() || saving) return
+    if (!text.trim() || saving || (isTodo && !todoTextFromInput(text))) return
     setSaving(true)
-    await onSave({ text })
+    await onSave({ text: isTodo ? todoTextFromInput(text) : text })
     setSaving(false)
   }
 
@@ -67,18 +70,19 @@ export default function NoteModal({ initial, onSave, onClose }: NoteModalProps) 
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-box" style={{ maxWidth: 600 }} onClick={e => e.stopPropagation()}>
-        <h2 className="text-lg font-semibold mb-4">{initial ? 'Modifier la note' : 'Nouvelle note'}</h2>
-        <div className="flex gap-1 mb-2">
+        <h2 className="text-lg font-semibold mb-4">{isTodo ? (initial ? 'Modifier la liste de tâches' : 'Nouvelle liste de tâches') : initial ? 'Modifier la note' : 'Nouvelle note'}</h2>
+        {!isTodo && <div className="flex gap-1 mb-2">
           {tools.map(t => (
             <button key={t.kind} type="button" title={t.label} aria-label={t.label} onClick={() => format(t.kind)} className="sidebar-icon-btn rounded p-1" style={{ color: 'var(--text-muted)' }}>
               <i className={`ti ti-${t.icon}`} />
             </button>
           ))}
-        </div>
+        </div>}
         <textarea
           ref={areaRef}
           autoFocus
-          rows={10}
+          rows={isTodo ? 6 : 10}
+          placeholder={isTodo ? 'Une tâche par ligne' : undefined}
           className="w-full rounded-lg border px-3 py-2 text-sm t-border"
           value={text}
           onChange={e => setText(e.target.value)}

@@ -1,5 +1,9 @@
 # Historique des versions
 
+## 1.4.0 — 2026-10-05
+- Nouveau type de note : la liste de tâches, créée avec le bouton à côté de « Notes & historique »
+- Cocher une tâche la range dans les notes ; les tâches restantes restent en haut de la liste
+
 ## 1.3.0 — 2026-10-05
 - Nouveau bouton en haut du panneau pour l'agrandir au centre de l'écran
 - Les notes peuvent être mises en forme : gras, italique, titres, listes, liens

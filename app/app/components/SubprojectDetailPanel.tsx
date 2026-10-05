@@ -5,6 +5,8 @@ import { STATUS_LABELS, STATUS_ACCENT, STATUS_ORDER, toEU } from '../constants'
 import InlineDropdown from './InlineDropdown'
 import DateInput from './DateInput'
 import NoteText from './NoteText'
+import TodoNote from './TodoNote'
+import { isTodoNote } from '../todo'
 
 interface SubprojectDetailPanelProps {
   sub: Subproject
@@ -20,6 +22,8 @@ interface SubprojectDetailPanelProps {
   onUpdateField: (patch: Partial<Subproject>) => void
   onQuickAddNote: (text: string) => Promise<void>
   onEditNote: (note: Note) => void
+  onAddTodo: () => void
+  onCompleteTodo: (note: Note, index: number) => void
   onDeleteNote: (note: Note) => void
 }
 
@@ -41,6 +45,8 @@ export default function SubprojectDetailPanel({
   onUpdateField,
   onQuickAddNote,
   onEditNote,
+  onAddTodo,
+  onCompleteTodo,
   onDeleteNote,
 }: SubprojectDetailPanelProps) {
   const [editing, setEditing] = useState<EditableField | null>(null)
@@ -158,7 +164,7 @@ export default function SubprojectDetailPanel({
     )
   }
 
-  const allNotes = [...(sub.notes || [])].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+  const allNotes = [...(sub.notes || [])].sort((a, b) => Number(isTodoNote(b.text)) - Number(isTodoNote(a.text)) || new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
   const filteredNotes = noteTab === 'all' ? allNotes : noteTab === 'notes' ? allNotes.filter(n => !isStatusNote(n.text)) : allNotes.filter(n => isStatusNote(n.text))
   const visibleNotes = filteredNotes.slice(0, visibleCount)
   const hiddenCount = filteredNotes.length - visibleNotes.length
@@ -270,6 +276,9 @@ export default function SubprojectDetailPanel({
       <div>
         <div className="flex items-center justify-between mb-2">
           <span className="text-xs font-semibold t-text-muted uppercase tracking-wide">Notes & historique</span>
+          <button onClick={onAddTodo} title="Nouvelle liste de tâches" aria-label="Nouvelle liste de tâches" className="sidebar-icon-btn rounded p-1" style={{ color: 'var(--text-muted)' }}>
+            <i className="ti ti-list-check" />
+          </button>
         </div>
 
         <textarea
@@ -362,7 +371,9 @@ export default function SubprojectDetailPanel({
             return (
               <div key={n.id} className={`flex items-start gap-2 rounded border t-border px-2 py-1.5${n.id === newNoteId ? ' note-enter' : ''}`}>
                 <div className="flex-1 min-w-0">
-                  <NoteText text={n.text} />
+                  {isTodoNote(n.text)
+                    ? <TodoNote text={n.text} onComplete={i => onCompleteTodo(n, i)} />
+                    : <NoteText text={n.text} />}
                   <span className="text-xs t-text-muted">{fmtDate(n.created_at)}</span>
                 </div>
                 <button onClick={() => onEditNote(n)} className="sidebar-icon-btn rounded p-1" style={{ color: 'var(--text-muted)' }}>

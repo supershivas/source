@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import { Category, Importance, Note, Project, Status, Subproject } from './types'
 import ProjectModal, { ProjectFormValues } from './components/ProjectModal'
 import SubprojectModal, { SubprojectFormValues } from './components/SubprojectModal'
+import { todoItems, serializeTodo, DONE_PREFIX } from './todo'
 import NoteModal, { NoteFormValues } from './components/NoteModal'
 import ConfirmModal from './components/ConfirmModal'
 import SortableProjectCard from './components/SortableProjectCard'
@@ -41,7 +42,7 @@ type DeleteTarget =
   | { type: 'subproject'; id: string; parentId: string }
   | { type: 'note'; id: string; projectId: string; subprojectId?: string }
 
-type NoteModalTarget = { projectId: string; subprojectId?: string; note?: Note }
+type NoteModalTarget = { projectId: string; subprojectId?: string; note?: Note; todo?: boolean }
 type SubprojectModalTarget = { parentId: string; sub?: Subproject }
 type DuplicateSubTarget = { sub: Subproject; parentId: string }
 
@@ -920,6 +921,36 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
     }
   }
 
+  // Coche une tâche : elle quitte la liste et devient une note ; la liste est supprimée une fois vide.
+  async function handleCompleteTodo(projectId: string, subprojectId: string | undefined, note: Note, index: number) {
+    const items = todoItems(note.text)
+    const done = items[index]
+    if (done === undefined) return
+    const remaining = items.filter((_, i) => i !== index)
+    const { data: created, error } = await supabase.from('notes').insert({
+      text: DONE_PREFIX + done,
+      project_id: note.project_id ?? projectId,
+      subproject_id: note.subproject_id ?? null,
+    }).select().single()
+    if (error || !created) { showToast(`Erreur : ${error?.message}`, 'error'); return }
+    let updated: Note | null = null
+    const res = remaining.length
+      ? await supabase.from('notes').update({ text: serializeTodo(remaining) }).eq('id', note.id).select().single()
+      : await supabase.from('notes').delete().eq('id', note.id)
+    if (res.error) showToast(`Erreur : ${res.error.message}`, 'error')
+    else if (remaining.length) updated = (res as { data: Note }).data
+    const apply = (ns: Note[] = []) => {
+      const next = [...ns, created]
+      if (res.error) return next
+      return remaining.length ? next.map(n => (n.id === note.id && updated ? updated : n)) : next.filter(n => n.id !== note.id)
+    }
+    setProjects(ps => ps.map(p => {
+      if (p.id !== projectId) return p
+      if (subprojectId) return { ...p, subprojects: (p.subprojects || []).map(s => s.id === subprojectId ? { ...s, notes: apply(s.notes) } : s) }
+      return { ...p, notes: apply(p.notes) }
+    }))
+  }
+
   async function handleDeleteNote(target: { id: string; projectId: string; subprojectId?: string }) {
     const proj = projects.find(p => p.id === target.projectId)
     const deleted = target.subprojectId
@@ -1462,6 +1493,7 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
       {noteModalTarget && (
         <NoteModal
           initial={noteModalTarget.note ? { text: noteModalTarget.note.text } : undefined}
+          todo={noteModalTarget.todo}
           onSave={handleSaveNote}
           onClose={() => setNoteModalTarget(null)}
         />
@@ -1546,6 +1578,8 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
           onEditNote={(note, subprojectId) =>
             setNoteModalTarget({ projectId: selectedDetailProject.id, subprojectId, note })
           }
+          onAddTodo={() => setNoteModalTarget({ projectId: selectedDetailProject.id, todo: true })}
+          onCompleteTodo={(note, index, subprojectId) => handleCompleteTodo(selectedDetailProject.id, subprojectId, note, index)}
           onDeleteNote={(note, subprojectId) =>
             setDeleteTarget({ type: 'note', id: note.id, projectId: selectedDetailProject.id, subprojectId })
           }
@@ -1574,6 +1608,8 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
           onUpdateField={patch => handleUpdateSubField(selectedDetailParentId, selectedDetailSub, patch)}
           onQuickAddNote={text => handleQuickAddSubNote(selectedDetailParentId, selectedDetailSub.id, text)}
           onEditNote={note => setNoteModalTarget({ projectId: selectedDetailParentId, subprojectId: selectedDetailSub.id, note })}
+          onAddTodo={() => setNoteModalTarget({ projectId: selectedDetailParentId, subprojectId: selectedDetailSub.id, todo: true })}
+          onCompleteTodo={(note, index) => handleCompleteTodo(selectedDetailParentId, selectedDetailSub.id, note, index)}
           onDeleteNote={note => setDeleteTarget({ type: 'note', id: note.id, projectId: selectedDetailParentId, subprojectId: selectedDetailSub.id })}
         />
       )}
