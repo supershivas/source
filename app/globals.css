@@ -373,3 +373,6 @@ input::placeholder, textarea::placeholder {
 @keyframes note-flash { 0% { background: color-mix(in srgb, var(--accent) 55%, var(--card-bg)); } 100% { background: color-mix(in srgb, var(--accent) 10%, var(--card-bg)); } }
 .note-focus { background: color-mix(in srgb, var(--accent) 10%, var(--card-bg)) !important; border-color: var(--accent) !important; box-shadow: inset 3px 0 0 var(--accent); animation: note-flash 1.1s ease-out; }
 .tl-milestone-focus { transform: translate(-50%, -50%) scale(1.7) !important; box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 35%, transparent); z-index: 4; }
+
+/* Projets et sous-projets archivés : fond proche de celui de la page, ombre légère. */
+.t-bg-card.card-archived { background: color-mix(in srgb, var(--card-bg) 35%, var(--app-bg)); box-shadow: none !important; border: 1px solid var(--border); }

@@ -1,5 +1,8 @@
 # Historique des versions
 
+## 1.11.1 — 2026-10-06
+- Les projets et sous-projets archivés ont un fond plus neutre, proche de celui de la page
+
 ## 1.11.0 — 2026-10-06
 - Frise : les dates sont à l'échelle, la deadline n'apparaît que si elle existe, avec des repères d'années et de mois
 - Cliquer sur un jalon de la frise surligne la note correspondante ; le feu d'artifice se joue à chaque archivage, avec un lien « Annuler »

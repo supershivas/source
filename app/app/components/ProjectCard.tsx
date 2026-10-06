@@ -85,7 +85,7 @@ export default function ProjectCard({
     <div
       ref={cardRef}
       data-project-id={project.id}
-      className={`t-bg-card rounded-lg p-3 cursor-pointer relative overflow-visible${archiving ? ' card-archiving' : ''}`}
+      className={`t-bg-card rounded-lg p-3 cursor-pointer relative overflow-visible${archiving ? ' card-archiving' : ''}${project.archived ? ' card-archived' : ''}`}
       style={{ boxShadow: 'var(--card-shadow)' }}
       onClick={onOpenDetail}
       onAnimationEnd={handleAnimationEnd}

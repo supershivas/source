@@ -45,7 +45,7 @@ export default function SubprojectCard({
 
   return (
     <div
-      className="t-bg-card rounded-lg p-3 relative overflow-visible"
+      className={`t-bg-card rounded-lg p-3 relative overflow-visible${sub.archived ? ' card-archived' : ''}`}
       style={{
         boxShadow: 'var(--card-shadow)',
         marginLeft: 32,
