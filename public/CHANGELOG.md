@@ -1,5 +1,8 @@
 # Historique des versions
 
+## 1.8.0 — 2026-10-06
+- Nouveau : une page « Labo » (lien dans les Réglages) pour comparer d'autres mises en page de la liste des projets
+
 ## 1.7.0 — 2026-10-06
 - Un projet agrandi au centre affiche toutes ses notes et tous ses statuts
 - Nouveau : imprimer un projet (menu ⋯ du projet, option « Imprimer »)

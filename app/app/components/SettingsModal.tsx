@@ -272,6 +272,14 @@ export default function SettingsModal({ prefs, onChange, onClose, onLogout, user
             Se déconnecter
           </button>
 
+          <a
+            href="/app/labo"
+            className="w-full py-3 rounded-xl border text-sm font-medium flex items-center justify-center gap-2"
+            style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)', textDecoration: 'none' }}
+          >
+            <i className="ti ti-flask" /> Labo
+          </a>
+
           <div>
             <p className="text-center text-[11px]" style={{ color: 'var(--text-faint)' }}>
               Version {process.env.NEXT_PUBLIC_APP_VERSION}

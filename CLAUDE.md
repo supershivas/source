@@ -116,6 +116,13 @@ quels, parce que ce ne sont pas des icônes d'interface : le logo ✦ de
 l'en-tête (marque de l'app, à garder), le « ↳ » de l'export CSV (donnée) et
 le préfixe `→ ` des notes de statut (lu par `isStatusNote`).
 
+## Labo
+
+`/app/labo` (`app/app/labo/page.tsx`, protégé par le middleware, lien dans les
+Réglages) : banc d'essai de mises en page de la liste (liseré, pastille, fond
+teinté, dense, groupé…) sur des données d'exemple, avec un menu d'ancres en
+haut. Rien n'y est enregistré.
+
 ## Exceptions aux conventions
 
 Aucune.
