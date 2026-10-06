@@ -14,14 +14,14 @@ const SAMPLES: Sample[] = [
 ]
 
 const SECTIONS = [
-  { id: 'actuel', label: 'Ancien' },
-  { id: 'pastille', label: 'Pastille (retenue)' },
-  { id: 'fond', label: 'Fond teinté' },
-  { id: 'haut', label: 'Filet en haut' },
-  { id: 'progression', label: 'Progression' },
-  { id: 'icone', label: 'Icône de statut' },
-  { id: 'dense', label: 'Liste dense' },
-  { id: 'regroupe', label: 'Groupé par statut' },
+  { id: 'pastille', label: 'A · Pastille de statut' },
+  { id: 'actuel', label: 'B · Liseré à gauche' },
+  { id: 'fond', label: 'C · Fond teinté' },
+  { id: 'haut', label: 'D · Filet en haut' },
+  { id: 'progression', label: 'E · Barre de progression' },
+  { id: 'icone', label: 'F · Icône de statut' },
+  { id: 'dense', label: 'G · Liste dense' },
+  { id: 'regroupe', label: 'H · Groupé par statut' },
 ]
 
 const card: React.CSSProperties = { background: 'var(--card-bg)', boxShadow: 'var(--card-shadow)', borderRadius: 'var(--radius-md, 8px)' }
@@ -68,16 +68,7 @@ export default function LaboPage() {
           Variantes de mise en page de la liste des projets, avec des données d'exemple. Rien n'est enregistré : c'est un banc d'essai pour comparer, pas une fonctionnalité.
         </p>
 
-        <Section id="actuel" title="Ancien : liseré à gauche" text="Une bande de 3 px à gauche de chaque carte, colorée selon le statut. Le statut est dit trois fois : liseré, badge, et ici la couleur.">
-          {SAMPLES.map(p => (
-            <div key={p.number} className="flex items-center gap-3 px-4 py-3" style={{ ...card, borderLeft: `3px solid ${STATUS_ACCENT[p.status]}` }}>
-              <div className="flex-1 min-w-0 flex flex-col gap-1"><span className="flex items-center gap-2"><Num p={p} /><Name p={p} /></span><span className="flex items-center gap-2"><Badge s={p.status} /><Meta p={p} /></span></div>
-              <Imp i={p.importance} />
-            </div>
-          ))}
-        </Section>
-
-        <Section id="pastille" title="Pastille de statut (retenue, en place dans la liste)" text="Un point coloré devant le nom remplace le liseré. Le badge n'est plus nécessaire : le libellé passe en texte discret.">
+        <Section id="pastille" title="A. Pastille de statut (actuelle, retenue)" text="Un point coloré devant le nom remplace le liseré. Le badge n'est plus nécessaire : le libellé passe en texte discret.">
           {SAMPLES.map(p => (
             <div key={p.number} className="flex items-center gap-3 px-4 py-3" style={card}>
               <span style={{ width: 9, height: 9, borderRadius: '50%', background: STATUS_ACCENT[p.status], flexShrink: 0 }} />
@@ -87,7 +78,16 @@ export default function LaboPage() {
           ))}
         </Section>
 
-        <Section id="fond" title="Fond teinté" text="Toute la carte prend une teinte très légère du statut ; aucun liseré, le badge reste.">
+        <Section id="actuel" title="B. Liseré à gauche (ancien)" text="Une bande de 3 px à gauche de chaque carte, colorée selon le statut. Le statut y est dit deux fois : liseré et badge.">
+          {SAMPLES.map(p => (
+            <div key={p.number} className="flex items-center gap-3 px-4 py-3" style={{ ...card, borderLeft: `3px solid ${STATUS_ACCENT[p.status]}` }}>
+              <div className="flex-1 min-w-0 flex flex-col gap-1"><span className="flex items-center gap-2"><Num p={p} /><Name p={p} /></span><span className="flex items-center gap-2"><Badge s={p.status} /><Meta p={p} /></span></div>
+              <Imp i={p.importance} />
+            </div>
+          ))}
+        </Section>
+
+        <Section id="fond" title="C. Fond teinté" text="Toute la carte prend une teinte très légère du statut ; aucun liseré, le badge reste.">
           {SAMPLES.map(p => (
             <div key={p.number} className="flex items-center gap-3 px-4 py-3" style={{ ...card, background: `color-mix(in srgb, ${STATUS_ACCENT[p.status]} 7%, var(--card-bg))` }}>
               <div className="flex-1 min-w-0 flex flex-col gap-1"><span className="flex items-center gap-2"><Num p={p} /><Name p={p} /></span><span className="flex items-center gap-2"><Badge s={p.status} /><Meta p={p} /></span></div>
@@ -96,7 +96,7 @@ export default function LaboPage() {
           ))}
         </Section>
 
-        <Section id="haut" title="Filet en haut" text="Même idée que le liseré, mais horizontale et plus fine (2 px) : moins de masse visuelle à gauche, la poignée et la case restent alignées.">
+        <Section id="haut" title="D. Filet en haut" text="Même idée que le liseré, mais horizontale et plus fine (2 px) : moins de masse visuelle à gauche, la poignée et la case restent alignées.">
           {SAMPLES.map(p => (
             <div key={p.number} className="flex items-center gap-3 px-4 py-3" style={{ ...card, borderTop: `2px solid ${STATUS_ACCENT[p.status]}` }}>
               <div className="flex-1 min-w-0 flex flex-col gap-1"><span className="flex items-center gap-2"><Num p={p} /><Name p={p} /></span><span className="flex items-center gap-2"><Badge s={p.status} /><Meta p={p} /></span></div>
@@ -105,7 +105,7 @@ export default function LaboPage() {
           ))}
         </Section>
 
-        <Section id="progression" title="Barre de progression" text="La couleur du statut sert à remplir une fine barre en bas de la carte : elle ajoute une information (l'avancement) au lieu de répéter le statut.">
+        <Section id="progression" title="E. Barre de progression" text="La couleur du statut sert à remplir une fine barre en bas de la carte : elle ajoute une information (l'avancement) au lieu de répéter le statut.">
           {SAMPLES.map(p => (
             <div key={p.number} style={{ ...card, overflow: 'hidden' }}>
               <div className="flex items-center gap-3 px-4 py-3">
@@ -117,7 +117,7 @@ export default function LaboPage() {
           ))}
         </Section>
 
-        <Section id="icone" title="Icône de statut" text="Une icône Tabler au trait dans un rond teinté, à gauche, signale le statut par sa forme et pas seulement par sa couleur (utile en daltonisme).">
+        <Section id="icone" title="F. Icône de statut" text="Une icône Tabler au trait dans un rond teinté, à gauche, signale le statut par sa forme et pas seulement par sa couleur (utile en daltonisme).">
           {SAMPLES.map(p => {
             const icon = p.status === 'done' ? 'check' : p.status === 'review' ? 'eye' : p.status === 'ready' ? 'player-play' : 'loader-2'
             return (
@@ -130,7 +130,7 @@ export default function LaboPage() {
           })}
         </Section>
 
-        <Section id="dense" title="Liste dense" text="Une ligne par projet, sans carte : plus de projets à l'écran, séparés par des filets. La couleur se limite à une pastille.">
+        <Section id="dense" title="G. Liste dense" text="Une ligne par projet, sans carte : plus de projets à l'écran, séparés par des filets. La couleur se limite à une pastille.">
           <div style={card}>
             {SAMPLES.map((p, i) => (
               <div key={p.number} className="flex items-center gap-3 px-4" style={{ minHeight: 44, borderTop: i ? '1px solid var(--border)' : 'none' }}>
@@ -144,7 +144,7 @@ export default function LaboPage() {
           </div>
         </Section>
 
-        <Section id="regroupe" title="Groupé par statut" text="Des titres de groupe portent la couleur ; les cartes en dessous restent neutres, sans liseré ni badge.">
+        <Section id="regroupe" title="H. Groupé par statut" text="Des titres de groupe portent la couleur ; les cartes en dessous restent neutres, sans liseré ni badge.">
           {(['ongoing', 'review', 'ready', 'done'] as Status[]).map(st => (
             <div key={st} className="flex flex-col gap-1.5" style={{ marginBottom: 10 }}>
               <h3 className="flex items-center gap-2" style={{ fontSize: '0.78rem', fontWeight: 600, color: STATUS_ACCENT[st] }}>
