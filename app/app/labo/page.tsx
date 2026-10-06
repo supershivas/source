@@ -1,5 +1,5 @@
 'use client'
-import React from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { Status, Importance } from '../types'
 import { STATUS_ACCENT, STATUS_LABELS, IMPORTANCE_LABELS } from '../constants'
 
@@ -11,17 +11,6 @@ const SAMPLES: Sample[] = [
   { number: '2026_2089', name: 'Factsheet - Ukraine', status: 'review', importance: 'high', editor: 'Leszek', client: 'PEC', deadline: '03/07/2026', notes: 12, progress: 70 },
   { number: '2026_2164', name: 'LT Cobranded Logo', status: 'ready', importance: 'medium', editor: 'N/A', client: 'COMM1B', notes: 1, progress: 0 },
   { number: '2026_2010', name: 'Annual report', status: 'done', importance: 'low', editor: 'Jessica', client: 'ART', notes: 7, progress: 100 },
-]
-
-const SECTIONS = [
-  { id: 'pastille', label: 'A · Pastille de statut' },
-  { id: 'actuel', label: 'B · Liseré à gauche' },
-  { id: 'fond', label: 'C · Fond teinté' },
-  { id: 'haut', label: 'D · Filet en haut' },
-  { id: 'progression', label: 'E · Barre de progression' },
-  { id: 'icone', label: 'F · Icône de statut' },
-  { id: 'dense', label: 'G · Liste dense' },
-  { id: 'regroupe', label: 'H · Groupé par statut' },
 ]
 
 const card: React.CSSProperties = { background: 'var(--card-bg)', boxShadow: 'var(--card-shadow)', borderRadius: 'var(--radius-md, 8px)' }
@@ -38,127 +27,180 @@ const Meta = ({ p }: { p: Sample }) => (
   </span>
 )
 
-function Section({ id, title, text, children }: { id: string; title: string; text: string; children: React.ReactNode }) {
-  return (
-    <section id={id} style={{ scrollMarginTop: 72, marginBottom: 40 }}>
-      <h2 style={{ fontSize: '1.05rem', fontWeight: 600, marginBottom: 4 }}>{title}</h2>
-      <p style={{ ...muted, fontSize: '0.8rem', marginBottom: 12 }}>{text}</p>
-      <div className="flex flex-col gap-2">{children}</div>
-    </section>
-  )
-}
 
-export default function LaboPage() {
-  return (
-    <div style={{ minHeight: '100vh', background: 'var(--app-bg)', color: 'var(--text-primary)' }}>
-      <header style={{ position: 'sticky', top: 0, zIndex: 20, background: 'var(--card-bg)', borderBottom: '1px solid var(--border)' }}>
-        <div className="flex items-center gap-3 px-4" style={{ height: 52 }}>
-          <a href="/app" className="font-semibold" style={{ color: 'var(--text-primary)', textDecoration: 'none' }}>Source</a>
-          <span style={muted}>/ Labo</span>
-        </div>
-        <nav aria-label="Rubriques du labo" className="flex gap-1 overflow-x-auto px-3 pb-2">
-          {SECTIONS.map(s => (
-            <a key={s.id} href={`#${s.id}`} className="shrink-0 rounded-md" style={{ fontSize: '0.78rem', padding: '6px 10px', border: '1px solid var(--border)', color: 'var(--text-secondary)', textDecoration: 'none' }}>{s.label}</a>
-          ))}
-        </nav>
-      </header>
+type Variant = { letter: string; id: string; title: string; text: string; status?: 'actuelle' | 'ancienne'; retained?: boolean; render: () => React.ReactNode }
+type Topic = { id: string; label: string; icon: string; variants: Variant[] }
 
-      <main style={{ maxWidth: 800, margin: '0 auto', padding: '24px 16px 80px' }}>
-        <p style={{ ...muted, fontSize: '0.85rem', marginBottom: 28 }}>
-          Variantes de mise en page de la liste des projets, avec des données d'exemple. Rien n'est enregistré : c'est un banc d'essai pour comparer, pas une fonctionnalité.
-        </p>
+const row = (p: Sample, extra: React.CSSProperties = {}, content?: React.ReactNode) => (
+  <div key={p.number} className="flex items-center gap-3 px-4 py-3" style={{ ...card, ...extra }}>{content}</div>
+)
+const twoLines = (p: Sample, first: React.ReactNode, second: React.ReactNode) => (
+  <div className="flex-1 min-w-0 flex flex-col gap-1"><span className="flex items-center gap-2">{first}</span><span className="flex items-center gap-2">{second}</span></div>
+)
+const std = (p: Sample) => twoLines(p, <><Num p={p} /><Name p={p} /></>, <><Badge s={p.status} /><Meta p={p} /></>)
+const list = (f: (p: Sample) => React.ReactNode) => <div className="flex flex-col gap-2">{SAMPLES.map(f)}</div>
 
-        <Section id="pastille" title="A. Pastille de statut (actuelle, retenue)" text="Un point coloré devant le nom remplace le liseré. Le badge n'est plus nécessaire : le libellé passe en texte discret.">
-          {SAMPLES.map(p => (
-            <div key={p.number} className="flex items-center gap-3 px-4 py-3" style={card}>
-              <span style={{ width: 9, height: 9, borderRadius: '50%', background: STATUS_ACCENT[p.status], flexShrink: 0 }} />
-              <div className="flex-1 min-w-0 flex flex-col"><span className="flex items-center gap-2"><Name p={p} /><Num p={p} /></span><span style={muted}>{STATUS_LABELS[p.status]} · <Meta p={p} /></span></div>
-              <Imp i={p.importance} />
-            </div>
-          ))}
-        </Section>
-
-        <Section id="actuel" title="B. Liseré à gauche (ancien)" text="Une bande de 3 px à gauche de chaque carte, colorée selon le statut. Le statut y est dit deux fois : liseré et badge.">
-          {SAMPLES.map(p => (
-            <div key={p.number} className="flex items-center gap-3 px-4 py-3" style={{ ...card, borderLeft: `3px solid ${STATUS_ACCENT[p.status]}` }}>
-              <div className="flex-1 min-w-0 flex flex-col gap-1"><span className="flex items-center gap-2"><Num p={p} /><Name p={p} /></span><span className="flex items-center gap-2"><Badge s={p.status} /><Meta p={p} /></span></div>
-              <Imp i={p.importance} />
-            </div>
-          ))}
-        </Section>
-
-        <Section id="fond" title="C. Fond teinté" text="Toute la carte prend une teinte très légère du statut ; aucun liseré, le badge reste.">
-          {SAMPLES.map(p => (
-            <div key={p.number} className="flex items-center gap-3 px-4 py-3" style={{ ...card, background: `color-mix(in srgb, ${STATUS_ACCENT[p.status]} 7%, var(--card-bg))` }}>
-              <div className="flex-1 min-w-0 flex flex-col gap-1"><span className="flex items-center gap-2"><Num p={p} /><Name p={p} /></span><span className="flex items-center gap-2"><Badge s={p.status} /><Meta p={p} /></span></div>
-              <Imp i={p.importance} />
-            </div>
-          ))}
-        </Section>
-
-        <Section id="haut" title="D. Filet en haut" text="Même idée que le liseré, mais horizontale et plus fine (2 px) : moins de masse visuelle à gauche, la poignée et la case restent alignées.">
-          {SAMPLES.map(p => (
-            <div key={p.number} className="flex items-center gap-3 px-4 py-3" style={{ ...card, borderTop: `2px solid ${STATUS_ACCENT[p.status]}` }}>
-              <div className="flex-1 min-w-0 flex flex-col gap-1"><span className="flex items-center gap-2"><Num p={p} /><Name p={p} /></span><span className="flex items-center gap-2"><Badge s={p.status} /><Meta p={p} /></span></div>
-              <Imp i={p.importance} />
-            </div>
-          ))}
-        </Section>
-
-        <Section id="progression" title="E. Barre de progression" text="La couleur du statut sert à remplir une fine barre en bas de la carte : elle ajoute une information (l'avancement) au lieu de répéter le statut.">
-          {SAMPLES.map(p => (
-            <div key={p.number} style={{ ...card, overflow: 'hidden' }}>
-              <div className="flex items-center gap-3 px-4 py-3">
-                <div className="flex-1 min-w-0 flex flex-col gap-1"><span className="flex items-center gap-2"><Num p={p} /><Name p={p} /></span><span className="flex items-center gap-2"><Badge s={p.status} /><Meta p={p} /></span></div>
-                <Imp i={p.importance} />
-              </div>
-              <div style={{ height: 3, background: 'var(--border)' }}><div style={{ width: `${p.progress}%`, height: '100%', background: STATUS_ACCENT[p.status] }} /></div>
-            </div>
-          ))}
-        </Section>
-
-        <Section id="icone" title="F. Icône de statut" text="Une icône Tabler au trait dans un rond teinté, à gauche, signale le statut par sa forme et pas seulement par sa couleur (utile en daltonisme).">
-          {SAMPLES.map(p => {
-            const icon = p.status === 'done' ? 'check' : p.status === 'review' ? 'eye' : p.status === 'ready' ? 'player-play' : 'loader-2'
-            return (
-              <div key={p.number} className="flex items-center gap-3 px-4 py-3" style={card}>
-                <span className="flex items-center justify-center" style={{ width: 36, height: 36, borderRadius: '50%', background: `color-mix(in srgb, ${STATUS_ACCENT[p.status]} 14%, transparent)`, color: STATUS_ACCENT[p.status], flexShrink: 0 }}><i className={`ti ti-${icon}`} /></span>
-                <div className="flex-1 min-w-0 flex flex-col"><span className="flex items-center gap-2"><Name p={p} /><Num p={p} /></span><Meta p={p} /></div>
-                <Imp i={p.importance} />
-              </div>
-            )
-          })}
-        </Section>
-
-        <Section id="dense" title="G. Liste dense" text="Une ligne par projet, sans carte : plus de projets à l'écran, séparés par des filets. La couleur se limite à une pastille.">
+const TOPICS: Topic[] = [
+  {
+    id: 'cartes', label: 'Cartes de la liste', icon: 'layout-list',
+    variants: [
+      { letter: 'A', id: 'pastille', title: 'Pastille de statut', status: 'actuelle', retained: true,
+        text: "Un point coloré devant le numéro remplace le liseré. Le badge devient un texte discret.",
+        render: () => list(p => row(p, {}, <>
+          <span style={{ width: 9, height: 9, borderRadius: '50%', background: STATUS_ACCENT[p.status], flexShrink: 0 }} />
+          <div className="flex-1 min-w-0 flex flex-col"><span className="flex items-center gap-2"><Name p={p} /><Num p={p} /></span><span style={muted}>{STATUS_LABELS[p.status]} · <Meta p={p} /></span></div>
+          <Imp i={p.importance} /></>)) },
+      { letter: 'B', id: 'lisere', title: 'Liseré à gauche', status: 'ancienne',
+        text: "Une bande de 3 px à gauche de chaque carte, colorée selon le statut ; le badge répète l'information.",
+        render: () => list(p => row(p, { borderLeft: `3px solid ${STATUS_ACCENT[p.status]}` }, <>{std(p)}<Imp i={p.importance} /></>)) },
+      { letter: 'C', id: 'fond', title: 'Fond teinté',
+        text: "Toute la carte prend une teinte très légère du statut ; aucun liseré, le badge reste.",
+        render: () => list(p => row(p, { background: `color-mix(in srgb, ${STATUS_ACCENT[p.status]} 7%, var(--card-bg))` }, <>{std(p)}<Imp i={p.importance} /></>)) },
+      { letter: 'D', id: 'haut', title: 'Filet en haut',
+        text: "Comme le liseré mais horizontal et plus fin (2 px) : moins de masse à gauche, poignée et case restent alignées.",
+        render: () => list(p => row(p, { borderTop: `2px solid ${STATUS_ACCENT[p.status]}` }, <>{std(p)}<Imp i={p.importance} /></>)) },
+      { letter: 'E', id: 'progression', title: 'Barre de progression',
+        text: "La couleur du statut remplit une fine barre en bas de la carte : elle ajoute l'avancement au lieu de répéter le statut.",
+        render: () => list(p => (
+          <div key={p.number} style={{ ...card, overflow: 'hidden' }}>
+            <div className="flex items-center gap-3 px-4 py-3">{std(p)}<Imp i={p.importance} /></div>
+            <div style={{ height: 3, background: 'var(--border)' }}><div style={{ width: `${p.progress}%`, height: '100%', background: STATUS_ACCENT[p.status] }} /></div>
+          </div>)) },
+      { letter: 'F', id: 'icone', title: 'Icône de statut',
+        text: "Une icône Tabler au trait dans un rond teinté : le statut se lit par la forme et pas seulement par la couleur (daltonisme).",
+        render: () => list(p => {
+          const icon = p.status === 'done' ? 'check' : p.status === 'review' ? 'eye' : p.status === 'ready' ? 'player-play' : 'loader-2'
+          return row(p, {}, <>
+            <span className="flex items-center justify-center" style={{ width: 36, height: 36, borderRadius: '50%', background: `color-mix(in srgb, ${STATUS_ACCENT[p.status]} 14%, transparent)`, color: STATUS_ACCENT[p.status], flexShrink: 0 }}><i className={`ti ti-${icon}`} /></span>
+            <div className="flex-1 min-w-0 flex flex-col"><span className="flex items-center gap-2"><Name p={p} /><Num p={p} /></span><Meta p={p} /></div>
+            <Imp i={p.importance} /></>)
+        }) },
+      { letter: 'G', id: 'dense', title: 'Liste dense',
+        text: "Une ligne par projet, sans carte : plus de projets à l'écran, séparés par des filets.",
+        render: () => (
           <div style={card}>
             {SAMPLES.map((p, i) => (
               <div key={p.number} className="flex items-center gap-3 px-4" style={{ minHeight: 44, borderTop: i ? '1px solid var(--border)' : 'none' }}>
                 <span style={{ width: 8, height: 8, borderRadius: '50%', background: STATUS_ACCENT[p.status], flexShrink: 0 }} />
-                <Num p={p} />
-                <span className="flex-1 min-w-0 truncate"><Name p={p} /></span>
-                <span style={muted} className="hidden sm:inline">{p.client}</span>
-                <Imp i={p.importance} />
-              </div>
-            ))}
-          </div>
-        </Section>
+                <Num p={p} /><span className="flex-1 min-w-0 truncate"><Name p={p} /></span>
+                <span style={muted} className="hidden sm:inline">{p.client}</span><Imp i={p.importance} />
+              </div>))}
+          </div>) },
+      { letter: 'H', id: 'regroupe', title: 'Groupé par statut',
+        text: "Des titres de groupe portent la couleur ; les cartes dessous restent neutres.",
+        render: () => (
+          <div className="flex flex-col gap-3">
+            {(['ongoing', 'review', 'ready', 'done'] as Status[]).map(st => (
+              <div key={st} className="flex flex-col gap-1.5">
+                <h3 className="flex items-center gap-2" style={{ fontSize: '0.78rem', fontWeight: 600, color: STATUS_ACCENT[st] }}>
+                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: STATUS_ACCENT[st] }} />{STATUS_LABELS[st]} <span style={muted}>{SAMPLES.filter(p => p.status === st).length}</span>
+                </h3>
+                {SAMPLES.filter(p => p.status === st).map(p => row(p, {}, <><div className="flex-1 min-w-0 flex flex-col"><span className="flex items-center gap-2"><Num p={p} /><Name p={p} /></span><Meta p={p} /></div><Imp i={p.importance} /></>))}
+              </div>))}
+          </div>) },
+    ],
+  },
+]
 
-        <Section id="regroupe" title="H. Groupé par statut" text="Des titres de groupe portent la couleur ; les cartes en dessous restent neutres, sans liseré ni badge.">
-          {(['ongoing', 'review', 'ready', 'done'] as Status[]).map(st => (
-            <div key={st} className="flex flex-col gap-1.5" style={{ marginBottom: 10 }}>
-              <h3 className="flex items-center gap-2" style={{ fontSize: '0.78rem', fontWeight: 600, color: STATUS_ACCENT[st] }}>
-                <span style={{ width: 8, height: 8, borderRadius: '50%', background: STATUS_ACCENT[st] }} />{STATUS_LABELS[st]} <span style={muted}>{SAMPLES.filter(p => p.status === st).length}</span>
-              </h3>
-              {SAMPLES.filter(p => p.status === st).map(p => (
-                <div key={p.number} className="flex items-center gap-3 px-4 py-3" style={card}>
-                  <div className="flex-1 min-w-0 flex flex-col"><span className="flex items-center gap-2"><Num p={p} /><Name p={p} /></span><Meta p={p} /></div>
-                  <Imp i={p.importance} />
-                </div>
-              ))}
-            </div>
+// Adresse : #sujet-LETTRE (ex. #cartes-C)
+function parseHash(): { topic: number; variant: number } {
+  try {
+    const [t, l] = window.location.hash.slice(1).split('-')
+    const topic = Math.max(0, TOPICS.findIndex(x => x.id === t))
+    const variant = Math.max(0, TOPICS[topic].variants.findIndex(v => v.letter === l))
+    return { topic, variant }
+  } catch { return { topic: 0, variant: 0 } }
+}
+
+export default function LaboPage() {
+  const [topicIdx, setTopicIdx] = useState(0)
+  const [variantIdx, setVariantIdx] = useState(0)
+  const touchX = useRef<number | null>(null)
+  const topic = TOPICS[topicIdx]
+  const variant = topic.variants[variantIdx]
+
+  useEffect(() => {
+    const sync = () => { const h = parseHash(); setTopicIdx(h.topic); setVariantIdx(h.variant) }
+    sync()
+    window.addEventListener('hashchange', sync)
+    return () => window.removeEventListener('hashchange', sync)
+  }, [])
+
+  const go = useCallback((t: number, v: number) => {
+    const n = TOPICS[t].variants.length
+    const vv = (v + n) % n
+    setTopicIdx(t); setVariantIdx(vv)
+    try { window.history.replaceState(null, '', `#${TOPICS[t].id}-${TOPICS[t].variants[vv].letter}`) } catch {}
+  }, [])
+
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      const tag = (e.target as HTMLElement).tagName
+      if (tag === 'INPUT' || tag === 'TEXTAREA') return
+      if (e.key === 'ArrowRight') go(topicIdx, variantIdx + 1)
+      if (e.key === 'ArrowLeft') go(topicIdx, variantIdx - 1)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [go, topicIdx, variantIdx])
+
+  const tabBtn = (active: boolean): React.CSSProperties => ({
+    minWidth: 44, minHeight: 44, padding: '0 14px', borderRadius: 8, fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer',
+    border: '1px solid var(--border)', background: active ? 'var(--text-primary)' : 'transparent', color: active ? 'var(--card-bg)' : 'var(--text-secondary)',
+  })
+
+  return (
+    <div className="labo-root" style={{ height: '100dvh', display: 'flex', flexDirection: 'column', background: 'var(--app-bg)', color: 'var(--text-primary)' }}>
+      <style>{`@media (min-width: 769px) { .labo-vbar { order: 1; border-top: none !important; border-bottom: 1px solid var(--border); } .labo-main { order: 2; } }`}</style>
+      <header style={{ background: 'var(--card-bg)', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
+        <div className="flex items-center gap-3 px-4" style={{ height: 52 }}>
+          <a href="/app" className="font-semibold" style={{ color: 'var(--text-primary)', textDecoration: 'none' }}>Source</a>
+          <span style={muted}>/ Labo</span>
+        </div>
+        <nav aria-label="Sujets du labo" className="flex gap-1 overflow-x-auto px-3 pb-2">
+          {TOPICS.map((t, i) => (
+            <button key={t.id} onClick={() => go(i, 0)} aria-current={i === topicIdx} className="shrink-0 flex items-center gap-2" style={tabBtn(i === topicIdx)}>
+              <i className={`ti ti-${t.icon}`} /> {t.label}
+            </button>
           ))}
-        </Section>
+        </nav>
+      </header>
+
+      <div className="labo-vbar flex items-center gap-1 px-3" style={{ background: 'var(--card-bg)', borderTop: '1px solid var(--border)', paddingBottom: 'max(8px, env(safe-area-inset-bottom))', paddingTop: 8, flexShrink: 0, order: 3 }}>
+        <button onClick={() => go(topicIdx, variantIdx - 1)} aria-label="Variante précédente" style={tabBtn(false)}><i className="ti ti-chevron-left" /></button>
+        <div className="flex flex-1 justify-center gap-1 overflow-x-auto" role="tablist" aria-label="Variantes">
+          {topic.variants.map((v, i) => (
+            <button key={v.letter} role="tab" aria-selected={i === variantIdx} onClick={() => go(topicIdx, i)} title={v.title} style={{ ...tabBtn(i === variantIdx), position: 'relative' }}>
+              {v.letter}
+              {v.retained && <span aria-label="retenue" style={{ position: 'absolute', top: 5, right: 5, width: 6, height: 6, borderRadius: '50%', background: 'var(--accent)' }} />}
+            </button>
+          ))}
+        </div>
+        <button onClick={() => go(topicIdx, variantIdx + 1)} aria-label="Variante suivante" style={tabBtn(false)}><i className="ti ti-chevron-right" /></button>
+      </div>
+
+      <main
+        className="labo-main"
+        style={{ flex: 1, overflowY: 'auto', order: 2, touchAction: 'pan-y' }}
+        onTouchStart={e => { touchX.current = e.touches[0].clientX }}
+        onTouchEnd={e => {
+          if (touchX.current == null) return
+          const dx = e.changedTouches[0].clientX - touchX.current
+          touchX.current = null
+          if (Math.abs(dx) > 70) go(topicIdx, variantIdx + (dx < 0 ? 1 : -1))
+        }}
+      >
+        <div style={{ maxWidth: 800, margin: '0 auto', padding: '20px 16px 24px' }}>
+          <div className="flex items-center gap-2 flex-wrap" style={{ marginBottom: 4 }}>
+            <h1 style={{ fontSize: '1.1rem', fontWeight: 600 }}>{variant.letter}. {variant.title}</h1>
+            {variant.status === 'actuelle' && <span style={{ ...muted, border: '1px solid var(--border)', borderRadius: 10, padding: '1px 8px' }}>actuelle</span>}
+            {variant.status === 'ancienne' && <span style={{ ...muted, border: '1px solid var(--border)', borderRadius: 10, padding: '1px 8px' }}>ancienne</span>}
+            {variant.retained && <span style={{ fontSize: '0.72rem', color: 'var(--accent)', border: '1px solid var(--accent)', borderRadius: 10, padding: '1px 8px' }}>retenue</span>}
+          </div>
+          <p style={{ ...muted, fontSize: '0.82rem', marginBottom: 16 }}>{variant.text}</p>
+          {variant.render()}
+          <p style={{ ...muted, marginTop: 20 }}>Données d'exemple, rien n'est enregistré. Flèches ← → ou balayage pour changer de variante.</p>
+        </div>
       </main>
     </div>
   )

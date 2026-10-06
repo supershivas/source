@@ -1,5 +1,8 @@
 # Historique des versions
 
+## 1.8.2 — 2026-10-06
+- Labo : un sujet par onglet, une variante à la fois (A, B, C…), avec flèches et balayage, sans longue page à défiler
+
 ## 1.8.1 — 2026-10-06
 - Dans la liste, le statut s'affiche par une pastille colorée devant le numéro, à la place du liseré à gauche et du badge
 
