@@ -137,9 +137,9 @@ const civilVariant = (letter: string, id: string, title: string, text: string, c
 const TIMELINE_TOPIC: Topic = {
   id: 'frise', group: 'Détail', label: 'Frise du projet', icon: 'timeline',
   variants: [
-    civilVariant('A', 'ticks', 'Graduations', "Petits traits à chaque début de mois, trait plus haut pour le 1er janvier avec l'année en gras ; les noms de mois s'adaptent à la durée (tous, initiales, trimestres).", 'ticks'),
-    civilVariant('B', 'bands', 'Bandes de mois', "Une bande derrière la frise, un mois sur deux plus foncé, comme un calendrier ; l'année s'écrit au changement d'année.", 'bands'),
-    civilVariant('C', 'grid', 'Grille légère', "Des pointillés verticaux traversent la frise à chaque mois, un trait plein pour l'année ; plus aéré, mais plus présent.", 'grid'),
+    civilVariant('A', 'grid', 'Grille légère', "Des pointillés verticaux traversent la frise à chaque mois, un trait plein pour l'année ; plus aéré, mais plus présent.", 'grid'),
+    civilVariant('B', 'ticks', 'Graduations', "Petits traits à chaque début de mois, trait plus haut pour le 1er janvier avec l'année en gras ; les noms de mois s'adaptent à la durée (tous, initiales, trimestres).", 'ticks'),
+    civilVariant('C', 'bands', 'Bandes de mois', "Une bande derrière la frise, un mois sur deux plus foncé, comme un calendrier ; l'année s'écrit au changement d'année.", 'bands'),
     civilVariant('D', 'flags', 'Drapeaux d\'année', "Seules les années ressortent, en petits drapeaux sombres ; les trimestres sont de simples points. Le plus sobre qui reste lisible.", 'flags'),
     civilVariant('E', 'dots', 'Points', "Les mois sont de petits points sur la frise, les années des anneaux avec leur numéro : un ruban discret, sans trait vertical.", 'dots'),
     civilVariant('F', 'none', 'Sans repères', "La frise sans repères civils, pour comparer : seules les dates du projet et les jalons apparaissent.", 'none'),

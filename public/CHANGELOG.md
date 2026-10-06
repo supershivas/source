@@ -1,5 +1,9 @@
 # Historique des versions
 
+## 1.11.2 — 2026-10-06
+- Frise : les dates très proches ne se superposent plus (étiquettes sur plusieurs rangées) et un projet terminé s'arrête à sa fin
+- Frise : repères d'années et de mois en « grille légère »
+
 ## 1.11.1 — 2026-10-06
 - Les projets et sous-projets archivés ont un fond plus neutre, proche de celui de la page
 

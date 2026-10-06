@@ -7,7 +7,7 @@ import DateInput from './DateInput'
 
 // Repères civils de la frise : voir le labo (Frise du projet) pour comparer les styles.
 export type CivilStyle = 'none' | 'ticks' | 'bands' | 'grid' | 'flags' | 'dots'
-export const CIVIL_STYLE: CivilStyle = 'ticks'
+export const CIVIL_STYLE: CivilStyle = 'grid'
 
 type DateField = 'date' | 'deadline' | 'ended'
 
@@ -63,7 +63,9 @@ export default function ProjectTimeline({ date, deadline, ended, notes, civil = 
   const noteTs = notes.map(n => new Date(n.created_at).getTime()).filter(t => !Number.isNaN(t))
   const startTs = Math.min(ts(date) ?? Infinity, ...noteTs, now)
   // La frise va du début jusqu'à la dernière échéance connue (deadline ou fin), ou jusqu'à aujourd'hui.
-  let endTs = Math.max(ts(deadline) ?? 0, ts(ended) ?? 0, now)
+  // Un projet terminé s'arrête à sa fin (ou à sa deadline si elle est postérieure) ; sinon la frise va jusqu'à aujourd'hui.
+  const finished = ts(ended) != null && (ts(ended) as number) <= now
+  let endTs = Math.max(ts(deadline) ?? 0, ts(ended) ?? 0, finished ? 0 : now)
   if (endTs - startTs < 14 * DAY) endTs = startTs + 14 * DAY
   const posOf = (t: number) => Math.max(0, Math.min(100, ((t - startTs) / (endTs - startTs)) * 100))
   const milestones = buildMilestones(notes, posOf)
@@ -73,6 +75,19 @@ export default function ProjectTimeline({ date, deadline, ended, notes, civil = 
   const firstYearTick = ticks.find(t => t.month === 0)
   const startYear = new Date(startTs).getFullYear()
   const missing = POINTS.filter(p => !values[p.field])
+  // Repères Début / Deadline / Fin : quand ils sont proches, leurs étiquettes se décalent sur plusieurs rangées.
+  const ROW_H = 26
+  const rowEnd: number[] = []
+  const placed = POINTS.filter(p => values[p.field])
+    .map(p => ({ ...p, iso: values[p.field]!, pos: posOf(new Date(values[p.field]!).getTime()) }))
+    .sort((a, b) => a.pos - b.pos)
+    .map(m => {
+      let row = rowEnd.findIndex(end => m.pos - end >= 16)
+      if (row === -1) row = rowEnd.length
+      rowEnd[row] = m.pos
+      return { ...m, row }
+    })
+  const maxRow = placed.reduce((r, m) => Math.max(r, m.row), 0)
   const hasCivil = civil !== 'none'
 
   function milestoneStyle(m: Milestone): React.CSSProperties {
@@ -151,10 +166,10 @@ export default function ProjectTimeline({ date, deadline, ended, notes, civil = 
   }
 
   return (
-    <div className="mb-3" style={{ paddingTop: hasCivil ? 34 : 18, paddingBottom: missing.length && !readOnly ? 58 : 40 }}>
+    <div className="mb-3" style={{ paddingTop: hasCivil ? 34 : 18, paddingBottom: (missing.length && !readOnly ? 58 : 40) + maxRow * ROW_H }}>
       <div style={{ position: 'relative', height: 4, background: 'var(--border)', borderRadius: 2, margin: '0 8px' }}>
         {civilLayer()}
-        <div style={{ position: 'absolute', left: 0, top: 0, height: '100%', width: `${todayPos}%`, background: 'linear-gradient(90deg,#16a34a,var(--accent))', borderRadius: 2, opacity: 0.55, pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', left: 0, top: 0, height: '100%', width: `${finished ? posOf(ts(ended) as number) : todayPos}%`, background: 'linear-gradient(90deg,#16a34a,var(--accent))', borderRadius: 2, opacity: 0.55, pointerEvents: 'none' }} />
 
         {milestones.map(m => {
           const focused = !!focusNoteId && m.noteIds.includes(focusNoteId)
@@ -167,13 +182,13 @@ export default function ProjectTimeline({ date, deadline, ended, notes, civil = 
           )
         })}
 
-        {POINTS.filter(p => values[p.field]).map(p => {
-          const iso = values[p.field]!
-          const pos = posOf(new Date(iso).getTime())
+        {placed.map(p => {
+          const { iso, pos, row } = p
           return (
-            <div key={p.field} style={{ position: 'absolute', top: '50%', left: `${pos}%`, transform: 'translate(-50%,-50%)', cursor: readOnly ? 'default' : 'pointer', zIndex: 2 }} onClick={() => !readOnly && onStartEdit?.(p.field)}>
+            <div key={p.field} style={{ position: 'absolute', top: '50%', left: `${pos}%`, transform: 'translate(-50%,-50%)', cursor: readOnly ? 'default' : 'pointer', zIndex: 2 + row }} onClick={() => !readOnly && onStartEdit?.(p.field)}>
               <div style={{ width: 11, height: 11, borderRadius: '50%', background: p.color, border: '2px solid var(--card-bg)', boxShadow: `0 0 0 1.5px ${p.color}` }} />
-              <div style={{ position: 'absolute', top: 13, left: 0, transform: pos < 12 ? 'translateX(-8%)' : pos > 88 ? 'translateX(-82%)' : 'translateX(-42%)', fontSize: '0.6rem', whiteSpace: 'nowrap', textAlign: 'center', lineHeight: 1.35 }}>
+              {row > 0 && <div style={{ position: 'absolute', left: '50%', top: 11, height: row * ROW_H + 2, width: 1, background: p.color, opacity: 0.45 }} />}
+              <div style={{ position: 'absolute', top: 13 + row * ROW_H, left: 0, transform: pos < 12 ? 'translateX(-8%)' : pos > 88 ? 'translateX(-82%)' : 'translateX(-42%)', fontSize: '0.6rem', whiteSpace: 'nowrap', textAlign: 'center', lineHeight: 1.35, background: row > 0 ? 'var(--card-bg)' : undefined, padding: row > 0 ? '0 2px' : undefined }}>
                 <span style={{ display: 'block', color: 'var(--text-muted)' }}>{p.label}</span>
                 {editing === p.field && onChangeDate
                   ? <DateInput value={iso} onChange={v => onChangeDate(p.field, v || null)} className="inline-edit-input text-xs" />
@@ -183,10 +198,10 @@ export default function ProjectTimeline({ date, deadline, ended, notes, civil = 
           )
         })}
 
-        {todayPos > 0 && todayPos < 100 && (
+        {!finished && todayPos > 0 && (
           <div style={{ position: 'absolute', top: '50%', left: `${todayPos}%`, pointerEvents: 'none', zIndex: 3 }}>
             <div style={{ width: 1.5, height: 22, background: 'var(--text-secondary)', position: 'absolute', top: '50%', left: 0, transform: 'translate(-50%,-50%)' }} />
-            <div style={{ position: 'absolute', bottom: hasCivil ? 24 : 14, left: '50%', transform: 'translateX(-50%)', fontSize: '0.55rem', color: 'var(--text-secondary)', fontWeight: 600, whiteSpace: 'nowrap' }}>auj.</div>
+            <div style={{ position: 'absolute', bottom: hasCivil ? 24 : 14, left: '50%', transform: todayPos > 94 ? 'translateX(-85%)' : 'translateX(-50%)', fontSize: '0.55rem', color: 'var(--text-secondary)', fontWeight: 600, whiteSpace: 'nowrap' }}>auj.</div>
           </div>
         )}
       </div>

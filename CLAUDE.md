@@ -78,15 +78,11 @@ idee.
   titres, puces et cases à cocher, jamais les codes ; la saisie `## `, `- `,
   `[ ] ` en début de ligne les crée ; `richNote.ts` convertit le Markdown
   stocké ⇄ DOM (le format en base ne change pas).
-- Frise du projet (`DetailPanel`) : jalons (`app/app/milestones.ts`) posés sur la
-  barre à la date de chaque note du projet et de ses sous-projets : point
-  plein de la couleur du statut (changement de statut « → … »), point vert à
-  coche (« Fait : … »), anneau (note) ; plusieurs notes proches = un jalon
-  avec compteur ; clic = la note s'affiche et clignote dans la liste. Les
-  dates sont placées entre les repères Début / Deadline / Fin (0 / 50 / 100).
+- Jalons de la frise (`app/app/milestones.ts`) : un point par note du projet et de ses
+  sous-projets, à sa date : plein de la couleur du statut (« → … »), vert à coche
+  (« Fait : … »), anneau (note) ; plusieurs notes proches = un jalon avec compteur.
 - Frise (`ProjectTimeline.tsx`) : axe à l'échelle du début (ou de la première note) jusqu'à la deadline / fin / aujourd'hui ; Début, Deadline et Fin
-  n'apparaissent que s'ils existent (liens « + Deadline »… pour les ajouter) ; repères civils d'années et de mois (`CIVIL_STYLE`, choisi parmi
-  les styles du labo, sujet « Frise du projet »). Jalon cliqué : la note clignote en rouge puis reste teintée (`note-focus`).
+  n'apparaissent que s'ils existent (liens « + Deadline »… pour les ajouter) ; repères civils d'années et de mois : style « Grille légère » retenu (`CIVIL_STYLE`, variante A du sujet « Frise du projet » du labo) ; étiquettes Début / Deadline / Fin décalées sur plusieurs rangées quand les dates sont proches ; un projet terminé s'arrête à sa fin. Jalon cliqué : la note clignote en rouge puis reste teintée (`note-focus`).
 - Archivage : feu d'artifice (`fireworks.ts`) depuis le bouton de la carte, le panneau de détail, le menu ⋯ et la sélection groupée ;
   le toast propose « Annuler ».
 - Panneaux de détail : bouton agrandir/réduire (centré, bureau seulement)
