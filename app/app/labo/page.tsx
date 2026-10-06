@@ -2,6 +2,8 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { Status, Importance } from '../types'
 import { STATUS_ACCENT, STATUS_LABELS, IMPORTANCE_LABELS } from '../constants'
+import ProjectTimeline, { CivilStyle, CIVIL_STYLE } from '../components/ProjectTimeline'
+import { Note } from '../types'
 
 interface Sample { number: string; name: string; status: Status; importance: Importance; editor: string; client: string; deadline?: string; notes: number; progress: number }
 
@@ -102,6 +104,48 @@ const TOPICS: Topic[] = [
     ],
   },
 ]
+
+
+// ── Frise du projet : repères civils (années, mois) ─────────────────────────
+const DAYMS = 86400000
+const iso = (offsetDays: number) => new Date(Date.now() + offsetDays * DAYMS).toISOString()
+const day = (offsetDays: number) => iso(offsetDays).slice(0, 10)
+const note = (id: string, text: string, d: number): Note => ({ id, text, created_at: iso(d) })
+const SCENARIOS: { title: string; date?: string; deadline?: string; ended?: string; notes: Note[] }[] = [
+  { title: 'Projet court : 2 mois, deadline à venir', date: day(-40), deadline: day(20),
+    notes: [note('a1', '→ Ready to start', -40), note('a2', 'Brief reçu', -37), note('a3', '→ Ongoing', -30), note('a4', 'Maquette v1', -22), note('a5', 'Fait : valider devis', -14), note('a6', '→ In review', -5)] },
+  { title: 'Sans deadline : la frise va jusqu\'à aujourd\'hui', date: day(-75),
+    notes: [note('b1', '→ Ongoing', -75), note('b2', 'Premiers retours', -50), note('b3', 'Réunion client', -20)] },
+  { title: 'Projet d\'un an à cheval sur deux années', date: day(-220), deadline: day(110),
+    notes: [note('c1', '→ Ongoing', -220), note('c2', 'Note de cadrage', -200), note('c3', '→ In review', -120), note('c4', 'Retours', -118), note('c5', '→ Ongoing', -60), note('c6', 'Fait : maquette finale', -30), note('c7', 'Point d\'étape', -10)] },
+  { title: 'Projet pluriannuel, terminé', date: day(-640), deadline: day(-200), ended: day(-150),
+    notes: [note('d1', '→ Ongoing', -640), note('d2', 'Phase 1', -500), note('d3', '→ In review', -300), note('d4', '→ Done', -150)] },
+]
+const civilVariant = (letter: string, id: string, title: string, text: string, civil: CivilStyle): Variant => ({
+  letter, id, title, text, status: civil === CIVIL_STYLE ? 'actuelle' : undefined, retained: civil === CIVIL_STYLE,
+  render: () => (
+    <div className="flex flex-col gap-3">
+      {SCENARIOS.map(sc => (
+        <div key={sc.title} className="px-4 py-3" style={card}>
+          <p style={{ ...muted, marginBottom: 2 }}>{sc.title}</p>
+          <ProjectTimeline date={sc.date} deadline={sc.deadline} ended={sc.ended} notes={sc.notes} civil={civil} readOnly />
+        </div>
+      ))}
+    </div>
+  ),
+})
+const TIMELINE_TOPIC: Topic = {
+  id: 'frise', group: 'Détail', label: 'Frise du projet', icon: 'timeline',
+  variants: [
+    civilVariant('A', 'ticks', 'Graduations', "Petits traits à chaque début de mois, trait plus haut pour le 1er janvier avec l'année en gras ; les noms de mois s'adaptent à la durée (tous, initiales, trimestres).", 'ticks'),
+    civilVariant('B', 'bands', 'Bandes de mois', "Une bande derrière la frise, un mois sur deux plus foncé, comme un calendrier ; l'année s'écrit au changement d'année.", 'bands'),
+    civilVariant('C', 'grid', 'Grille légère', "Des pointillés verticaux traversent la frise à chaque mois, un trait plein pour l'année ; plus aéré, mais plus présent.", 'grid'),
+    civilVariant('D', 'flags', 'Drapeaux d\'année', "Seules les années ressortent, en petits drapeaux sombres ; les trimestres sont de simples points. Le plus sobre qui reste lisible.", 'flags'),
+    civilVariant('E', 'dots', 'Points', "Les mois sont de petits points sur la frise, les années des anneaux avec leur numéro : un ruban discret, sans trait vertical.", 'dots'),
+    civilVariant('F', 'none', 'Sans repères', "La frise sans repères civils, pour comparer : seules les dates du projet et les jalons apparaissent.", 'none'),
+  ],
+}
+TOPICS.push(TIMELINE_TOPIC)
 const GROUPS = Array.from(new Set(TOPICS.map(t => t.group)))
 
 // Adresse : #sujet-LETTRE (ex. #cartes-C)

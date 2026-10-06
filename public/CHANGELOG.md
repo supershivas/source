@@ -1,5 +1,10 @@
 # Historique des versions
 
+## 1.11.0 — 2026-10-06
+- Frise : les dates sont à l'échelle, la deadline n'apparaît que si elle existe, avec des repères d'années et de mois
+- Cliquer sur un jalon de la frise surligne la note correspondante ; le feu d'artifice se joue à chaque archivage, avec un lien « Annuler »
+- Labo : nouveau sujet « Frise du projet » avec six styles de repères à comparer
+
 ## 1.10.0 — 2026-10-06
 - Frise du projet : de petits jalons marquent les notes, les changements de statut et les tâches faites
 - Cliquer sur un jalon affiche la note correspondante dans la liste

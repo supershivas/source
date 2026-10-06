@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import { Category, Importance, Note, Project, Status, Subproject } from './types'
 import ProjectModal, { ProjectFormValues } from './components/ProjectModal'
 import SubprojectModal, { SubprojectFormValues } from './components/SubprojectModal'
+import { playArchiveFireworks } from './fireworks'
 import { todoLineText, normalizeTodoLines, todoPrefix, DONE_PREFIX } from './todo'
 import NoteModal, { NoteFormValues } from './components/NoteModal'
 import ConfirmModal from './components/ConfirmModal'
@@ -610,7 +611,15 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
     const { error } = await supabase.from('projects').update({ archived }).eq('id', p.id)
     if (!error) {
       updateProject(p.id, { archived })
-      showToast(archived ? 'Projet archivé' : 'Projet désarchivé', archived ? 'archive' : 'success')
+      if (archived) playArchiveFireworks(p.id)
+      showToast(archived ? 'Projet archivé' : 'Projet désarchivé', archived ? 'archive' : 'success', {
+        label: 'Annuler',
+        onClick: async () => {
+          const res = await supabase.from('projects').update({ archived: !archived }).eq('id', p.id)
+          if (res.error) showToast(`Erreur : ${res.error.message}`, 'error')
+          else updateProject(p.id, { archived: !archived })
+        },
+      })
     }
   }
 
@@ -1054,7 +1063,14 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
     const ids = [...selectedIds]
     setProjects(ps => ps.map(p => ids.includes(p.id) ? { ...p, archived: true } : p))
     await Promise.all(ids.map(id => supabase.from('projects').update({ archived: true }).eq('id', id)))
-    showToast(`${ids.length} projet${ids.length > 1 ? 's' : ''} archivé${ids.length > 1 ? 's' : ''}`, 'archive')
+    playArchiveFireworks()
+    showToast(`${ids.length} projet${ids.length > 1 ? 's' : ''} archivé${ids.length > 1 ? 's' : ''}`, 'archive', {
+      label: 'Annuler',
+      onClick: async () => {
+        setProjects(ps => ps.map(p => ids.includes(p.id) ? { ...p, archived: false } : p))
+        await Promise.all(ids.map(id => supabase.from('projects').update({ archived: false }).eq('id', id)))
+      },
+    })
     setSelectedIds(new Set())
   }
 

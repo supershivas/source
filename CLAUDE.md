@@ -84,6 +84,11 @@ idee.
   coche (« Fait : … »), anneau (note) ; plusieurs notes proches = un jalon
   avec compteur ; clic = la note s'affiche et clignote dans la liste. Les
   dates sont placées entre les repères Début / Deadline / Fin (0 / 50 / 100).
+- Frise (`ProjectTimeline.tsx`) : axe à l'échelle du début (ou de la première note) jusqu'à la deadline / fin / aujourd'hui ; Début, Deadline et Fin
+  n'apparaissent que s'ils existent (liens « + Deadline »… pour les ajouter) ; repères civils d'années et de mois (`CIVIL_STYLE`, choisi parmi
+  les styles du labo, sujet « Frise du projet »). Jalon cliqué : la note clignote en rouge puis reste teintée (`note-focus`).
+- Archivage : feu d'artifice (`fireworks.ts`) depuis le bouton de la carte, le panneau de détail, le menu ⋯ et la sélection groupée ;
+  le toast propose « Annuler ».
 - Panneaux de détail : bouton agrandir/réduire (centré, bureau seulement)
 - Notes en Markdown léger (`NoteMarkdown.tsx`, sans dépendance, rendu en
   éléments React) ; `NoteModal` a une barre gras/italique/titre/puces/tâches

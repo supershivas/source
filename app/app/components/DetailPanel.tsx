@@ -8,7 +8,7 @@ import NoteText from './NoteText'
 import { useSheetDrag, useKeyboardFit } from './useSheetDrag'
 import { hasTodo } from '../todo'
 import { printProject } from '../printProject'
-import { buildMilestones } from '../milestones'
+import ProjectTimeline from './ProjectTimeline'
 
 interface DetailPanelProps {
   project: Project
@@ -59,6 +59,7 @@ export default function DetailPanel({
   onDeleteNote,
 }: DetailPanelProps) {
   const [newNoteId, setNewNoteId] = useState<string | null>(null)
+  const [focusNoteId, setFocusNoteId] = useState<string | null>(null)
   const prevNoteIdsRef = useRef<Set<string>>(new Set((project.notes || []).map(n => n.id)))
   const [editing, setEditing] = useState<EditableField | null>(null)
   const [draft, setDraft] = useState('')
@@ -193,13 +194,15 @@ export default function DetailPanel({
     return entry ? (entry[0] as Status) : null
   }
 
-  // Clic sur un jalon : affiche la note correspondante dans la liste et la fait clignoter.
+  // Clic sur un jalon : la note s'affiche dans la liste, clignote en rouge puis reste surlignée.
   function revealNote(id: string) {
     setNoteTab('all')
     setVisibleCount(Number.MAX_SAFE_INTEGER)
-    setNewNoteId(id)
-    setTimeout(() => { document.getElementById(`note-${id}`)?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }) }, 50)
-    setTimeout(() => setNewNoteId(null), 900)
+    setFocusNoteId(null)
+    requestAnimationFrame(() => {
+      setFocusNoteId(id)
+      setTimeout(() => { document.getElementById(`note-${id}`)?.scrollIntoView({ block: 'center', behavior: 'smooth' }) }, 50)
+    })
   }
 
   const isExpanded = expanded && !mobile
@@ -316,103 +319,16 @@ export default function DetailPanel({
         </div>
       </div>
 
-      {/* Timeline */}
-      {(() => {
-        const pts = [
-          { field: 'date' as const,     label: 'Début',    color: '#16a34a', pos: 0 },
-          { field: 'deadline' as const, label: 'Deadline', color: '#dc2626', pos: 50 },
-          { field: 'ended' as const,    label: 'Fin',      color: '#6366f1', pos: 100 },
-        ]
-        const d0 = project.date ? new Date(project.date).getTime() : null
-        const d1 = project.deadline ? new Date(project.deadline).getTime() : null
-        const d2 = project.ended ? new Date(project.ended).getTime() : null
-        const knownTs = [d0, d1, d2].filter(Boolean) as number[]
-        const minTs = knownTs.length ? Math.min(...knownTs) : null
-        const maxTs = knownTs.length > 1 ? Math.max(...knownTs) : null
-        const todayTs = new Date().getTime()
-        const todayPct = (minTs && maxTs && maxTs > minTs)
-          ? Math.max(2, Math.min(98, ((todayTs - minTs) / (maxTs - minTs)) * 100))
-          : null
-
-        const anchors = [
-          ...(d0 ? [{ ts: d0, pos: 0 }] : []),
-          ...(d1 ? [{ ts: d1, pos: 50 }] : []),
-          ...(d2 ? [{ ts: d2, pos: 100 }] : []),
-        ]
-        const milestones = buildMilestones(allNotes, anchors)
-        function milestoneStyle(m: typeof milestones[number]): React.CSSProperties {
-          if (m.kind === 'status') return { background: m.status ? STATUS_ACCENT[m.status] : 'var(--text-muted)', borderColor: 'var(--card-bg)' }
-          if (m.kind === 'done') return { background: '#16a34a', borderColor: 'var(--card-bg)' }
-          return { background: 'var(--card-bg)', borderColor: 'var(--text-muted)' }
-        }
-
-        function fmtShort(iso: string) {
-          const d = new Date(iso)
-          return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`
-        }
-
-        return (
-          <div className="mb-4" style={{ paddingBottom: 40 }}>
-            <div style={{ position: 'relative', height: 4, background: 'var(--border)', borderRadius: 2, margin: '0 8px' }}>
-              {todayPct && d0 && (
-                <div style={{ position: 'absolute', left: 0, top: 0, height: '100%', width: `${todayPct / 2}%`, background: 'linear-gradient(90deg,#16a34a,#dc2626)', borderRadius: 2, opacity: 0.7 }} />
-              )}
-              {milestones.map(m => (
-                <button
-                  key={m.noteIds[0]}
-                  title={m.title}
-                  aria-label={m.title}
-                  onClick={() => revealNote(m.noteIds[0])}
-                  className="tl-milestone"
-                  style={{ left: `${m.pos}%`, ...milestoneStyle(m) }}
-                >
-                  {m.kind === 'done' && <i className="ti ti-check" style={{ fontSize: '0.55rem', color: '#fff' }} />}
-                  {m.noteIds.length > 1 && <span className="tl-milestone-count">{m.noteIds.length}</span>}
-                </button>
-              ))}
-              {pts.map(pt => {
-                const iso = pt.field === 'date' ? project.date : pt.field === 'deadline' ? project.deadline : project.ended
-                const empty = !iso
-                return (
-                  <div key={pt.field} style={{ position: 'absolute', top: '50%', left: `${pt.pos}%`, transform: 'translate(-50%,-50%)', cursor: 'pointer', zIndex: 2 }} onClick={() => setEditing(pt.field)}>
-                    <div style={{
-                      width: 11, height: 11, borderRadius: '50%',
-                      background: empty ? 'var(--border)' : pt.color,
-                      border: `2px solid var(--card-bg)`,
-                      boxShadow: `0 0 0 1.5px ${empty ? 'var(--border)' : pt.color}`,
-                      transition: 'background 0.15s',
-                    }} />
-                    <div style={{
-                      position: 'absolute', top: 13, left: 0,
-                      transform: pt.pos === 0 ? 'translateX(-8%)' : pt.pos === 100 ? 'translateX(-82%)' : 'translateX(-42%)',
-                      fontSize: '0.6rem', whiteSpace: 'nowrap', textAlign: 'center', lineHeight: 1.35,
-                    }}>
-                      <span style={{ display: 'block', color: 'var(--text-muted)' }}>{pt.label}</span>
-                      {editing === pt.field ? (
-                        <DateInput
-                          value={iso || ''}
-                          onChange={v => { onUpdateField({ [pt.field]: v || null }); setEditing(null) }}
-                          className="inline-edit-input text-xs"
-                        />
-                      ) : (
-                        <span style={{ display: 'block', fontWeight: iso ? 700 : 400, color: iso ? pt.color : 'var(--text-muted)', fontStyle: iso ? 'normal' : 'italic' }}>
-                          {iso ? fmtShort(iso) : '—'}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                )
-              })}
-              {todayPct && (
-                <div style={{ position: 'absolute', top: '50%', left: `${todayPct / 2}%`, transform: 'translate(-50%,-50%)', pointerEvents: 'none' }}>
-                  <div style={{ width: 1.5, height: 22, background: 'var(--text-muted)', position: 'absolute', top: '50%', left: 0, transform: 'translate(-50%,-50%)' }} />
-                  <div style={{ position: 'absolute', bottom: 14, left: '50%', transform: 'translateX(-50%)', fontSize: '0.55rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>auj.</div>
-                </div>
-              )}
-            </div>
-          </div>
-        )
-      })()}
+      {/* Frise */}
+      <ProjectTimeline
+        date={project.date} deadline={project.deadline} ended={project.ended}
+        notes={allNotes}
+        focusNoteId={focusNoteId}
+        editing={editing === 'date' || editing === 'deadline' || editing === 'ended' ? editing : null}
+        onStartEdit={setEditing}
+        onChangeDate={(field, v) => { onUpdateField({ [field]: v }); setEditing(null) }}
+        onRevealNote={revealNote}
+      />
 
       <div style={{ height: 1, background: 'var(--border)', margin: '0 0 16px' }} />
 
@@ -501,7 +417,7 @@ export default function DetailPanel({
               const s = statusFromNote(n.text)
               const color = s ? STATUS_ACCENT[s] : 'var(--text-muted)'
               return (
-                <div key={n.id} id={`note-${n.id}`} className={`flex items-center gap-2 rounded px-2 py-1.5${n.id === newNoteId ? ' note-enter' : ''}`} style={{ border: '1px solid var(--border)', background: 'var(--hover-bg, rgba(0,0,0,0.015))' }}>
+                <div key={n.id} id={`note-${n.id}`} className={`flex items-center gap-2 rounded px-2 py-1.5${n.id === newNoteId ? ' note-enter' : ''}${n.id === focusNoteId ? ' note-focus' : ''}`} style={{ border: '1px solid var(--border)', background: 'var(--hover-bg, rgba(0,0,0,0.015))' }}>
                   <span style={{ width: 7, height: 7, borderRadius: '50%', background: color, flexShrink: 0, display: 'inline-block' }} />
                   <span className="flex-1 text-xs" style={{ color: 'var(--text-secondary)' }}>
                     {n._subName && <span className="t-text-muted"><i className="ti ti-corner-down-right" style={{ fontSize: '0.85em', verticalAlign: '-0.1em' }} /> {n._subName} · </span>}
@@ -515,7 +431,7 @@ export default function DetailPanel({
               )
             }
             return (
-              <div key={n.id} id={`note-${n.id}`} className={`flex items-start gap-2 rounded border t-border px-2 py-1.5${n.id === newNoteId ? ' note-enter' : ''}`}>
+              <div key={n.id} id={`note-${n.id}`} className={`flex items-start gap-2 rounded border t-border px-2 py-1.5${n.id === newNoteId ? ' note-enter' : ''}${n.id === focusNoteId ? ' note-focus' : ''}`}>
                 <div className="flex-1 min-w-0">
                   {n._subName && <p className="text-xs t-text-muted mb-0.5"><i className="ti ti-corner-down-right" style={{ fontSize: '0.85em', verticalAlign: '-0.1em' }} /> {n._subName}</p>}
                   <NoteText text={n.text} onCompleteLine={i => onCompleteTodo(n, i, subprojectId)} />
