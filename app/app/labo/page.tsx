@@ -14,8 +14,8 @@ const SAMPLES: Sample[] = [
 ]
 
 const SECTIONS = [
-  { id: 'actuel', label: 'Actuel' },
-  { id: 'pastille', label: 'Pastille' },
+  { id: 'actuel', label: 'Ancien' },
+  { id: 'pastille', label: 'Pastille (retenue)' },
   { id: 'fond', label: 'Fond teinté' },
   { id: 'haut', label: 'Filet en haut' },
   { id: 'progression', label: 'Progression' },
@@ -68,7 +68,7 @@ export default function LaboPage() {
           Variantes de mise en page de la liste des projets, avec des données d'exemple. Rien n'est enregistré : c'est un banc d'essai pour comparer, pas une fonctionnalité.
         </p>
 
-        <Section id="actuel" title="Actuel : liseré à gauche" text="Une bande de 3 px à gauche de chaque carte, colorée selon le statut. Le statut est dit trois fois : liseré, badge, et ici la couleur.">
+        <Section id="actuel" title="Ancien : liseré à gauche" text="Une bande de 3 px à gauche de chaque carte, colorée selon le statut. Le statut est dit trois fois : liseré, badge, et ici la couleur.">
           {SAMPLES.map(p => (
             <div key={p.number} className="flex items-center gap-3 px-4 py-3" style={{ ...card, borderLeft: `3px solid ${STATUS_ACCENT[p.status]}` }}>
               <div className="flex-1 min-w-0 flex flex-col gap-1"><span className="flex items-center gap-2"><Num p={p} /><Name p={p} /></span><span className="flex items-center gap-2"><Badge s={p.status} /><Meta p={p} /></span></div>
@@ -77,7 +77,7 @@ export default function LaboPage() {
           ))}
         </Section>
 
-        <Section id="pastille" title="Pastille de statut" text="Un point coloré devant le nom remplace le liseré. Le badge n'est plus nécessaire : le libellé passe en texte discret.">
+        <Section id="pastille" title="Pastille de statut (retenue, en place dans la liste)" text="Un point coloré devant le nom remplace le liseré. Le badge n'est plus nécessaire : le libellé passe en texte discret.">
           {SAMPLES.map(p => (
             <div key={p.number} className="flex items-center gap-3 px-4 py-3" style={card}>
               <span style={{ width: 9, height: 9, borderRadius: '50%', background: STATUS_ACCENT[p.status], flexShrink: 0 }} />

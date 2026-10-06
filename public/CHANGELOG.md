@@ -1,5 +1,8 @@
 # Historique des versions
 
+## 1.8.1 — 2026-10-06
+- Dans la liste, le statut s'affiche par une pastille colorée devant le numéro, à la place du liseré à gauche et du badge
+
 ## 1.8.0 — 2026-10-06
 - Nouveau : une page « Labo » (lien dans les Réglages) pour comparer d'autres mises en page de la liste des projets
 

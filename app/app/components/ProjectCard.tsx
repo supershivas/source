@@ -117,7 +117,7 @@ export default function ProjectCard({
     <div
       ref={cardRef}
       className={`t-bg-card rounded-lg p-3 cursor-pointer relative overflow-visible${archiving ? ' card-archiving' : ''}`}
-      style={{ boxShadow: 'var(--card-shadow)', borderLeft: `3px solid ${STATUS_ACCENT[project.status]}` }}
+      style={{ boxShadow: 'var(--card-shadow)' }}
       onClick={onOpenDetail}
       onAnimationEnd={handleAnimationEnd}
     >
@@ -160,6 +160,7 @@ export default function ProjectCard({
         <div className="flex-1 min-w-0 flex flex-col gap-1">
           {/* Ligne 1 : numéro + bulles + nom */}
           <div className="flex items-center gap-2 min-w-0 proj-num-row">
+            <span className="shrink-0" style={{ width: 9, height: 9, borderRadius: '50%', background: STATUS_ACCENT[project.status] }} />
             <span className="text-xs t-text-muted shrink-0 whitespace-nowrap" style={{ fontFamily: 'ui-monospace, monospace' }}>
               {project.number}
             </span>
@@ -190,8 +191,8 @@ export default function ProjectCard({
               options={STATUS_ORDER}
               labels={STATUS_LABELS}
               onChange={onChangeStatus}
-              triggerClassName={`status-badge s-${project.status} flex items-center`}
-              triggerStyle={{ fontSize: '0.62rem', padding: '2px 7px' }}
+              triggerClassName="flex items-center t-text-muted"
+              triggerStyle={{ fontSize: '0.72rem', background: 'transparent', padding: 0 }}
               renderOption={opt => (
                 <span className={`status-badge s-${opt}`} style={{ pointerEvents: 'none' }}>{STATUS_LABELS[opt]}</span>
               )}
@@ -219,7 +220,7 @@ export default function ProjectCard({
           labels={IMPORTANCE_LABELS}
           onChange={onChangeImportance}
           triggerClassName={`imp-tag imp-tag-${project.importance} flex items-center shrink-0`}
-          triggerStyle={{ fontSize: '0.62rem', padding: '2px 7px' }}
+          triggerStyle={{ fontSize: '0.72rem', background: 'transparent', padding: 0 }}
           renderOption={opt => (
             <span className={`imp-tag imp-tag-${opt}`} style={{ pointerEvents: 'none' }}>{IMPORTANCE_LABELS[opt]}</span>
           )}

@@ -48,7 +48,6 @@ export default function SubprojectCard({
       className="t-bg-card rounded-lg p-3 relative overflow-visible"
       style={{
         boxShadow: 'var(--card-shadow)',
-        borderLeft: `3px solid ${STATUS_ACCENT[sub.status]}`,
         marginLeft: 32,
         opacity: dimmed ? 0.35 : 1,
         transition: 'opacity 0.2s',
@@ -68,6 +67,7 @@ export default function SubprojectCard({
         </span>
         <div className="flex-1 min-w-0 flex flex-col gap-1">
           <div className="flex items-center gap-2 min-w-0 proj-num-row">
+            <span className="shrink-0" style={{ width: 9, height: 9, borderRadius: '50%', background: STATUS_ACCENT[sub.status] }} />
             <span className="text-xs t-text-muted shrink-0 whitespace-nowrap" style={{ fontFamily: 'ui-monospace, monospace' }}>
               {sub.number}
             </span>
@@ -84,8 +84,8 @@ export default function SubprojectCard({
               options={STATUS_ORDER}
               labels={STATUS_LABELS}
               onChange={onChangeStatus}
-              triggerClassName={`status-badge s-${sub.status} flex items-center`}
-              triggerStyle={{ fontSize: '0.62rem', padding: '2px 7px' }}
+              triggerClassName="flex items-center t-text-muted"
+              triggerStyle={{ fontSize: '0.72rem', background: 'transparent', padding: 0 }}
               renderOption={opt => (
                 <span className={`status-badge s-${opt}`} style={{ pointerEvents: 'none' }}>{STATUS_LABELS[opt]}</span>
               )}
