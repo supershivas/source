@@ -1,4 +1,5 @@
 import React from 'react'
+import { todoLineText } from '../todo'
 
 // Rendu Markdown minimal pour les notes (titres, gras, italique, code, listes,
 // liens). Produit des éléments React, jamais de HTML brut : pas d'injection.
@@ -31,7 +32,8 @@ function renderInline(text: string, keyPrefix: string): React.ReactNode[] {
   return out
 }
 
-export default function NoteMarkdown({ text }: { text: string }) {
+// onCompleteLine : appelé avec le numéro de ligne quand on coche une tâche (« [ ] … »).
+export default function NoteMarkdown({ text, onCompleteLine }: { text: string; onCompleteLine?: (line: number) => void }) {
   const blocks: React.ReactNode[] = []
   let list: { ordered: boolean; items: string[] } | null = null
 
@@ -53,6 +55,18 @@ export default function NoteMarkdown({ text }: { text: string }) {
       if (list && list.ordered !== ordered) flushList()
       if (!list) list = { ordered, items: [] }
       list.items.push((bullet || numbered)![1])
+      return
+    }
+    const task = todoLineText(line)
+    if (task !== null) {
+      flushList()
+      if (!task) return
+      blocks.push(
+        <button key={k} onClick={() => onCompleteLine?.(idx)} disabled={!onCompleteLine} title="Marquer comme fait" className="note-task flex items-start gap-2 text-left w-full py-0.5">
+          <i className="ti ti-square" style={{ color: 'var(--text-muted)', fontSize: '1.05rem', marginTop: 1 }} />
+          <span className="break-words min-w-0">{renderInline(task, k)}</span>
+        </button>
+      )
       return
     }
     flushList()

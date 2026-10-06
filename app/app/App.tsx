@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import { Category, Importance, Note, Project, Status, Subproject } from './types'
 import ProjectModal, { ProjectFormValues } from './components/ProjectModal'
 import SubprojectModal, { SubprojectFormValues } from './components/SubprojectModal'
-import { todoItems, serializeTodo, DONE_PREFIX } from './todo'
+import { todoLineText, normalizeTodoLines, todoPrefix, DONE_PREFIX } from './todo'
 import NoteModal, { NoteFormValues } from './components/NoteModal'
 import ConfirmModal from './components/ConfirmModal'
 import SortableProjectCard from './components/SortableProjectCard'
@@ -906,13 +906,13 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
   }
 
   async function handleQuickAddNote(projectId: string, text: string) {
-    const { data, error } = await supabase.from('notes').insert({ text, project_id: projectId, subproject_id: null }).select().single()
+    const { data, error } = await supabase.from('notes').insert({ text: normalizeTodoLines(text), project_id: projectId, subproject_id: null }).select().single()
     if (error) { showToast(`Erreur : ${error.message}`, 'error'); return }
     if (data) setProjects(ps => ps.map(p => p.id !== projectId ? p : { ...p, notes: [...(p.notes || []), data] }))
   }
 
   async function handleQuickAddSubNote(parentId: string, subprojectId: string, text: string) {
-    const { data, error } = await supabase.from('notes').insert({ text, project_id: parentId, subproject_id: subprojectId }).select().single()
+    const { data, error } = await supabase.from('notes').insert({ text: normalizeTodoLines(text), project_id: parentId, subproject_id: subprojectId }).select().single()
     if (error) { showToast(`Erreur : ${error.message}`, 'error'); return }
     if (data) {
       setProjects(ps => ps.map(p => p.id !== parentId ? p : {
@@ -930,23 +930,25 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
     }))
   }
 
-  // Coche une tâche : elle quitte la liste et devient une note ; la liste est supprimée une fois vide.
-  async function handleCompleteTodo(projectId: string, subprojectId: string | undefined, note: Note, index: number) {
-    const items = todoItems(note.text)
-    const done = items[index]
-    if (done === undefined) return
-    const remaining = items.filter((_, i) => i !== index)
+  // Coche une tâche (ligne « [ ] … » de la note, repérée par son numéro de ligne) : la ligne quitte la note et
+  // devient une note « Fait : … » ; la note est supprimée s'il ne lui reste plus rien.
+  async function handleCompleteTodo(projectId: string, subprojectId: string | undefined, note: Note, lineIndex: number) {
+    const lines = note.text.split('\n')
+    const done = todoLineText(lines[lineIndex] ?? '')
+    if (!done) return
+    const remaining = lines.filter((_, i) => i !== lineIndex)
+    const keep = remaining.some(l => l.trim())
     const { data: created, error } = await supabase.from('notes').insert({
       text: DONE_PREFIX + done,
       project_id: note.project_id ?? projectId,
       subproject_id: note.subproject_id ?? null,
     }).select().single()
     if (error || !created) { showToast(`Erreur : ${error?.message}`, 'error'); return }
-    const res = remaining.length
-      ? await supabase.from('notes').update({ text: serializeTodo(remaining) }).eq('id', note.id).select().single()
+    const res = keep
+      ? await supabase.from('notes').update({ text: remaining.join('\n') }).eq('id', note.id).select().single()
       : await supabase.from('notes').delete().eq('id', note.id)
     if (res.error) { showToast(`Erreur : ${res.error.message}`, 'error'); applyNotes(projectId, subprojectId, ns => [...ns, created]); return }
-    const updated = remaining.length ? (res as { data: Note }).data : null
+    const updated = keep ? (res as { data: Note }).data : null
     applyNotes(projectId, subprojectId, ns => {
       const next = [...ns, created]
       return updated ? next.map(n => (n.id === note.id ? updated : n)) : next.filter(n => n.id !== note.id)
@@ -954,11 +956,11 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
     showToast('Tâche terminée', 'success', {
       label: 'Annuler',
       onClick: async () => {
-        // Relit la liste en base : elle a pu changer (ou disparaître) depuis le cochage.
+        // Relit la note en base : elle a pu changer (ou disparaître) depuis le cochage.
         const { data: current } = await supabase.from('notes').select().eq('id', note.id).maybeSingle()
-        const base = current ? todoItems(current.text) : []
-        base.splice(Math.min(index, base.length), 0, done)
-        const text = serializeTodo(base)
+        const base = current ? current.text.split('\n') : []
+        base.splice(Math.min(lineIndex, base.length), 0, todoPrefix() + done)
+        const text = base.join('\n')
         const restored = current
           ? await supabase.from('notes').update({ text }).eq('id', note.id).select().single()
           : await supabase.from('notes').insert({ text, project_id: note.project_id ?? projectId, subproject_id: note.subproject_id ?? null }).select().single()
@@ -1600,7 +1602,7 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
           onEditNote={(note, subprojectId) =>
             setNoteModalTarget({ projectId: selectedDetailProject.id, subprojectId, note })
           }
-          onAddTodo={() => setNoteModalTarget({ projectId: selectedDetailProject.id, todo: true })}
+          onAddTodo={() => setNoteModalTarget({ projectId: selectedDetailProject.id })}
           onCompleteTodo={(note, index, subprojectId) => handleCompleteTodo(selectedDetailProject.id, subprojectId, note, index)}
           onDeleteNote={(note, subprojectId) =>
             setDeleteTarget({ type: 'note', id: note.id, projectId: selectedDetailProject.id, subprojectId })
@@ -1630,7 +1632,7 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
           onUpdateField={patch => handleUpdateSubField(selectedDetailParentId, selectedDetailSub, patch)}
           onQuickAddNote={text => handleQuickAddSubNote(selectedDetailParentId, selectedDetailSub.id, text)}
           onEditNote={note => setNoteModalTarget({ projectId: selectedDetailParentId, subprojectId: selectedDetailSub.id, note })}
-          onAddTodo={() => setNoteModalTarget({ projectId: selectedDetailParentId, subprojectId: selectedDetailSub.id, todo: true })}
+          onAddTodo={() => setNoteModalTarget({ projectId: selectedDetailParentId, subprojectId: selectedDetailSub.id })}
           onCompleteTodo={(note, index) => handleCompleteTodo(selectedDetailParentId, selectedDetailSub.id, note, index)}
           onDeleteNote={note => setDeleteTarget({ type: 'note', id: note.id, projectId: selectedDetailParentId, subprojectId: selectedDetailSub.id })}
         />

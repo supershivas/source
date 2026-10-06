@@ -1,5 +1,10 @@
 # Historique des versions
 
+## 1.9.0 — 2026-10-06
+- Notes : une ligne « [ ] » devient une case à cocher dans n'importe quelle note, y compris la note rapide
+- Nouveau bouton « Note détaillée » : mise en forme et tâches dans la même note
+- Un texte peut mélanger paragraphes et tâches ; cocher une tâche crée toujours une note « Fait : … »
+
 ## 1.8.5 — 2026-10-06
 - Labo : l'onglet du navigateur s'appelle « Labo — Source » et son icône porte une pastille à fiole en haut à droite
 

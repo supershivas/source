@@ -6,8 +6,7 @@ import InlineDropdown from './InlineDropdown'
 import DateInput from './DateInput'
 import NoteText from './NoteText'
 import { useSheetDrag, useKeyboardFit } from './useSheetDrag'
-import TodoNote from './TodoNote'
-import { isTodoNote } from '../todo'
+import { hasTodo } from '../todo'
 import { printProject } from '../printProject'
 
 interface DetailPanelProps {
@@ -180,7 +179,7 @@ export default function DetailPanel({
   const allNotes: LogNote[] = [
     ...(project.notes || []).map(n => ({ ...n, _subName: undefined as string | undefined })),
     ...subprojectNotes,
-  ].sort((a, b) => Number(isTodoNote(b.text)) - Number(isTodoNote(a.text)) || new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+  ].sort((a, b) => Number(hasTodo(b.text)) - Number(hasTodo(a.text)) || new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
   const filteredNotes = noteTab === 'all' ? allNotes : noteTab === 'notes' ? allNotes.filter(n => !isStatusNote(n.text)) : allNotes.filter(n => isStatusNote(n.text))
 
   function fmtDate(iso: string) {
@@ -386,15 +385,15 @@ export default function DetailPanel({
       <div>
         <div className="flex items-center justify-between mb-2">
           <span className="text-xs font-semibold t-text-muted uppercase tracking-wide">Notes & historique</span>
-          <button onClick={onAddTodo} title="Nouvelle liste de tâches" aria-label="Nouvelle liste de tâches" className="sidebar-icon-btn rounded p-1" style={{ color: 'var(--text-muted)' }}>
-            <i className="ti ti-list-check" />
+          <button onClick={onAddTodo} title="Note détaillée : texte mis en forme, liste de tâches…" aria-label="Ajouter une note détaillée" className="flex items-center gap-1 rounded px-2 py-1 text-xs" style={{ color: 'var(--text-muted)', border: '1px solid var(--border)' }}>
+            <i className="ti ti-pencil-plus" /> Note détaillée
           </button>
         </div>
 
         <textarea
           ref={quickNoteRef}
           value={quickNote}
-          placeholder="Ajouter une note…"
+          placeholder="Note rapide… (Entrée pour ajouter)"
           rows={1}
           onChange={e => {
             setQuickNote(e.target.value)
@@ -484,9 +483,7 @@ export default function DetailPanel({
               <div key={n.id} className={`flex items-start gap-2 rounded border t-border px-2 py-1.5${n.id === newNoteId ? ' note-enter' : ''}`}>
                 <div className="flex-1 min-w-0">
                   {n._subName && <p className="text-xs t-text-muted mb-0.5"><i className="ti ti-corner-down-right" style={{ fontSize: '0.85em', verticalAlign: '-0.1em' }} /> {n._subName}</p>}
-                  {isTodoNote(n.text)
-                    ? <TodoNote text={n.text} onComplete={i => onCompleteTodo(n, i, subprojectId)} />
-                    : <NoteText text={n.text} />}
+                  <NoteText text={n.text} onCompleteLine={i => onCompleteTodo(n, i, subprojectId)} />
                   <span className="text-xs t-text-muted">{fmtDate(n.created_at)}</span>
                 </div>
                 <button onClick={() => onEditNote(n, subprojectId)} className="sidebar-icon-btn rounded p-1" style={{ color: 'var(--text-muted)' }}>
