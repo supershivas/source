@@ -5,6 +5,7 @@ import { STATUS_LABELS, STATUS_ACCENT, IMPORTANCE_LABELS, STATUS_ORDER, IMPORTAN
 import InlineDropdown from './InlineDropdown'
 import DateInput from './DateInput'
 import NoteText from './NoteText'
+import NoteDate from './NoteDate'
 import { useSheetDrag, useKeyboardFit } from './useSheetDrag'
 import { hasTodo } from '../todo'
 import { printProject } from '../printProject'
@@ -30,6 +31,7 @@ interface DetailPanelProps {
   onAddTodo: () => void
   onCompleteTodo: (note: Note, index: number, subprojectId?: string) => void
   onDeleteNote: (note: Note, subprojectId?: string) => void
+  onChangeNoteDate: (note: Note, day: string, subprojectId?: string) => void
 }
 
 type EditableField = 'name' | 'number' | 'editor' | 'client' | 'date' | 'deadline' | 'ended'
@@ -57,6 +59,7 @@ export default function DetailPanel({
   onAddTodo,
   onCompleteTodo,
   onDeleteNote,
+  onChangeNoteDate,
 }: DetailPanelProps) {
   const [newNoteId, setNewNoteId] = useState<string | null>(null)
   const [focusNoteId, setFocusNoteId] = useState<string | null>(null)
@@ -423,7 +426,7 @@ export default function DetailPanel({
                     {n._subName && <span className="t-text-muted"><i className="ti ti-corner-down-right" style={{ fontSize: '0.85em', verticalAlign: '-0.1em' }} /> {n._subName} · </span>}
                     Statut <i className="ti ti-arrow-right" style={{ fontSize: '0.85em', verticalAlign: '-0.1em' }} /> <strong>{n.text.slice(2)}</strong>
                   </span>
-                  <span className="text-xs t-text-muted shrink-0">{fmtDate(n.created_at)}</span>
+                  <span className="shrink-0"><NoteDate iso={n.created_at} onChange={d => onChangeNoteDate(n, d, subprojectId)} /></span>
                   <button onClick={() => onDeleteNote(n, subprojectId)} className="sidebar-icon-btn rounded p-1" style={{ color: 'var(--text-muted)' }}>
                     <i className="ti ti-x" style={{ fontSize: '0.7rem' }} />
                   </button>
@@ -435,7 +438,7 @@ export default function DetailPanel({
                 <div className="flex-1 min-w-0">
                   {n._subName && <p className="text-xs t-text-muted mb-0.5"><i className="ti ti-corner-down-right" style={{ fontSize: '0.85em', verticalAlign: '-0.1em' }} /> {n._subName}</p>}
                   <NoteText text={n.text} onCompleteLine={i => onCompleteTodo(n, i, subprojectId)} />
-                  <span className="text-xs t-text-muted">{fmtDate(n.created_at)}</span>
+                  <NoteDate iso={n.created_at} onChange={d => onChangeNoteDate(n, d, subprojectId)} />
                 </div>
                 <button onClick={() => onEditNote(n, subprojectId)} className="sidebar-icon-btn rounded p-1" style={{ color: 'var(--text-muted)' }}>
                   <i className="ti ti-edit" />

@@ -984,6 +984,24 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
     })
   }
 
+  // Change le jour d'une note (l'heure est conservée) ; la frise se repositionne.
+  async function handleChangeNoteDate(projectId: string, subprojectId: string | undefined, note: Note, day: string) {
+    const old = new Date(note.created_at)
+    const [y, m, d] = day.split('-').map(Number)
+    const next = new Date(y, m - 1, d, old.getHours(), old.getMinutes(), old.getSeconds()).toISOString()
+    const { error } = await supabase.from('notes').update({ created_at: next }).eq('id', note.id)
+    if (error) { showToast(`Erreur : ${error.message}`, 'error'); return }
+    applyNotes(projectId, subprojectId, ns => ns.map(n => (n.id === note.id ? { ...n, created_at: next } : n)))
+    showToast('Date de la note modifiée', 'success', {
+      label: 'Annuler',
+      onClick: async () => {
+        const res = await supabase.from('notes').update({ created_at: note.created_at }).eq('id', note.id)
+        if (res.error) showToast(`Erreur : ${res.error.message}`, 'error')
+        else applyNotes(projectId, subprojectId, ns => ns.map(n => (n.id === note.id ? { ...n, created_at: note.created_at } : n)))
+      },
+    })
+  }
+
   async function handleDeleteNote(target: { id: string; projectId: string; subprojectId?: string }) {
     const proj = projects.find(p => p.id === target.projectId)
     const deleted = target.subprojectId
@@ -1620,6 +1638,7 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
           }
           onAddTodo={() => setNoteModalTarget({ projectId: selectedDetailProject.id })}
           onCompleteTodo={(note, index, subprojectId) => handleCompleteTodo(selectedDetailProject.id, subprojectId, note, index)}
+          onChangeNoteDate={(note, day, subprojectId) => handleChangeNoteDate(selectedDetailProject.id, subprojectId, note, day)}
           onDeleteNote={(note, subprojectId) =>
             setDeleteTarget({ type: 'note', id: note.id, projectId: selectedDetailProject.id, subprojectId })
           }
@@ -1650,6 +1669,7 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
           onEditNote={note => setNoteModalTarget({ projectId: selectedDetailParentId, subprojectId: selectedDetailSub.id, note })}
           onAddTodo={() => setNoteModalTarget({ projectId: selectedDetailParentId, subprojectId: selectedDetailSub.id })}
           onCompleteTodo={(note, index) => handleCompleteTodo(selectedDetailParentId, selectedDetailSub.id, note, index)}
+          onChangeNoteDate={(note, day) => handleChangeNoteDate(selectedDetailParentId, selectedDetailSub.id, note, day)}
           onDeleteNote={note => setDeleteTarget({ type: 'note', id: note.id, projectId: selectedDetailParentId, subprojectId: selectedDetailSub.id })}
         />
       )}

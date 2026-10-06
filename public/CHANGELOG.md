@@ -1,5 +1,8 @@
 # Historique des versions
 
+## 1.12.0 — 2026-10-06
+- La date de chaque note est modifiable d'un clic (l'heure est conservée) ; la note et son jalon sur la frise se déplacent, avec un lien « Annuler »
+
 ## 1.11.2 — 2026-10-06
 - Frise : les dates très proches ne se superposent plus (étiquettes sur plusieurs rangées) et un projet terminé s'arrête à sa fin
 - Frise : repères d'années et de mois en « grille légère »

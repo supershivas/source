@@ -5,6 +5,7 @@ import { STATUS_LABELS, STATUS_ACCENT, STATUS_ORDER, toEU } from '../constants'
 import InlineDropdown from './InlineDropdown'
 import DateInput from './DateInput'
 import NoteText from './NoteText'
+import NoteDate from './NoteDate'
 import { useSheetDrag, useKeyboardFit } from './useSheetDrag'
 import { hasTodo } from '../todo'
 
@@ -25,6 +26,7 @@ interface SubprojectDetailPanelProps {
   onAddTodo: () => void
   onCompleteTodo: (note: Note, index: number) => void
   onDeleteNote: (note: Note) => void
+  onChangeNoteDate: (note: Note, day: string) => void
 }
 
 type EditableField = 'name' | 'number' | 'deadline' | 'ended'
@@ -48,6 +50,7 @@ export default function SubprojectDetailPanel({
   onAddTodo,
   onCompleteTodo,
   onDeleteNote,
+  onChangeNoteDate,
 }: SubprojectDetailPanelProps) {
   const [editing, setEditing] = useState<EditableField | null>(null)
   const [draft, setDraft] = useState('')
@@ -368,7 +371,7 @@ export default function SubprojectDetailPanel({
                   <span className="flex-1 text-xs" style={{ color: 'var(--text-secondary)' }}>
                     Statut <i className="ti ti-arrow-right" style={{ fontSize: '0.85em', verticalAlign: '-0.1em' }} /> <strong>{n.text.slice(2)}</strong>
                   </span>
-                  <span className="text-xs t-text-muted shrink-0">{fmtDate(n.created_at)}</span>
+                  <span className="shrink-0"><NoteDate iso={n.created_at} onChange={d => onChangeNoteDate(n, d)} /></span>
                   <button onClick={() => onDeleteNote(n)} className="sidebar-icon-btn rounded p-1" style={{ color: 'var(--text-muted)' }}>
                     <i className="ti ti-x" style={{ fontSize: '0.7rem' }} />
                   </button>
@@ -379,7 +382,7 @@ export default function SubprojectDetailPanel({
               <div key={n.id} className={`flex items-start gap-2 rounded border t-border px-2 py-1.5${n.id === newNoteId ? ' note-enter' : ''}`}>
                 <div className="flex-1 min-w-0">
                   <NoteText text={n.text} onCompleteLine={i => onCompleteTodo(n, i)} />
-                  <span className="text-xs t-text-muted">{fmtDate(n.created_at)}</span>
+                  <NoteDate iso={n.created_at} onChange={d => onChangeNoteDate(n, d)} />
                 </div>
                 <button onClick={() => onEditNote(n)} className="sidebar-icon-btn rounded p-1" style={{ color: 'var(--text-muted)' }}>
                   <i className="ti ti-edit" />
