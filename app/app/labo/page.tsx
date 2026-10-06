@@ -29,7 +29,7 @@ const Meta = ({ p }: { p: Sample }) => (
 
 
 type Variant = { letter: string; id: string; title: string; text: string; status?: 'actuelle' | 'ancienne'; retained?: boolean; render: () => React.ReactNode }
-type Topic = { id: string; label: string; icon: string; variants: Variant[] }
+type Topic = { id: string; group: string; label: string; icon: string; variants: Variant[]; fake?: boolean }
 
 const row = (p: Sample, extra: React.CSSProperties = {}, content?: React.ReactNode) => (
   <div key={p.number} className="flex items-center gap-3 px-4 py-3" style={{ ...card, ...extra }}>{content}</div>
@@ -40,9 +40,43 @@ const twoLines = (p: Sample, first: React.ReactNode, second: React.ReactNode) =>
 const std = (p: Sample) => twoLines(p, <><Num p={p} /><Name p={p} /></>, <><Badge s={p.status} /><Meta p={p} /></>)
 const list = (f: (p: Sample) => React.ReactNode) => <div className="flex flex-col gap-2">{SAMPLES.map(f)}</div>
 
+
+// Sujets factices : ils ne servent qu'à juger de l'ergonomie d'un labo bien rempli (à retirer ensuite).
+const FAKE_SPEC: [string, string, string, string[]][] = [
+  ['Liste', 'Filtres', 'filter', ['Barre horizontale', 'Puces', 'Panneau latéral', 'Menu déroulant']],
+  ['Liste', 'Tri', 'arrows-sort', ['Menu', 'En-têtes de colonnes', 'Glisser-déposer']],
+  ['Liste', 'Sélection groupée', 'checkbox', ['Barre flottante', 'Barre en haut', 'Menu contextuel']],
+  ['Détail', 'Panneau de détail', 'layout-sidebar-right', ['Panneau latéral', 'Feuille centrée', 'Page entière', 'Tiroir bas']],
+  ['Détail', 'Notes et historique', 'notes', ['Fil unique', 'Deux colonnes', 'Onglets']],
+  ['Détail', 'Chronologie', 'timeline', ['Frise', 'Liste datée', 'Jauge']],
+  ['Modales', 'Projet', 'folder', ['Formulaire simple', 'Étapes', 'Plein écran mobile']],
+  ['Modales', 'Note', 'note', ['Éditeur léger', 'Barre Markdown', 'Plein écran']],
+  ['Modales', 'Confirmation', 'alert-triangle', ['Texte seul', 'Avec résumé', 'Annuler 5 s (toast)']],
+  ['Navigation', 'Sidebar', 'layout-sidebar', ['Sombre fixe', 'Repliable', 'Icônes seules']],
+  ['Navigation', 'Année et catégorie', 'calendar', ['Onglets', 'Menu', 'Chips']],
+  ['Navigation', 'Palette de commandes', 'command', ['Centrée', 'Plein écran mobile']],
+  ['Réglages', 'Thème', 'palette', ['Interrupteur', 'Trois choix', 'Aperçu']],
+  ['Réglages', 'Couleur d\'accent', 'color-swatch', ['Pastilles', 'Roue', 'Liste nommée']],
+]
+const placeholder = (n: number) => (
+  <div className="flex flex-col gap-2">
+    <p style={{ ...muted, border: '1px dashed var(--border)', borderRadius: 8, padding: '6px 10px' }}>Maquette factice : sert à juger du menu, pas du contenu.</p>
+    {[0, 1, 2].map(i => (
+      <div key={i} className="flex items-center gap-3 px-4 py-3" style={card}>
+        <span style={{ width: 9, height: 9, borderRadius: n % 2 ? 2 : '50%', background: 'var(--border)' }} />
+        <div className="flex-1 flex flex-col gap-1.5"><span style={{ height: 10, width: `${70 - i * 12 - n * 3}%`, background: 'var(--border)', borderRadius: 4 }} /><span style={{ height: 8, width: `${45 + i * 8}%`, background: 'var(--hover-bg)', borderRadius: 4 }} /></div>
+      </div>
+    ))}
+  </div>
+)
+const FAKE_TOPICS: Topic[] = FAKE_SPEC.map(([group, label, icon, names]) => ({
+  id: label.normalize('NFD').replace(/[^a-zA-Z]+/g, '').toLowerCase(), group, label, icon, fake: true,
+  variants: names.map((title, i) => ({ letter: String.fromCharCode(65 + i), id: String(i), title, text: `Variante factice « ${title} ».`, status: i === 0 ? 'actuelle' as const : undefined, render: () => placeholder(i) })),
+}))
+
 const TOPICS: Topic[] = [
   {
-    id: 'cartes', label: 'Cartes de la liste', icon: 'layout-list',
+    id: 'cartes', group: 'Liste', label: 'Cartes de la liste', icon: 'layout-list',
     variants: [
       { letter: 'A', id: 'pastille', title: 'Pastille de statut', status: 'actuelle', retained: true,
         text: "Un point coloré devant le numéro remplace le liseré. Le badge devient un texte discret.",
@@ -100,7 +134,9 @@ const TOPICS: Topic[] = [
           </div>) },
     ],
   },
+  ...FAKE_TOPICS,
 ]
+const GROUPS = Array.from(new Set(TOPICS.map(t => t.group)))
 
 // Adresse : #sujet-LETTRE (ex. #cartes-C)
 function parseHash(): { topic: number; variant: number } {
@@ -118,6 +154,7 @@ export default function LaboPage() {
   const touchX = useRef<number | null>(null)
   const topic = TOPICS[topicIdx]
   const variant = topic.variants[variantIdx]
+  const groupTopics = TOPICS.map((t, i) => ({ t, i })).filter(x => x.t.group === topic.group)
 
   useEffect(() => {
     const sync = () => { const h = parseHash(); setTopicIdx(h.topic); setVariantIdx(h.variant) }
@@ -137,71 +174,132 @@ export default function LaboPage() {
     function onKey(e: KeyboardEvent) {
       const tag = (e.target as HTMLElement).tagName
       if (tag === 'INPUT' || tag === 'TEXTAREA') return
-      if (e.key === 'ArrowRight') go(topicIdx, variantIdx + 1)
-      if (e.key === 'ArrowLeft') go(topicIdx, variantIdx - 1)
+      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { e.preventDefault(); go(topicIdx, variantIdx + 1) }
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); go(topicIdx, variantIdx - 1) }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [go, topicIdx, variantIdx])
 
-  const tabBtn = (active: boolean): React.CSSProperties => ({
+  const btn = (active: boolean): React.CSSProperties => ({
     minWidth: 44, minHeight: 44, padding: '0 14px', borderRadius: 8, fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer',
     border: '1px solid var(--border)', background: active ? 'var(--text-primary)' : 'transparent', color: active ? 'var(--card-bg)' : 'var(--text-secondary)',
   })
+  const letter = (v: Variant, active: boolean): React.CSSProperties => ({
+    width: 28, height: 28, borderRadius: 6, flexShrink: 0, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '0.78rem', position: 'relative',
+    background: active ? 'var(--accent)' : 'var(--hover-bg)', color: active ? '#fff' : 'var(--text-secondary)',
+  })
+  const dot = (v: Variant) => v.retained ? <span aria-label="retenue" style={{ position: 'absolute', top: -3, right: -3, width: 8, height: 8, borderRadius: '50%', background: 'var(--card-bg)', border: '2px solid var(--accent)' }} /> : null
 
   return (
-    <div className="labo-root" style={{ height: '100dvh', display: 'flex', flexDirection: 'column', background: 'var(--app-bg)', color: 'var(--text-primary)' }}>
-      <style>{`@media (min-width: 769px) { .labo-vbar { order: 1; border-top: none !important; border-bottom: 1px solid var(--border); } .labo-main { order: 2; } }`}</style>
-      <header style={{ background: 'var(--card-bg)', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
+    <div style={{ height: '100dvh', display: 'flex', flexDirection: 'column', background: 'var(--app-bg)', color: 'var(--text-primary)' }}>
+      <style>{`
+        .labo-rail, .labo-chips { display: none; }
+        @media (min-width: 769px) { .labo-rail { display: flex; } .labo-vbar { display: none !important; } }
+        @media (max-width: 768px) { .labo-chips { display: flex; } }
+      `}</style>
+
+      {/* En-tête : même titre que l'app (✦ + Source), mais sur fond d'accent, puis « LABO » en mono */}
+      <header style={{ background: 'var(--accent)', color: '#fff', flexShrink: 0 }}>
         <div className="flex items-center gap-3 px-4" style={{ height: 52 }}>
-          <a href="/app" className="font-semibold" style={{ color: 'var(--text-primary)', textDecoration: 'none' }}>Source</a>
-          <span style={muted}>/ Labo</span>
+          <a href="/app" className="flex items-center gap-2" style={{ color: '#fff', textDecoration: 'none' }} title="Revenir à l'app">
+            <span className="flex items-center justify-center rounded-lg" style={{ width: 24, height: 24, fontSize: '0.85rem', background: 'rgba(255,255,255,0.2)' }}>✦</span>
+            <span style={{ fontFamily: 'var(--font-title)', fontSize: 17, fontWeight: 700, letterSpacing: '-0.01em', lineHeight: 1 }}>Source</span>
+          </a>
+          <span className="flex items-center gap-1.5" style={{ fontFamily: 'var(--font-mono)', fontSize: '0.78rem', letterSpacing: '0.18em', textTransform: 'uppercase', border: '1px solid rgba(255,255,255,0.7)', borderRadius: 4, padding: '3px 8px' }}>
+            <i className="ti ti-flask" /> Labo
+          </span>
         </div>
-        <nav aria-label="Sujets du labo" className="flex gap-1 overflow-x-auto px-3 pb-2">
-          {TOPICS.map((t, i) => (
-            <button key={t.id} onClick={() => go(i, 0)} aria-current={i === topicIdx} className="shrink-0 flex items-center gap-2" style={tabBtn(i === topicIdx)}>
-              <i className={`ti ti-${t.icon}`} /> {t.label}
-            </button>
-          ))}
+        <nav aria-label="Groupes du labo" className="flex gap-1 overflow-x-auto px-3" style={{ background: 'rgba(0,0,0,0.18)' }}>
+          {GROUPS.map(g => {
+            const active = g === topic.group
+            return (
+              <button key={g} onClick={() => go(TOPICS.findIndex(t => t.group === g), 0)} aria-current={active} className="shrink-0"
+                style={{ minHeight: 44, padding: '0 14px', fontSize: '0.85rem', fontWeight: active ? 700 : 500, color: '#fff', opacity: active ? 1 : 0.7, borderBottom: `3px solid ${active ? '#fff' : 'transparent'}`, background: 'transparent', cursor: 'pointer' }}>
+                {g}
+              </button>
+            )
+          })}
         </nav>
       </header>
 
-      <div className="labo-vbar flex items-center gap-1 px-3" style={{ background: 'var(--card-bg)', borderTop: '1px solid var(--border)', paddingBottom: 'max(8px, env(safe-area-inset-bottom))', paddingTop: 8, flexShrink: 0, order: 3 }}>
-        <button onClick={() => go(topicIdx, variantIdx - 1)} aria-label="Variante précédente" style={tabBtn(false)}><i className="ti ti-chevron-left" /></button>
-        <div className="flex flex-1 justify-center gap-1 overflow-x-auto" role="tablist" aria-label="Variantes">
-          {topic.variants.map((v, i) => (
-            <button key={v.letter} role="tab" aria-selected={i === variantIdx} onClick={() => go(topicIdx, i)} title={v.title} style={{ ...tabBtn(i === variantIdx), position: 'relative' }}>
-              {v.letter}
-              {v.retained && <span aria-label="retenue" style={{ position: 'absolute', top: 5, right: 5, width: 6, height: 6, borderRadius: '50%', background: 'var(--accent)' }} />}
-            </button>
-          ))}
-        </div>
-        <button onClick={() => go(topicIdx, variantIdx + 1)} aria-label="Variante suivante" style={tabBtn(false)}><i className="ti ti-chevron-right" /></button>
+      {/* Mobile : sujets du groupe en puces */}
+      <nav className="labo-chips gap-1 overflow-x-auto px-3 py-2" aria-label="Sujets" style={{ background: 'var(--card-bg)', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
+        {groupTopics.map(({ t, i }) => (
+          <button key={t.id} onClick={() => go(i, 0)} className="shrink-0 flex items-center gap-1.5" style={btn(i === topicIdx)}><i className={`ti ti-${t.icon}`} /> {t.label}</button>
+        ))}
+      </nav>
+
+      <div style={{ flex: 1, display: 'flex', minHeight: 0 }}>
+        {/* Bureau : sujets du groupe dans la marge, le sujet ouvert déplie ses variantes */}
+        <aside className="labo-rail" aria-label="Sujets et variantes" style={{ width: 260, flexShrink: 0, flexDirection: 'column', overflowY: 'auto', background: 'var(--card-bg)', borderRight: '1px solid var(--border)', padding: '12px 8px' }}>
+          {groupTopics.map(({ t, i }) => {
+            const open = i === topicIdx
+            return (
+              <div key={t.id} style={{ marginBottom: 4 }}>
+                <button onClick={() => go(i, 0)} aria-expanded={open} className="flex items-center gap-2 w-full text-left"
+                  style={{ minHeight: 40, padding: '0 10px', borderRadius: 8, fontSize: '0.85rem', fontWeight: 600, color: open ? 'var(--text-primary)' : 'var(--text-secondary)', background: open ? 'var(--hover-bg)' : 'transparent', cursor: 'pointer' }}>
+                  <i className={`ti ti-${t.icon}`} style={{ color: open ? 'var(--accent)' : 'var(--text-muted)' }} />
+                  <span className="flex-1">{t.label}</span>
+                  <span style={muted}>{t.variants.length}</span>
+                  <i className={`ti ti-chevron-${open ? 'down' : 'right'}`} style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }} />
+                </button>
+                {open && (
+                  <div className="flex flex-col" style={{ marginLeft: 14, paddingLeft: 8, borderLeft: '1px solid var(--border)', marginTop: 2 }}>
+                    {t.variants.map((v, vi) => (
+                      <button key={v.letter} onClick={() => go(i, vi)} aria-current={vi === variantIdx} className="flex items-center gap-2 text-left"
+                        style={{ minHeight: 40, padding: '0 8px', borderRadius: 8, fontSize: '0.82rem', color: vi === variantIdx ? 'var(--text-primary)' : 'var(--text-secondary)', fontWeight: vi === variantIdx ? 600 : 400, background: vi === variantIdx ? 'var(--hover-bg)' : 'transparent', cursor: 'pointer' }}>
+                        <span style={letter(v, vi === variantIdx)}>{v.letter}{dot(v)}</span>
+                        <span className="flex-1 truncate">{v.title}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </aside>
+
+        <main
+          style={{ flex: 1, overflowY: 'auto', touchAction: 'pan-y' }}
+          onTouchStart={e => { touchX.current = e.touches[0].clientX }}
+          onTouchEnd={e => {
+            if (touchX.current == null) return
+            const dx = e.changedTouches[0].clientX - touchX.current
+            touchX.current = null
+            if (Math.abs(dx) > 70) go(topicIdx, variantIdx + (dx < 0 ? 1 : -1))
+          }}
+        >
+          <div style={{ maxWidth: 800, margin: '0 auto', padding: '20px 16px 24px' }}>
+            <p style={{ ...muted, marginBottom: 4 }}>{topic.group} / {topic.label}</p>
+            <div className="flex items-center gap-2 flex-wrap" style={{ marginBottom: 4 }}>
+              <h1 style={{ fontSize: '1.1rem', fontWeight: 600 }}>{variant.letter}. {variant.title}</h1>
+              {variant.status === 'actuelle' && <span style={{ ...muted, border: '1px solid var(--border)', borderRadius: 10, padding: '1px 8px' }}>actuelle</span>}
+              {variant.status === 'ancienne' && <span style={{ ...muted, border: '1px solid var(--border)', borderRadius: 10, padding: '1px 8px' }}>ancienne</span>}
+              {variant.retained && <span style={{ fontSize: '0.72rem', color: 'var(--accent)', border: '1px solid var(--accent)', borderRadius: 10, padding: '1px 8px' }}>retenue</span>}
+            </div>
+            <p style={{ ...muted, fontSize: '0.82rem', marginBottom: 16 }}>{variant.text}</p>
+            {variant.render()}
+            <p style={{ ...muted, marginTop: 20 }}>Données d'exemple, rien n'est enregistré. Flèches du clavier ou balayage pour changer de variante.</p>
+          </div>
+        </main>
       </div>
 
-      <main
-        className="labo-main"
-        style={{ flex: 1, overflowY: 'auto', order: 2, touchAction: 'pan-y' }}
-        onTouchStart={e => { touchX.current = e.touches[0].clientX }}
-        onTouchEnd={e => {
-          if (touchX.current == null) return
-          const dx = e.changedTouches[0].clientX - touchX.current
-          touchX.current = null
-          if (Math.abs(dx) > 70) go(topicIdx, variantIdx + (dx < 0 ? 1 : -1))
-        }}
-      >
-        <div style={{ maxWidth: 800, margin: '0 auto', padding: '20px 16px 24px' }}>
-          <div className="flex items-center gap-2 flex-wrap" style={{ marginBottom: 4 }}>
-            <h1 style={{ fontSize: '1.1rem', fontWeight: 600 }}>{variant.letter}. {variant.title}</h1>
-            {variant.status === 'actuelle' && <span style={{ ...muted, border: '1px solid var(--border)', borderRadius: 10, padding: '1px 8px' }}>actuelle</span>}
-            {variant.status === 'ancienne' && <span style={{ ...muted, border: '1px solid var(--border)', borderRadius: 10, padding: '1px 8px' }}>ancienne</span>}
-            {variant.retained && <span style={{ fontSize: '0.72rem', color: 'var(--accent)', border: '1px solid var(--accent)', borderRadius: 10, padding: '1px 8px' }}>retenue</span>}
+      {/* Mobile : variantes en bas, avec le titre de la variante ouverte */}
+      <div className="labo-vbar" style={{ background: 'var(--card-bg)', borderTop: '1px solid var(--border)', paddingBottom: 'max(8px, env(safe-area-inset-bottom))', paddingTop: 6, flexShrink: 0 }}>
+        <p className="truncate px-4" style={{ ...muted, textAlign: 'center', marginBottom: 4 }}>{variant.letter} · {variant.title}</p>
+        <div className="flex items-center gap-1 px-3">
+          <button onClick={() => go(topicIdx, variantIdx - 1)} aria-label="Variante précédente" style={btn(false)}><i className="ti ti-chevron-left" /></button>
+          <div className="flex flex-1 gap-1 overflow-x-auto" style={{ justifyContent: "safe center" }} role="tablist" aria-label="Variantes">
+            {topic.variants.map((v, i) => (
+              <button key={v.letter} role="tab" aria-selected={i === variantIdx} onClick={() => go(topicIdx, i)} title={v.title} style={{ ...btn(i === variantIdx), position: 'relative', background: i === variantIdx ? 'var(--accent)' : 'transparent', color: i === variantIdx ? '#fff' : 'var(--text-secondary)' }}>
+                {v.letter}{dot(v)}
+              </button>
+            ))}
           </div>
-          <p style={{ ...muted, fontSize: '0.82rem', marginBottom: 16 }}>{variant.text}</p>
-          {variant.render()}
-          <p style={{ ...muted, marginTop: 20 }}>Données d'exemple, rien n'est enregistré. Flèches ← → ou balayage pour changer de variante.</p>
+          <button onClick={() => go(topicIdx, variantIdx + 1)} aria-label="Variante suivante" style={btn(false)}><i className="ti ti-chevron-right" /></button>
         </div>
-      </main>
+      </div>
     </div>
   )
 }

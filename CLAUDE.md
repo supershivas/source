@@ -120,11 +120,15 @@ le préfixe `→ ` des notes de statut (lu par `isStatusNote`).
 
 `/app/labo` (`app/app/labo/page.tsx`, protégé par le middleware, lien dans les
 Réglages) : banc d'essai sur des données d'exemple, rien n'y est enregistré.
-Écran à hauteur fixe : sujets en onglets (`TOPICS`), une variante à la fois,
-lettres A, B, C… (A = l'actuelle), barre de variantes sous l'en-tête sur
-bureau et en bas sur mobile, flèches ← → et balayage, adresse `#sujet-LETTRE`
-(ex. `#cartes-C`). Pour un nouveau sujet ou une variante : ajouter une entrée
-dans `TOPICS`. Sujet « Cartes de la liste » : la pastille (A) est retenue et en
+En-tête sur fond d'accent (✦ + « Source » en Playfair comme dans l'app, puis
+« LABO » en DM Mono dans un cadre). Écran à hauteur fixe : groupes en onglets
+dans l'en-tête, sujets du groupe dans la marge gauche (bureau) ou en puces
+(mobile), le sujet ouvert déplie ses variantes A, B, C… (A = l'actuelle) ;
+sur mobile les variantes sont dans une barre en bas. Flèches du clavier et
+balayage, adresse `#sujet-LETTRE` (ex. `#cartes-C`). Pour ajouter un sujet ou
+une variante : une entrée dans `TOPICS` (avec son `group`). Les sujets
+`FAKE_TOPICS` (marqués `fake`) sont des maquettes pour juger du menu : à
+retirer. Sujet « Cartes de la liste » : la pastille (A) est retenue et en
 place dans `ProjectCard` / `SubprojectCard` ; le liseré (B) ne reste que dans
 les panneaux de détail.
 

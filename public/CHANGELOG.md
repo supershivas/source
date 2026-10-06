@@ -1,5 +1,8 @@
 # Historique des versions
 
+## 1.8.3 — 2026-10-06
+- Labo : en-tête sur fond d'accent avec « LABO », sujets et variantes dans la marge de gauche, menu à plusieurs niveaux
+
 ## 1.8.2 — 2026-10-06
 - Labo : un sujet par onglet, une variante à la fois (A, B, C…), avec flèches et balayage, sans longue page à défiler
 
