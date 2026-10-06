@@ -1,5 +1,9 @@
 # Historique des versions
 
+## 1.7.0 — 2026-10-06
+- Un projet agrandi au centre affiche toutes ses notes et tous ses statuts
+- Nouveau : imprimer un projet (menu ⋯ du projet, option « Imprimer »)
+
 ## 1.6.1 — 2026-10-05
 - Mobile : pour réordonner, on garde le doigt appuyé sur la poignée puis on glisse ; le défilement ne déplace plus rien par erreur
 - Mobile : le champ de note reste visible au-dessus du clavier

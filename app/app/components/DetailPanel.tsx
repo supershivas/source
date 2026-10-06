@@ -8,6 +8,7 @@ import NoteText from './NoteText'
 import { useSheetDrag, useKeyboardFit } from './useSheetDrag'
 import TodoNote from './TodoNote'
 import { isTodoNote } from '../todo'
+import { printProject } from '../printProject'
 
 interface DetailPanelProps {
   project: Project
@@ -181,8 +182,6 @@ export default function DetailPanel({
     ...subprojectNotes,
   ].sort((a, b) => Number(isTodoNote(b.text)) - Number(isTodoNote(a.text)) || new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
   const filteredNotes = noteTab === 'all' ? allNotes : noteTab === 'notes' ? allNotes.filter(n => !isStatusNote(n.text)) : allNotes.filter(n => isStatusNote(n.text))
-  const visibleNotes = filteredNotes.slice(0, visibleCount)
-  const hiddenCount = filteredNotes.length - visibleNotes.length
 
   function fmtDate(iso: string) {
     return new Date(iso).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' })
@@ -195,6 +194,8 @@ export default function DetailPanel({
   }
 
   const isExpanded = expanded && !mobile
+  const visibleNotes = isExpanded ? filteredNotes : filteredNotes.slice(0, visibleCount)
+  const hiddenCount = filteredNotes.length - visibleNotes.length
   const sheetDrag = useSheetDrag(panelRef, onClose, !!mobile)
   useKeyboardFit(panelRef, !!mobile)
 
@@ -252,6 +253,9 @@ export default function DetailPanel({
                 </button>
                 <button onClick={() => { setMenuOpen(false); onDuplicate() }} className="flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-[var(--hover-bg)] text-left" style={{ color: 'var(--text-secondary)' }}>
                   <i className="ti ti-copy" style={{ fontSize: '0.85rem' }} /> Dupliquer
+                </button>
+                <button onClick={() => { setMenuOpen(false); printProject(project) }} className="flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-[var(--hover-bg)] text-left" style={{ color: 'var(--text-secondary)' }}>
+                  <i className="ti ti-printer" style={{ fontSize: '0.85rem' }} /> Imprimer
                 </button>
                 <div style={{ height: 1, background: 'var(--border)', margin: '4px 8px' }} />
                 <button onClick={() => { setMenuOpen(false); onDelete() }} className="flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-[var(--hover-bg)] text-left" style={{ color: '#ef4444' }}>

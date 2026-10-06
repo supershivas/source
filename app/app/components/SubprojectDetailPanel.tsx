@@ -167,8 +167,6 @@ export default function SubprojectDetailPanel({
 
   const allNotes = [...(sub.notes || [])].sort((a, b) => Number(isTodoNote(b.text)) - Number(isTodoNote(a.text)) || new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
   const filteredNotes = noteTab === 'all' ? allNotes : noteTab === 'notes' ? allNotes.filter(n => !isStatusNote(n.text)) : allNotes.filter(n => isStatusNote(n.text))
-  const visibleNotes = filteredNotes.slice(0, visibleCount)
-  const hiddenCount = filteredNotes.length - visibleNotes.length
 
   function fmtDate(iso: string) {
     return new Date(iso).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' })
@@ -181,6 +179,8 @@ export default function SubprojectDetailPanel({
   }
 
   const isExpanded = expanded && !mobile
+  const visibleNotes = isExpanded ? filteredNotes : filteredNotes.slice(0, visibleCount)
+  const hiddenCount = filteredNotes.length - visibleNotes.length
   const sheetDrag = useSheetDrag(panelRef, onClose, !!mobile)
   useKeyboardFit(panelRef, !!mobile)
 

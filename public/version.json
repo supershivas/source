@@ -1,9 +1,8 @@
 {
-  "version": "1.6.1",
-  "date": "2026-10-05",
+  "version": "1.7.0",
+  "date": "2026-10-06",
   "changes": [
-    "Mobile : pour réordonner, on garde le doigt appuyé sur la poignée puis on glisse ; le défilement ne déplace plus rien par erreur",
-    "Mobile : le champ de note reste visible au-dessus du clavier",
-    "Les tablettes utilisent maintenant l'affichage mobile (jusqu'à 768 px)"
+    "Un projet agrandi au centre affiche toutes ses notes et tous ses statuts",
+    "Nouveau : imprimer un projet (menu ⋯ du projet, option « Imprimer »)"
   ]
 }
