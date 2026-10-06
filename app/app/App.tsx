@@ -316,7 +316,7 @@ export default function App({ initialProjects, userId, userEmail }: AppProps) {
         return
       }
       const target = e.target as HTMLElement
-      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT') return
+      if (target.isContentEditable || target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT') return
       if (e.key === 'Escape') {
         if (selectedDetailId || selectedDetailSubId) {
           setSelectedDetailId(null); setSelectedDetailSubId(null); setSelectedDetailParentId(null); return

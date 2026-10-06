@@ -1,7 +1,7 @@
 {
-  "version": "1.9.1",
+  "version": "1.9.2",
   "date": "2026-10-06",
   "changes": [
-    "Note détaillée : l'éditeur montre le résultat en direct (gras, titres, puces, cases à cocher) au lieu des codes"
+    "Note détaillée : les raccourcis clavier (N, D, P, E…) ne se déclenchent plus pendant la saisie dans l'éditeur"
   ]
 }

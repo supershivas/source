@@ -1,5 +1,8 @@
 # Historique des versions
 
+## 1.9.2 — 2026-10-06
+- Note détaillée : les raccourcis clavier (N, D, P, E…) ne se déclenchent plus pendant la saisie dans l'éditeur
+
 ## 1.9.1 — 2026-10-06
 - Note détaillée : l'éditeur montre le résultat en direct (gras, titres, puces, cases à cocher) au lieu des codes
 

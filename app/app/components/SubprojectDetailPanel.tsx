@@ -91,8 +91,8 @@ export default function SubprojectDetailPanel({
   useEffect(() => {
     if (!expanded || mobile) return
     function onKey(e: KeyboardEvent) {
-      const tag = (e.target as HTMLElement).tagName
-      if (e.key !== 'Escape' || tag === 'INPUT' || tag === 'TEXTAREA') return
+      const el = e.target as HTMLElement
+      if (e.key !== 'Escape' || el.isContentEditable || el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') return
       e.stopPropagation()
       setExpanded(false)
     }
