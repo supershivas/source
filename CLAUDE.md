@@ -124,7 +124,9 @@ En-tête sur fond d'accent (✦ + « Source » en Playfair comme dans l'app, pui
 « LABO » en DM Mono dans un cadre). Écran à hauteur fixe : groupes en onglets
 dans l'en-tête, sujets du groupe dans la marge gauche (bureau) ou en puces
 (mobile), le sujet ouvert déplie ses variantes A, B, C… (A = l'actuelle) ;
-sur mobile les variantes sont dans une barre en bas. Flèches du clavier et
+sur mobile les variantes sont dans une barre en bas. Onglet : titre « Labo — Source »
+et favicon `public/favicon-labo.svg` (+ `favicon-labo-32x32.png`) = favicon de l'app
+avec une pastille sombre à fiole blanche en haut à droite (`app/app/labo/layout.tsx`). Flèches du clavier et
 balayage, adresse `#sujet-LETTRE` (ex. `#cartes-C`). Pour ajouter un sujet ou
 une variante : une entrée dans `TOPICS` (avec son `group`) ; la barre des
 groupes et les puces de sujets n'apparaissent qu'à partir de deux. Sujet « Cartes de la liste » : la pastille (A) est retenue et en

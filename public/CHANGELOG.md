@@ -1,5 +1,8 @@
 # Historique des versions
 
+## 1.8.5 — 2026-10-06
+- Labo : l'onglet du navigateur s'appelle « Labo — Source » et son icône porte une pastille à fiole en haut à droite
+
 ## 1.8.4 — 2026-10-06
 - Labo : retire les menus factices, ne garde que les cartes de la liste
 
