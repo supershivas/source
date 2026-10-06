@@ -1,5 +1,8 @@
 # Historique des versions
 
+## 1.8.4 — 2026-10-06
+- Labo : retire les menus factices, ne garde que les cartes de la liste
+
 ## 1.8.3 — 2026-10-06
 - Labo : en-tête sur fond d'accent avec « LABO », sujets et variantes dans la marge de gauche, menu à plusieurs niveaux
 

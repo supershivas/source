@@ -126,9 +126,8 @@ dans l'en-tête, sujets du groupe dans la marge gauche (bureau) ou en puces
 (mobile), le sujet ouvert déplie ses variantes A, B, C… (A = l'actuelle) ;
 sur mobile les variantes sont dans une barre en bas. Flèches du clavier et
 balayage, adresse `#sujet-LETTRE` (ex. `#cartes-C`). Pour ajouter un sujet ou
-une variante : une entrée dans `TOPICS` (avec son `group`). Les sujets
-`FAKE_TOPICS` (marqués `fake`) sont des maquettes pour juger du menu : à
-retirer. Sujet « Cartes de la liste » : la pastille (A) est retenue et en
+une variante : une entrée dans `TOPICS` (avec son `group`) ; la barre des
+groupes et les puces de sujets n'apparaissent qu'à partir de deux. Sujet « Cartes de la liste » : la pastille (A) est retenue et en
 place dans `ProjectCard` / `SubprojectCard` ; le liseré (B) ne reste que dans
 les panneaux de détail.
 

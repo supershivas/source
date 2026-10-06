@@ -29,7 +29,7 @@ const Meta = ({ p }: { p: Sample }) => (
 
 
 type Variant = { letter: string; id: string; title: string; text: string; status?: 'actuelle' | 'ancienne'; retained?: boolean; render: () => React.ReactNode }
-type Topic = { id: string; group: string; label: string; icon: string; variants: Variant[]; fake?: boolean }
+type Topic = { id: string; group: string; label: string; icon: string; variants: Variant[] }
 
 const row = (p: Sample, extra: React.CSSProperties = {}, content?: React.ReactNode) => (
   <div key={p.number} className="flex items-center gap-3 px-4 py-3" style={{ ...card, ...extra }}>{content}</div>
@@ -40,39 +40,6 @@ const twoLines = (p: Sample, first: React.ReactNode, second: React.ReactNode) =>
 const std = (p: Sample) => twoLines(p, <><Num p={p} /><Name p={p} /></>, <><Badge s={p.status} /><Meta p={p} /></>)
 const list = (f: (p: Sample) => React.ReactNode) => <div className="flex flex-col gap-2">{SAMPLES.map(f)}</div>
 
-
-// Sujets factices : ils ne servent qu'à juger de l'ergonomie d'un labo bien rempli (à retirer ensuite).
-const FAKE_SPEC: [string, string, string, string[]][] = [
-  ['Liste', 'Filtres', 'filter', ['Barre horizontale', 'Puces', 'Panneau latéral', 'Menu déroulant']],
-  ['Liste', 'Tri', 'arrows-sort', ['Menu', 'En-têtes de colonnes', 'Glisser-déposer']],
-  ['Liste', 'Sélection groupée', 'checkbox', ['Barre flottante', 'Barre en haut', 'Menu contextuel']],
-  ['Détail', 'Panneau de détail', 'layout-sidebar-right', ['Panneau latéral', 'Feuille centrée', 'Page entière', 'Tiroir bas']],
-  ['Détail', 'Notes et historique', 'notes', ['Fil unique', 'Deux colonnes', 'Onglets']],
-  ['Détail', 'Chronologie', 'timeline', ['Frise', 'Liste datée', 'Jauge']],
-  ['Modales', 'Projet', 'folder', ['Formulaire simple', 'Étapes', 'Plein écran mobile']],
-  ['Modales', 'Note', 'note', ['Éditeur léger', 'Barre Markdown', 'Plein écran']],
-  ['Modales', 'Confirmation', 'alert-triangle', ['Texte seul', 'Avec résumé', 'Annuler 5 s (toast)']],
-  ['Navigation', 'Sidebar', 'layout-sidebar', ['Sombre fixe', 'Repliable', 'Icônes seules']],
-  ['Navigation', 'Année et catégorie', 'calendar', ['Onglets', 'Menu', 'Chips']],
-  ['Navigation', 'Palette de commandes', 'command', ['Centrée', 'Plein écran mobile']],
-  ['Réglages', 'Thème', 'palette', ['Interrupteur', 'Trois choix', 'Aperçu']],
-  ['Réglages', 'Couleur d\'accent', 'color-swatch', ['Pastilles', 'Roue', 'Liste nommée']],
-]
-const placeholder = (n: number) => (
-  <div className="flex flex-col gap-2">
-    <p style={{ ...muted, border: '1px dashed var(--border)', borderRadius: 8, padding: '6px 10px' }}>Maquette factice : sert à juger du menu, pas du contenu.</p>
-    {[0, 1, 2].map(i => (
-      <div key={i} className="flex items-center gap-3 px-4 py-3" style={card}>
-        <span style={{ width: 9, height: 9, borderRadius: n % 2 ? 2 : '50%', background: 'var(--border)' }} />
-        <div className="flex-1 flex flex-col gap-1.5"><span style={{ height: 10, width: `${70 - i * 12 - n * 3}%`, background: 'var(--border)', borderRadius: 4 }} /><span style={{ height: 8, width: `${45 + i * 8}%`, background: 'var(--hover-bg)', borderRadius: 4 }} /></div>
-      </div>
-    ))}
-  </div>
-)
-const FAKE_TOPICS: Topic[] = FAKE_SPEC.map(([group, label, icon, names]) => ({
-  id: label.normalize('NFD').replace(/[^a-zA-Z]+/g, '').toLowerCase(), group, label, icon, fake: true,
-  variants: names.map((title, i) => ({ letter: String.fromCharCode(65 + i), id: String(i), title, text: `Variante factice « ${title} ».`, status: i === 0 ? 'actuelle' as const : undefined, render: () => placeholder(i) })),
-}))
 
 const TOPICS: Topic[] = [
   {
@@ -134,7 +101,6 @@ const TOPICS: Topic[] = [
           </div>) },
     ],
   },
-  ...FAKE_TOPICS,
 ]
 const GROUPS = Array.from(new Set(TOPICS.map(t => t.group)))
 
@@ -210,7 +176,7 @@ export default function LaboPage() {
             <i className="ti ti-flask" /> Labo
           </span>
         </div>
-        <nav aria-label="Groupes du labo" className="flex gap-1 overflow-x-auto px-3" style={{ background: 'rgba(0,0,0,0.18)' }}>
+        {GROUPS.length > 1 && <nav aria-label="Groupes du labo" className="flex gap-1 overflow-x-auto px-3" style={{ background: 'rgba(0,0,0,0.18)' }}>
           {GROUPS.map(g => {
             const active = g === topic.group
             return (
@@ -220,15 +186,15 @@ export default function LaboPage() {
               </button>
             )
           })}
-        </nav>
+        </nav>}
       </header>
 
       {/* Mobile : sujets du groupe en puces */}
-      <nav className="labo-chips gap-1 overflow-x-auto px-3 py-2" aria-label="Sujets" style={{ background: 'var(--card-bg)', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
+      {groupTopics.length > 1 && <nav className="labo-chips gap-1 overflow-x-auto px-3 py-2" aria-label="Sujets" style={{ background: 'var(--card-bg)', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
         {groupTopics.map(({ t, i }) => (
           <button key={t.id} onClick={() => go(i, 0)} className="shrink-0 flex items-center gap-1.5" style={btn(i === topicIdx)}><i className={`ti ti-${t.icon}`} /> {t.label}</button>
         ))}
-      </nav>
+      </nav>}
 
       <div style={{ flex: 1, display: 'flex', minHeight: 0 }}>
         {/* Bureau : sujets du groupe dans la marge, le sujet ouvert déplie ses variantes */}
