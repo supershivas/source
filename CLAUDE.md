@@ -73,11 +73,14 @@ idee.
   numéro de ligne ; la note est supprimée s'il ne reste rien) ; les notes avec
   tâches sont épinglées en haut. Note rapide : champ « Note rapide… » (Entrée),
   `[]`, `- [ ]` y sont normalisés en `[ ] ` (`normalizeTodoLines`). Note
-  détaillée : bouton « Note détaillée » → `NoteModal` (gras, italique, titre,
-  puces, tâches ; Entrée prolonge une liste).
+  détaillée : bouton « Note détaillée » → `NoteModal` avec `RichNoteEditor`,
+  éditeur visuel en direct (`contentEditable`, sans dépendance) : on voit gras,
+  titres, puces et cases à cocher, jamais les codes ; la saisie `## `, `- `,
+  `[ ] ` en début de ligne les crée ; `richNote.ts` convertit le Markdown
+  stocké ⇄ DOM (le format en base ne change pas).
 - Panneaux de détail : bouton agrandir/réduire (centré, bureau seulement)
 - Notes en Markdown léger (`NoteMarkdown.tsx`, sans dépendance, rendu en
-  éléments React) ; `NoteModal` a une barre gras/italique/titre/liste
+  éléments React) ; `NoteModal` a une barre gras/italique/titre/puces/tâches
 
 `app/app/types.ts` définit les types `Project`, `Subproject`, `Note`
 correspondant au schéma Supabase existant.

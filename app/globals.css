@@ -292,6 +292,15 @@ input::placeholder, textarea::placeholder {
 .note-md .note-h3 { font-size: 0.9rem; color: var(--text-secondary); }
 .note-md .note-gap { height: 0.5rem; }
 
+/* ─── Éditeur de note visuel (RichNoteEditor) ────────────────────────────────*/
+.rt-editor { min-height: 220px; max-height: 55vh; overflow-y: auto; outline: none; background: var(--card-bg); color: var(--text-primary); line-height: 1.5; }
+.rt-editor:focus { border-color: var(--accent); }
+.rt-editor h1, .rt-editor h2, .rt-editor h3 { font-weight: 600; margin-top: 4px; }
+.rt-editor h1 { font-size: 1.1rem; } .rt-editor h2 { font-size: 1rem; } .rt-editor h3 { font-size: 0.9rem; color: var(--text-secondary); }
+.rt-editor a { color: var(--accent); text-decoration: underline; }
+.rt-editor .rt-task { position: relative; padding-left: 1.6rem; }
+.rt-editor .rt-task::before { content: ''; position: absolute; left: 2px; top: 0.3em; width: 0.95em; height: 0.95em; border: 1.5px solid var(--text-muted); border-radius: 3px; }
+
 /* ─── Panneau de détails agrandi (centré) ────────────────────────────────────*/
 .detail-panel-backdrop { position: fixed; inset: 0; z-index: 40; background: rgba(0,0,0,0.4); }
 .detail-panel-expanded {

@@ -1,5 +1,8 @@
 # Historique des versions
 
+## 1.9.1 — 2026-10-06
+- Note détaillée : l'éditeur montre le résultat en direct (gras, titres, puces, cases à cocher) au lieu des codes
+
 ## 1.9.0 — 2026-10-06
 - Notes : une ligne « [ ] » devient une case à cocher dans n'importe quelle note, y compris la note rapide
 - Nouveau bouton « Note détaillée » : mise en forme et tâches dans la même note

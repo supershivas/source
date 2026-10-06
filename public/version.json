@@ -1,9 +1,7 @@
 {
-  "version": "1.9.0",
+  "version": "1.9.1",
   "date": "2026-10-06",
   "changes": [
-    "Notes : une ligne « [ ] » devient une case à cocher dans n'importe quelle note, y compris la note rapide",
-    "Nouveau bouton « Note détaillée » : mise en forme et tâches dans la même note",
-    "Un texte peut mélanger paragraphes et tâches ; cocher une tâche crée toujours une note « Fait : … »"
+    "Note détaillée : l'éditeur montre le résultat en direct (gras, titres, puces, cases à cocher) au lieu des codes"
   ]
 }
