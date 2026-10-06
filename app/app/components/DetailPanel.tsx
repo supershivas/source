@@ -8,6 +8,7 @@ import NoteText from './NoteText'
 import { useSheetDrag, useKeyboardFit } from './useSheetDrag'
 import { hasTodo } from '../todo'
 import { printProject } from '../printProject'
+import { buildMilestones } from '../milestones'
 
 interface DetailPanelProps {
   project: Project
@@ -192,6 +193,15 @@ export default function DetailPanel({
     return entry ? (entry[0] as Status) : null
   }
 
+  // Clic sur un jalon : affiche la note correspondante dans la liste et la fait clignoter.
+  function revealNote(id: string) {
+    setNoteTab('all')
+    setVisibleCount(Number.MAX_SAFE_INTEGER)
+    setNewNoteId(id)
+    setTimeout(() => { document.getElementById(`note-${id}`)?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }) }, 50)
+    setTimeout(() => setNewNoteId(null), 900)
+  }
+
   const isExpanded = expanded && !mobile
   const visibleNotes = isExpanded ? filteredNotes : filteredNotes.slice(0, visibleCount)
   const hiddenCount = filteredNotes.length - visibleNotes.length
@@ -324,6 +334,18 @@ export default function DetailPanel({
           ? Math.max(2, Math.min(98, ((todayTs - minTs) / (maxTs - minTs)) * 100))
           : null
 
+        const anchors = [
+          ...(d0 ? [{ ts: d0, pos: 0 }] : []),
+          ...(d1 ? [{ ts: d1, pos: 50 }] : []),
+          ...(d2 ? [{ ts: d2, pos: 100 }] : []),
+        ]
+        const milestones = buildMilestones(allNotes, anchors)
+        function milestoneStyle(m: typeof milestones[number]): React.CSSProperties {
+          if (m.kind === 'status') return { background: m.status ? STATUS_ACCENT[m.status] : 'var(--text-muted)', borderColor: 'var(--card-bg)' }
+          if (m.kind === 'done') return { background: '#16a34a', borderColor: 'var(--card-bg)' }
+          return { background: 'var(--card-bg)', borderColor: 'var(--text-muted)' }
+        }
+
         function fmtShort(iso: string) {
           const d = new Date(iso)
           return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`
@@ -335,11 +357,24 @@ export default function DetailPanel({
               {todayPct && d0 && (
                 <div style={{ position: 'absolute', left: 0, top: 0, height: '100%', width: `${todayPct / 2}%`, background: 'linear-gradient(90deg,#16a34a,#dc2626)', borderRadius: 2, opacity: 0.7 }} />
               )}
+              {milestones.map(m => (
+                <button
+                  key={m.noteIds[0]}
+                  title={m.title}
+                  aria-label={m.title}
+                  onClick={() => revealNote(m.noteIds[0])}
+                  className="tl-milestone"
+                  style={{ left: `${m.pos}%`, ...milestoneStyle(m) }}
+                >
+                  {m.kind === 'done' && <i className="ti ti-check" style={{ fontSize: '0.55rem', color: '#fff' }} />}
+                  {m.noteIds.length > 1 && <span className="tl-milestone-count">{m.noteIds.length}</span>}
+                </button>
+              ))}
               {pts.map(pt => {
                 const iso = pt.field === 'date' ? project.date : pt.field === 'deadline' ? project.deadline : project.ended
                 const empty = !iso
                 return (
-                  <div key={pt.field} style={{ position: 'absolute', top: '50%', left: `${pt.pos}%`, transform: 'translate(-50%,-50%)', cursor: 'pointer' }} onClick={() => setEditing(pt.field)}>
+                  <div key={pt.field} style={{ position: 'absolute', top: '50%', left: `${pt.pos}%`, transform: 'translate(-50%,-50%)', cursor: 'pointer', zIndex: 2 }} onClick={() => setEditing(pt.field)}>
                     <div style={{
                       width: 11, height: 11, borderRadius: '50%',
                       background: empty ? 'var(--border)' : pt.color,
@@ -466,7 +501,7 @@ export default function DetailPanel({
               const s = statusFromNote(n.text)
               const color = s ? STATUS_ACCENT[s] : 'var(--text-muted)'
               return (
-                <div key={n.id} className="flex items-center gap-2 rounded px-2 py-1.5" style={{ border: '1px solid var(--border)', background: 'var(--hover-bg, rgba(0,0,0,0.015))' }}>
+                <div key={n.id} id={`note-${n.id}`} className={`flex items-center gap-2 rounded px-2 py-1.5${n.id === newNoteId ? ' note-enter' : ''}`} style={{ border: '1px solid var(--border)', background: 'var(--hover-bg, rgba(0,0,0,0.015))' }}>
                   <span style={{ width: 7, height: 7, borderRadius: '50%', background: color, flexShrink: 0, display: 'inline-block' }} />
                   <span className="flex-1 text-xs" style={{ color: 'var(--text-secondary)' }}>
                     {n._subName && <span className="t-text-muted"><i className="ti ti-corner-down-right" style={{ fontSize: '0.85em', verticalAlign: '-0.1em' }} /> {n._subName} · </span>}
@@ -480,7 +515,7 @@ export default function DetailPanel({
               )
             }
             return (
-              <div key={n.id} className={`flex items-start gap-2 rounded border t-border px-2 py-1.5${n.id === newNoteId ? ' note-enter' : ''}`}>
+              <div key={n.id} id={`note-${n.id}`} className={`flex items-start gap-2 rounded border t-border px-2 py-1.5${n.id === newNoteId ? ' note-enter' : ''}`}>
                 <div className="flex-1 min-w-0">
                   {n._subName && <p className="text-xs t-text-muted mb-0.5"><i className="ti ti-corner-down-right" style={{ fontSize: '0.85em', verticalAlign: '-0.1em' }} /> {n._subName}</p>}
                   <NoteText text={n.text} onCompleteLine={i => onCompleteTodo(n, i, subprojectId)} />

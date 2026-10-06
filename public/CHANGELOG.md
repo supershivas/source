@@ -1,5 +1,9 @@
 # Historique des versions
 
+## 1.10.0 — 2026-10-06
+- Frise du projet : de petits jalons marquent les notes, les changements de statut et les tâches faites
+- Cliquer sur un jalon affiche la note correspondante dans la liste
+
 ## 1.9.2 — 2026-10-06
 - Note détaillée : les raccourcis clavier (N, D, P, E…) ne se déclenchent plus pendant la saisie dans l'éditeur
 

@@ -78,6 +78,12 @@ idee.
   titres, puces et cases à cocher, jamais les codes ; la saisie `## `, `- `,
   `[ ] ` en début de ligne les crée ; `richNote.ts` convertit le Markdown
   stocké ⇄ DOM (le format en base ne change pas).
+- Frise du projet (`DetailPanel`) : jalons (`app/app/milestones.ts`) posés sur la
+  barre à la date de chaque note du projet et de ses sous-projets : point
+  plein de la couleur du statut (changement de statut « → … »), point vert à
+  coche (« Fait : … »), anneau (note) ; plusieurs notes proches = un jalon
+  avec compteur ; clic = la note s'affiche et clignote dans la liste. Les
+  dates sont placées entre les repères Début / Deadline / Fin (0 / 50 / 100).
 - Panneaux de détail : bouton agrandir/réduire (centré, bureau seulement)
 - Notes en Markdown léger (`NoteMarkdown.tsx`, sans dépendance, rendu en
   éléments React) ; `NoteModal` a une barre gras/italique/titre/puces/tâches
